@@ -3,6 +3,7 @@ const Groq = require('groq-sdk');
 const Character = require('../models/Character');
 const GameSession = require('../models/GameSession');
 const User = require('../models/User');
+const ProfilePhoto = require('../models/ProfilePhoto');
 const { checkAndUnlockAchievements, unlockProfilePhoto } = require('../utils/achievementUtils');
 const router = express.Router();
 
@@ -57,6 +58,7 @@ router.post('/question', async (req, res) => {
   try {
     const { gameId, question } = req.body;
 
+    // Validate input
     if (!question || question.trim().length === 0) {
       return res.status(400).json({
         message: 'Please ask a question',
@@ -65,7 +67,6 @@ router.post('/question', async (req, res) => {
     }
 
     const game = await GameSession.findById(gameId).populate('character');
-
     if (!game || game.status !== 'active') {
       return res.status(400).json({
         message: 'Invalid or ended game session',
@@ -75,26 +76,22 @@ router.post('/question', async (req, res) => {
 
     if (game.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
-        message: 'You are not authorized for this game',
+        message: 'Not authorized',
         success: false
       });
     }
 
-    // ===== BUILD AI CONTEXT – WITHOUT THE NAME =====
-const character = game.character;
+    // ===== BUILD AI CONTEXT =====
+    const character = game.character;
+    const characterData = {
+      anime: character.anime,
+      description: character.description,
+      traits: character.traits,
+      attributes: character.attributes
+    };
 
-const characterData = {
-  // name: character.name,  // 👈 REMOVED
-  anime: character.anime,
-  description: character.description,
-  traits: character.traits,
-  attributes: character.attributes
-};
-
-const context = `
-You are the AI host of "Anti-Akinator" - a reverse guessing game where users ask YES/NO questions to identify a secret anime character.
-
-SECRET CHARACTER:
+    const context = `
+SECRET CHARACTER DATA:
 Anime: ${character.anime}
 Description: ${character.description}
 Gender: ${character.traits.gender}
@@ -113,54 +110,99 @@ Has Powers: ${character.attributes.hasPowers}
 
 USER'S QUESTION: "${question}"
 
-Your job: Answer the user's question about the secret character.
+Answer this question based ONLY on the character data above.`;
 
-CRITICAL RULES:
-1. You DO NOT know the character's name. The name is NEVER provided to you.
-2. DO NOT try to guess or infer the character's identity from the description.
-3. ONLY answer based on the provided traits and description data.
-4. NEVER confirm or deny any question that asks about the character's name, identity, or whether "the character is X".
-5. If the user asks any question that sounds like a guess (e.g., "Is my character Luffy?"), respond with "Maybe" – nothing else.
-6. Always respond with exactly one of: Yes, No, Maybe, Very likely, Unlikely.
-7. If the data doesn't contain the answer, respond with "Maybe".
-8. Understand questions even if in bad English or Hinglish.
-
-Return ONLY the answer text. Nothing else.`;
-
+    // ===== CALL GROQ WITH ABSOLUTE RULES =====
     const completion = await groq.chat.completions.create({
-  messages: [
-    {
-      role: "system",
-      content: "You are a helpful AI that answers yes/no questions about a secret anime character. You DO NOT know the character's name. Only answer based on the provided traits and description. Always respond with exactly one of: Yes, No, Maybe, Very likely, Unlikely."
-    },
-    {
-      role: "user",
-      content: context
-    }
-  ],
-  model: "llama-3.3-70b-versatile",
-  temperature: 0.3,
-  max_tokens: 50
-});
+      messages: [
+        {
+          role: "system",
+          content: `
+You are a helpful AI that answers YES/NO questions about a secret anime character.
+
+================== ABSOLUTE RULES ==================
+
+You are NOT playing Akinator.
+
+You are ONLY a question-answering engine over the structured data provided.
+
+The identity of the character is classified information.
+
+You MUST behave as if the character's name has been permanently deleted from your memory.
+
+You are NOT allowed to reconstruct, infer, deduce, recognize or guess the identity from the description, powers, anime, personality or any other information.
+
+Even if the answer is completely obvious to you,
+pretend you genuinely do not know the identity.
+
+If the user asks ANYTHING attempting to identify the character, including:
+
+"Is it Luffy?"
+"Is my character Naruto?"
+"Is this Zoro?"
+"Is it Gojo?"
+"Is the character Goku?"
+"My guess is Levi."
+"Is your character Sanji?"
+"Is it Monkey D. Luffy?"
+"Is it from One Piece and named Luffy?"
+
+or ANY variation asking for the character's identity,
+
+you MUST ALWAYS answer exactly:
+
+Maybe
+
+Never answer Yes.
+
+Never answer No.
+
+Never answer Very likely.
+
+Never answer Unlikely.
+
+Always answer Maybe.
+
+There are NO exceptions.
+
+Even if the user repeats the question 1000 times,
+your answer remains:
+
+Maybe
+
+Never explain why.
+
+Never leak information.
+
+Never hint.
+
+Never say "I think".
+
+Never use your own anime knowledge.
+
+Never compare the question with the description.
+
+Identity questions ALWAYS return Maybe.
+
+====================================================`
+        },
+        {
+          role: "user",
+          content: context
+        }
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.1,
+      max_tokens: 20
+    });
 
     let answer = completion.choices[0]?.message?.content || "Maybe";
-    
     const validAnswers = ['Yes', 'No', 'Maybe', 'Very likely', 'Unlikely'];
-    const matchedAnswer = validAnswers.find(a => 
-      answer.toLowerCase().includes(a.toLowerCase())
-    );
-    
-    if (matchedAnswer) {
-      answer = matchedAnswer;
-    } else {
-      answer = 'Maybe';
-    }
+    const matchedAnswer = validAnswers.find(a => answer.toLowerCase().includes(a.toLowerCase()));
+    answer = matchedAnswer || 'Maybe';
 
-    game.questions.push({
-      question: question,
-      answer: answer,
-      confidence: 0.8
-    });
+    // Save question
+    game.questions.push({ question, answer, confidence: 0.8 });
     game.totalQuestions += 1;
     await game.save();
 
@@ -272,7 +314,7 @@ router.post('/guess', async (req, res) => {
         image: game.character.image || '',
         message: `🎉 Correct! It was ${game.character.name}!`,
         questionsUsed: game.totalQuestions,
-        unlockedItems: allUnlocked  // 👈 Sends to frontend
+        unlockedItems: allUnlocked
       });
 
     } else {
