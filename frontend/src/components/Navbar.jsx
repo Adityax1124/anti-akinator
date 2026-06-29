@@ -74,9 +74,8 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand" onClick={closeMobileMenu}>
-          <img src="/logo.png" alt="🎯" className="brand-logo" />
-          <span>Anti-Akinator</span>
-        </Link>
+  <span>Anti-Akinator</span>
+</Link>
 
         <div className="search-wrapper" ref={searchRef}>
           <div className="search-container">
