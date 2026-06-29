@@ -1,0 +1,701 @@
+.game-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 10px;
+}
+
+.game-start {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+}
+
+.game-start-content {
+  text-align: center;
+  background: #1a1a1a;
+  padding: 50px;
+  border-radius: 20px;
+  border: 1px solid #333;
+  max-width: 500px;
+  width: 100%;
+}
+
+.game-start-content h1 {
+  font-size: 36px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #ff6b35, #ff4500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.result-image {
+  margin: 16px auto;
+  width: 150px;
+  height: 150px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.result-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-start-content p {
+  color: #aaa;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.game-hint {
+  color: #a29bfe !important;
+  font-size: 14px !important;
+  background: rgba(108, 92, 231, 0.1);
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* ============================================================
+   UNLOCK POPUP – Premium Modal
+   ============================================================ */
+.unlock-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(15px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInUp 0.4s ease-out;
+  padding: 20px;
+}
+
+.unlock-popup-content {
+  background: linear-gradient(145deg, rgba(20, 20, 50, 0.95), rgba(10, 10, 30, 0.98));
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  border: 2px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.unlock-popup-content::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(255, 215, 0, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.unlock-popup-content h2 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffd700;
+  margin-bottom: 4px;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+}
+
+.unlock-popup-content h3 {
+  font-size: 20px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.unlock-popup-content p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.unlock-photo-preview {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  margin: 12px auto 16px;
+  overflow: hidden;
+  border: 4px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.15);
+  background: #1a1a2e;
+}
+
+.unlock-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.unlock-popup-content .btn {
+  padding: 12px 36px;
+  font-size: 16px;
+  border-radius: 14px;
+  margin-top: 8px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .unlock-popup-content {
+    padding: 28px 20px;
+    max-width: 340px;
+  }
+  
+  .unlock-popup-content h2 {
+    font-size: 22px;
+  }
+  
+  .unlock-photo-preview {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* ============================================================
+   UNLOCK POPUP – Premium Modal for Banners, Titles, Photos
+   ============================================================ */
+.unlock-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(15px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInUp 0.4s ease-out;
+  padding: 20px;
+}
+
+.unlock-popup-content {
+  background: linear-gradient(145deg, rgba(20, 20, 50, 0.95), rgba(10, 10, 30, 0.98));
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  border: 2px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.unlock-popup-content::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(255, 215, 0, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.unlock-popup-content h2 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffd700;
+  margin-bottom: 4px;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+}
+
+.unlock-popup-content h3 {
+  font-size: 20px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.unlock-popup-content p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.unlock-desc {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Preview container */
+.unlock-preview {
+  margin: 12px auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Banner GIF preview */
+.unlock-banner-gif {
+  width: 100%;
+  max-width: 300px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 215, 0, 0.15);
+  background: #1a1a2e;
+}
+
+/* Profile photo preview */
+.unlock-photo-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.1);
+  background: #1a1a2e;
+}
+
+/* Title preview */
+.unlock-title-preview {
+  padding: 16px 28px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #00d4ff;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 2px solid rgba(0, 212, 255, 0.15);
+  min-width: 200px;
+}
+
+.unlock-popup-content .btn {
+  padding: 12px 36px;
+  font-size: 16px;
+  border-radius: 14px;
+  margin-top: 8px;
+  min-width: 140px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .unlock-popup-content {
+    padding: 28px 20px;
+    max-width: 340px;
+  }
+  
+  .unlock-popup-content h2 {
+    font-size: 22px;
+  }
+  
+  .unlock-banner-gif {
+    height: 80px;
+  }
+  
+  .unlock-photo-img {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .unlock-title-preview {
+    font-size: 18px;
+    padding: 12px 20px;
+  }
+}
+
+.start-btn {
+  font-size: 18px;
+  padding: 14px 40px;
+  margin-top: 20px;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #333;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.game-info {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.game-status {
+  font-weight: 600;
+  color: #ff6b35;
+}
+
+.game-count {
+  color: #aaa;
+}
+
+.game-guesses {
+  color: #a29bfe;
+}
+
+.btn-sm {
+  padding: 6px 16px;
+  font-size: 14px;
+}
+
+.chat-container {
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #333;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-welcome {
+  text-align: center;
+  color: #888;
+  padding: 40px 20px;
+}
+
+.chat-welcome p:first-child {
+  font-size: 20px;
+  color: #ddd;
+  margin-bottom: 8px;
+}
+
+.chat-welcome .hint {
+  font-size: 14px;
+  color: #666;
+}
+
+.chat-message {
+  display: flex;
+  gap: 12px;
+  animation: slideIn 0.3s ease-out;
+  max-width: 85%;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-message.system {
+  align-self: center;
+  max-width: 100%;
+}
+
+.chat-message.system .message-content {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid #ff6b35;
+  color: #ff6b35;
+  font-weight: 500;
+  text-align: center;
+  font-size: 14px;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.chat-message.user .message-avatar {
+  background: linear-gradient(135deg, #ff6b35, #ff4500);
+}
+
+.message-content {
+  background: #0a0a0a;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.chat-message.user .message-content {
+  background: linear-gradient(135deg, #ff6b35, #ff4500);
+  border: none;
+}
+
+.message-text {
+  font-size: 15px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.message-meta {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.chat-message.user .message-meta {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Typing indicator */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: #ff6b35;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+.chat-input-area {
+  padding: 16px 20px;
+  border-top: 1px solid #333;
+}
+
+.input-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tab-btn {
+  padding: 6px 16px;
+  background: transparent;
+  border: 2px solid #333;
+  color: #888;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.tab-btn:hover {
+  border-color: #555;
+  color: #ddd;
+}
+
+.tab-btn.active {
+  border-color: #ff6b35;
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.1);
+}
+
+.chat-form {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input {
+  flex: 1;
+  background: #0a0a0a;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: white;
+  font-size: 15px;
+}
+
+.chat-input:focus {
+  border-color: #ff6b35;
+  outline: none;
+}
+
+.guess-input {
+  border-color: #00b894;
+}
+
+.guess-input:focus {
+  border-color: #00b894;
+}
+
+.send-btn {
+  padding: 12px 24px;
+  white-space: nowrap;
+}
+
+.chat-error {
+  color: #e74c3c;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Game Result */
+.game-result {
+  padding: 30px 20px;
+  text-align: center;
+  border-top: 1px solid #333;
+}
+
+.game-result h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.game-result.win h2 {
+  color: #00b894;
+}
+
+.game-result.lose h2 {
+  color: #e74c3c;
+}
+
+.result-character {
+  font-size: 24px;
+  margin: 12px 0;
+  color: #ff6b35;
+}
+
+.result-stats {
+  color: #a29bfe;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.result-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .game-start-content {
+    padding: 30px 20px;
+  }
+
+  .game-start-content h1 {
+    font-size: 28px;
+  }
+
+  .chat-container {
+    height: 500px;
+  }
+
+  .chat-message {
+    max-width: 95%;
+  }
+
+  .game-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .game-info {
+    justify-content: center;
+  }
+
+  .chat-form {
+    flex-direction: column;
+  }
+
+  .send-btn {
+    width: 100%;
+  }
+
+  .result-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .result-buttons .btn {
+    width: 100%;
+  }
+}
+/* ===== Mobile Chat Input Fix ===== */
+@media (max-width: 480px) {
+  .chat-form {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .chat-input {
+    width: 100% !important;
+  }
+  
+  .send-btn {
+    width: 100% !important;
+  }
+  
+  .input-tabs {
+    gap: 4px;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+  
+  .chat-container {
+    height: 65vh;
+  }
+  
+  .game-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .game-info {
+    justify-content: center;
+    font-size: 13px;
+  }
+  
+  .game-start-content {
+    padding: 20px;
+  }
+  
+  .game-start-content h1 {
+    font-size: 28px;
+  }
+}
