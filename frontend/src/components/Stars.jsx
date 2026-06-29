@@ -21,7 +21,6 @@ const Stars = () => {
 
     const createStars = (count) => {
       stars = [];
-
       for (let i = 0; i < count; i++) {
         stars.push({
           x: Math.random() * canvas.width,
@@ -82,9 +81,9 @@ const Stars = () => {
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
 
-        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
 
-        ctx.shadowColor = "white";
+        ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
         ctx.shadowBlur = 8;
 
         ctx.fill();
@@ -103,6 +102,11 @@ const Stars = () => {
       createStars(220);
       animate();
     };
+
+    // If image is already cached, trigger onload manually
+    if (bgImage.complete) {
+      bgImage.onload();
+    }
 
     const handleResize = () => {
       resize();
