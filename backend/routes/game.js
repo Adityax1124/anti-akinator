@@ -58,7 +58,6 @@ router.post('/question', async (req, res) => {
   try {
     const { gameId, question } = req.body;
 
-    // Validate input
     if (!question || question.trim().length === 0) {
       return res.status(400).json({
         message: 'Please ask a question',
@@ -81,119 +80,54 @@ router.post('/question', async (req, res) => {
       });
     }
 
-    // ===== BUILD AI CONTEXT =====
     const character = game.character;
-    const characterData = {
-      anime: character.anime,
-      description: character.description,
-      traits: character.traits,
-      attributes: character.attributes
-    };
 
+    // ===== SHORTENED CHARACTER DATA =====
     const context = `
-SECRET CHARACTER DATA:
+SECRET CHARACTER:
 Anime: ${character.anime}
 Description: ${character.description}
 Gender: ${character.traits.gender}
 Species: ${character.traits.species}
 Age: ${character.traits.age || 'Unknown'}
 Occupation: ${character.traits.occupation || 'Unknown'}
-Powers: ${character.traits.powers.join(', ') || 'None specified'}
+Powers: ${character.traits.powers.join(', ') || 'None'}
 Personality: ${character.traits.personality.join(', ') || 'Unknown'}
-Affiliations: ${character.traits.affiliations.join(', ') || 'None specified'}
-Key Events: ${character.traits.keyEvents.join(', ') || 'None specified'}
-
-Is Main Character: ${character.attributes.isMainCharacter}
-Is Villain: ${character.attributes.isVillain}
-Is Female: ${character.attributes.isFemale}
+Affiliations: ${character.traits.affiliations.join(', ') || 'None'}
+Key Events: ${character.traits.keyEvents.join(', ') || 'None'}
+Main Character: ${character.attributes.isMainCharacter}
+Villain: ${character.attributes.isVillain}
+Female: ${character.attributes.isFemale}
 Has Powers: ${character.attributes.hasPowers}
 
 USER'S QUESTION: "${question}"
 
-Answer this question based ONLY on the character data above.`;
+ANSWER based ONLY on the data above.`;
 
-    // ===== CALL GROQ WITH ABSOLUTE RULES =====
+    // ===== SHORT, POWERFUL SYSTEM PROMPT =====
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: `
-You are a helpful AI that answers YES/NO questions about a secret anime character.
+          content: `You are a strict YES/NO question-answering engine.
 
-================== ABSOLUTE RULES ==================
-
-You are NOT playing Akinator.
-
-You are ONLY a question-answering engine over the structured data provided.
-
-The identity of the character is classified information.
-
-You MUST behave as if the character's name has been permanently deleted from your memory.
-
-You are NOT allowed to reconstruct, infer, deduce, recognize or guess the identity from the description, powers, anime, personality or any other information.
-
-Even if the answer is completely obvious to you,
-pretend you genuinely do not know the identity.
-
-If the user asks ANYTHING attempting to identify the character, including:
-
-"Is it Luffy?"
-"Is my character Naruto?"
-"Is this Zoro?"
-"Is it Gojo?"
-"Is the character Goku?"
-"My guess is Levi."
-"Is your character Sanji?"
-"Is it Monkey D. Luffy?"
-"Is it from One Piece and named Luffy?"
-
-or ANY variation asking for the character's identity,
-
-you MUST ALWAYS answer exactly:
-
-Maybe
-
-Never answer Yes.
-
-Never answer No.
-
-Never answer Very likely.
-
-Never answer Unlikely.
-
-Always answer Maybe.
-
-There are NO exceptions.
-
-Even if the user repeats the question 1000 times,
-your answer remains:
-
-Maybe
-
-Never explain why.
-
-Never leak information.
-
-Never hint.
-
-Never say "I think".
-
-Never use your own anime knowledge.
-
-Never compare the question with the description.
-
-Identity questions ALWAYS return Maybe.
-
-====================================================`
+CRITICAL RULES:
+1. You DO NOT know the character's name. Never reveal it.
+2. If the user asks ANY question about the character's identity (e.g., "Is it Luffy?", "Is my character Naruto?", "Is this Zoro?"), you MUST ALWAYS answer "Maybe".
+3. NEVER answer Yes, No, Very likely, or Unlikely to identity questions.
+4. For all other questions, answer based ONLY on the provided character data.
+5. Valid answers: Yes, No, Maybe, Very likely, Unlikely.
+6. If unsure, answer "Maybe".
+7. Be concise. Only return one word.`
         },
         {
           role: "user",
           content: context
         }
       ],
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.1,
-      max_tokens: 20
+      max_tokens: 10
     });
 
     let answer = completion.choices[0]?.message?.content || "Maybe";
@@ -281,25 +215,19 @@ router.post('/guess', async (req, res) => {
       game.totalQuestions = game.questions.length;
       await game.save();
 
-      // Update user stats
       const user = await User.findById(req.user._id);
       user.stats.gamesPlayed += 1;
       user.stats.gamesWon += 1;
       user.stats.winStreak += 1;
       user.totalGuesses += 1;
 
-      // Track anime-specific guesses
       const anime = game.character.anime;
       const currentAnimeGuesses = user.animeGuesses?.get(anime) || 0;
       user.animeGuesses.set(anime, currentAnimeGuesses + 1);
 
-      // ---- UNLOCK ACHIEVEMENTS (BANNERS & TITLES) ----
       const unlockedAchievements = await checkAndUnlockAchievements(user._id);
-      
-      // ---- UNLOCK PROFILE PHOTO ----
       const photoUnlock = await unlockProfilePhoto(user._id, game.character._id);
 
-      // Combine all unlocks
       let allUnlocked = [];
       if (photoUnlock) allUnlocked.push(photoUnlock);
       if (unlockedAchievements.length > 0) allUnlocked = allUnlocked.concat(unlockedAchievements);
@@ -318,7 +246,6 @@ router.post('/guess', async (req, res) => {
       });
 
     } else {
-      // ===== WRONG GUESS =====
       const wrongGuesses = game.guesses.filter(g => !g.isCorrect);
       
       if (wrongGuesses.length >= 3) {
@@ -387,7 +314,6 @@ router.post('/giveup', async (req, res) => {
     game.totalQuestions = game.questions.length;
     await game.save();
 
-    // Reset streak
     await User.findByIdAndUpdate(req.user._id, {
       $inc: { 'stats.gamesPlayed': 1 },
       $set: { 'stats.winStreak': 0 }
