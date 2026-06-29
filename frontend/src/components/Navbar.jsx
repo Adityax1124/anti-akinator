@@ -10,6 +10,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // 👈 NEW
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -22,12 +23,14 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 👇 NEW: Close mobile menu
+  // 👈 Close mobile menu
   const closeMobileMenu = () => {
-    const menu = document.querySelector('.navbar-menu');
-    if (menu) {
-      menu.classList.remove('active');
-    }
+    setMobileMenuOpen(false);
+  };
+
+  // 👈 Toggle mobile menu
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   const handleSearch = async (e) => {
@@ -52,12 +55,12 @@ const Navbar = () => {
     setShowSearch(false);
     setSearchQuery('');
     setSearchResults([]);
-    closeMobileMenu(); // 👈 Close menu before navigating
+    closeMobileMenu();
     navigate(`/profile/${username}`);
   };
 
   const handleLogout = () => {
-    closeMobileMenu(); // 👈 Close menu before logout
+    closeMobileMenu();
     logout();
     navigate('/login');
   };
@@ -122,7 +125,7 @@ const Navbar = () => {
         </div>
 
         {/* ===== NAV LINKS ===== */}
-        <div className="navbar-menu">
+        <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`}>
           {isAuthenticated ? (
             <>
               <Link to="/game" className="nav-link" onClick={closeMobileMenu}>Play</Link>
@@ -154,11 +157,10 @@ const Navbar = () => {
 
         <button 
           className="mobile-menu-btn" 
-          onClick={() => {
-            document.querySelector('.navbar-menu').classList.toggle('active');
-          }}
+          onClick={toggleMobileMenu}
+          aria-label="Toggle menu"
         >
-          ☰
+          {mobileMenuOpen ? '✕' : '☰'}
         </button>
       </div>
     </nav>
