@@ -21,11 +21,14 @@ const handleSubmit = async (e) => {
       email: email,
       password: password
     });
+    console.log('Login response:', response.data);
     // ... handle success
   } catch (error) {
     setError('Login failed');
     setLoading(false);
   }
+  finally {
+    setLoading(false);
 };
 
   return (
