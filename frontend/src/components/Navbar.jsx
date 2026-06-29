@@ -74,7 +74,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand" onClick={closeMobileMenu}>
-          <img src="/logo-v2.png" alt="🎯" className="brand-logo" />
+          <img src="/logo.png" alt="🎯" className="brand-logo" />
           <span>Anti-Akinator</span>
         </Link>
 
