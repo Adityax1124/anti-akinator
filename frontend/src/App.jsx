@@ -15,6 +15,7 @@ import PublicProfile from './pages/PublicProfile';
 import AdminPanel from './pages/AdminPanel';
 import './App.css';
 
+
 function App() {
   return (
     <AuthProvider>
