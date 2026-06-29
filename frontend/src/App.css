@@ -1,11 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap');
-body {
-  background: red !important;
-}
 
-.navbar {
-  background: lime !important;
-}
 * {
   margin: 0;
   padding: 0;

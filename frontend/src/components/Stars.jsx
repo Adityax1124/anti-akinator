@@ -1,13 +1,18 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 const Stars = () => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
+
     let animationId;
     let stars = [];
+
+    // Background image
+    const bgImage = new Image();
+    bgImage.src = "/anime-bg.jpg";
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -16,38 +21,75 @@ const Stars = () => {
 
     const createStars = (count) => {
       stars = [];
+
       for (let i = 0; i < count; i++) {
         stars.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          radius: Math.random() * 1.5 + 0.5,
-          speed: Math.random() * 0.02 + 0.005,
+          radius: Math.random() * 1.8 + 0.5,
           brightness: Math.random() * 0.5 + 0.5,
           twinkleSpeed: Math.random() * 0.02 + 0.01,
         });
       }
     };
 
+    // Draw background image like CSS background-size: cover
+    const drawBackground = () => {
+      if (!bgImage.complete) return;
+
+      const canvasRatio = canvas.width / canvas.height;
+      const imageRatio = bgImage.width / bgImage.height;
+
+      let drawWidth;
+      let drawHeight;
+      let offsetX;
+      let offsetY;
+
+      if (imageRatio > canvasRatio) {
+        drawHeight = canvas.height;
+        drawWidth = drawHeight * imageRatio;
+        offsetX = (canvas.width - drawWidth) / 2;
+        offsetY = 0;
+      } else {
+        drawWidth = canvas.width;
+        drawHeight = drawWidth / imageRatio;
+        offsetX = 0;
+        offsetY = (canvas.height - drawHeight) / 2;
+      }
+
+      ctx.drawImage(
+        bgImage,
+        offsetX,
+        offsetY,
+        drawWidth,
+        drawHeight
+      );
+    };
+
     const drawStars = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      stars.forEach(star => {
-        // Twinkle effect
-        const twinkle = Math.sin(Date.now() * star.twinkleSpeed) * 0.3 + 0.7;
+
+      // Draw background first
+      drawBackground();
+
+      // Draw stars
+      stars.forEach((star) => {
+        const twinkle =
+          Math.sin(Date.now() * star.twinkleSpeed) * 0.3 + 0.7;
+
         const opacity = star.brightness * twinkle;
-        
+
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+
+        ctx.shadowColor = "white";
+        ctx.shadowBlur = 8;
+
         ctx.fill();
-        
-        // Glow for brighter stars
-        if (star.radius > 1.2) {
-          ctx.shadowColor = 'rgba(255, 200, 255, 0.3)';
-          ctx.shadowBlur = 10;
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        }
+
+        ctx.shadowBlur = 0;
       });
     };
 
@@ -56,18 +98,22 @@ const Stars = () => {
       animationId = requestAnimationFrame(animate);
     };
 
-    resize();
-    createStars(200); // Number of stars
-    animate();
-
-    window.addEventListener('resize', () => {
+    bgImage.onload = () => {
       resize();
-      createStars(200);
-    });
+      createStars(220);
+      animate();
+    };
+
+    const handleResize = () => {
+      resize();
+      createStars(220);
+    };
+
+    window.addEventListener("resize", handleResize);
 
     return () => {
       cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', resize);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -75,13 +121,13 @@ const Stars = () => {
     <canvas
       ref={canvasRef}
       style={{
-        position: 'fixed',
+        position: "fixed",
         top: 0,
         left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 0,
+        width: "100%",
+        height: "100%",
+        zIndex: -1,
+        pointerEvents: "none",
       }}
     />
   );
