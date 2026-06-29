@@ -16,6 +16,8 @@ html, body, #root {
 body {
   background: url('/anime-bg.jpg') center/cover no-repeat fixed;
   background-color: #0a0a12;
+  background-size: cover;
+  background-position: center;
   min-height: 100vh;
   margin: 0;
   padding: 0;
