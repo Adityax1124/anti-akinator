@@ -12,7 +12,7 @@ const adminRoutes = require('./routes/admin');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
-
+app.set('trust proxy', 1);
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -23,7 +23,13 @@ app.use((req, res, next) => {
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  keyGenerator: (req) => {
+    // Use the real IP from the proxy header
+    return req.headers['x-forwarded-for'] || req.ip;
+  }
 });
 
 // Middleware
