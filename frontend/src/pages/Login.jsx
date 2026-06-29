@@ -11,19 +11,22 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    const result = await login(email, password);
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.message);
-    }
+  try {
+    const response = await api.post('/auth/login', {  // ✅ Must be POST
+      email: email,
+      password: password
+    });
+    // ... handle success
+  } catch (error) {
+    setError('Login failed');
     setLoading(false);
-  };
+  }
+};
 
   return (
     <div className="auth-container fade-in">
