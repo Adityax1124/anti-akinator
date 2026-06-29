@@ -185,7 +185,27 @@
     margin-top: 4px;
   }
 }
+/* ===== NAVBAR LOGO ===== */
+.brand-logo {
+  height: 40px;
+  width: auto;
+  display: inline-block;
+}
 
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 900;
+  color: #ff6b9d;
+  text-decoration: none;
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+}
 .nav-link {
   color: rgba(255,255,255,0.6);
   text-decoration: none;
@@ -292,5 +312,15 @@
     width: 28px;
     height: 28px;
     font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-logo {
+    height: 30px;
+  }
+  .navbar-brand {
+    font-size: 18px;
+    gap: 8px;
   }
 }

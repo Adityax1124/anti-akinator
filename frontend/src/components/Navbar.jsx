@@ -58,9 +58,9 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
-          <span className="brand-icon">🎯</span>
-          Anti-Akinator
-        </Link>
+  <img src="/logo.png" alt="Anti-Akinator" className="brand-logo" />
+  <span>Anti-Akinator</span>
+</Link>
 
         {/* ===== SEARCH BAR ===== */}
         <div className="search-wrapper" ref={searchRef}>
