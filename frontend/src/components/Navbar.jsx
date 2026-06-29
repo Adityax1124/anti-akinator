@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import './Navbar.css';
@@ -7,11 +7,17 @@ import './Navbar.css';
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // 👈 NEW: Get current route
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // 👈 NEW
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchRef = useRef(null);
+
+  // 👈 NEW: Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -23,12 +29,10 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 👈 Close mobile menu
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
   };
 
-  // 👈 Toggle mobile menu
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
