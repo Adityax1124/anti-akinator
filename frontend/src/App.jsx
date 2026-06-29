@@ -4,7 +4,6 @@ import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
 import Stars from './components/Stars';
-import InstallButton from './components/InstallButton';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
@@ -14,7 +13,6 @@ import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import AdminPanel from './pages/AdminPanel';
 import './App.css';
-
 
 function App() {
   return (
@@ -36,7 +34,6 @@ function App() {
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>
-          <InstallButton />
         </div>
       </Router>
     </AuthProvider>
