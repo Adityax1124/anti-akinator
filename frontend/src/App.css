@@ -9,44 +9,69 @@
 html, body, #root {
   width: 100%;
   min-height: 100vh;
-  background: transparent;
   margin: 0;
   padding: 0;
 }
 
 body {
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  color: #ffffff;
   background: url('/anime-bg.jpg') center/cover no-repeat fixed;
   background-color: #0a0a12;
   min-height: 100vh;
-  margin: 0;
-  padding: 0;
+  overflow-x: hidden;
 }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: rgba(26, 26, 46, 0.8); }
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(26, 26, 46, 0.8);
+}
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #00d4ff, #7b2ffc);
   border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #00e5ff, #9b4dff); }
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00e5ff, #9b4dff);
+}
 
+/* ===== ANIMATIONS ===== */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(40px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.6), 0 0 80px rgba(123, 47, 252, 0.3); }
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 212, 255, 0.6), 0 0 80px rgba(123, 47, 252, 0.3);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
 }
 
-.fade-in { animation: fadeInUp 0.6s ease-out forwards; }
+.fade-in {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
 
+/* ===== APP LAYOUT ===== */
 .app {
   min-height: 100vh;
   display: flex;
@@ -63,6 +88,7 @@ body {
   margin: 0 auto;
 }
 
+/* ===== BUTTONS ===== */
 .btn {
   padding: 12px 28px;
   border: none;
@@ -84,12 +110,19 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
   transition: left 0.5s;
 }
 
-.btn:hover::before { left: 100%; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
 
 .btn-primary {
   background: linear-gradient(135deg, #00d4ff, #7b2ffc);
@@ -129,15 +162,27 @@ body {
   box-shadow: 0 8px 25px rgba(0, 184, 148, 0.5);
 }
 
-.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
-.btn-block { width: 100%; padding: 14px; }
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 8px;
+}
 
-.form-group { margin-bottom: 20px; }
+.btn-block {
+  width: 100%;
+  padding: 14px;
+}
+
+/* ===== FORM CONTROLS ===== */
+.form-group {
+  margin-bottom: 20px;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   letter-spacing: 0.5px;
 }
@@ -145,8 +190,8 @@ body {
 .form-control {
   width: 100%;
   padding: 14px 18px;
-  background: rgba(255,255,255,0.06);
-  border: 2px solid rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   color: #fff;
   font-size: 15px;
@@ -158,18 +203,26 @@ body {
   outline: none;
   border-color: #00d4ff;
   box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.15);
-  background: rgba(255,255,255,0.09);
+  background: rgba(255, 255, 255, 0.09);
 }
 
-.form-control::placeholder { color: rgba(255,255,255,0.3); }
-textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit; }
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
 
+textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+/* ===== CARDS ===== */
 .card {
   background: rgba(16, 16, 32, 0.7);
   backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 28px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.4s ease;
 }
 
@@ -179,6 +232,7 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
   box-shadow: 0 12px 50px rgba(0, 212, 255, 0.08);
 }
 
+/* ===== GLOW TEXT ===== */
 .glow-text {
   background: linear-gradient(135deg, #00d4ff, #7b2ffc, #ff6b9d);
   background-size: 200% auto;
@@ -188,9 +242,19 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
   animation: shimmer 3s linear infinite;
 }
 
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .main-content { padding: 70px 12px 12px; }
-  .btn { font-size: 13px; padding: 10px 20px; }
+  .main-content {
+    padding: 70px 12px 12px;
+  }
+  .btn {
+    font-size: 13px;
+    padding: 10px 20px;
+  }
 }
 
-@media (max-width: 480px) { .card { padding: 18px; } }
+@media (max-width: 480px) {
+  .card {
+    padding: 18px;
+  }
+}
