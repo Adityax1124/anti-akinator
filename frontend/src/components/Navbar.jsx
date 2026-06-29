@@ -22,6 +22,14 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 👇 NEW: Close mobile menu
+  const closeMobileMenu = () => {
+    const menu = document.querySelector('.navbar-menu');
+    if (menu) {
+      menu.classList.remove('active');
+    }
+  };
+
   const handleSearch = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -44,10 +52,12 @@ const Navbar = () => {
     setShowSearch(false);
     setSearchQuery('');
     setSearchResults([]);
+    closeMobileMenu(); // 👈 Close menu before navigating
     navigate(`/profile/${username}`);
   };
 
   const handleLogout = () => {
+    closeMobileMenu(); // 👈 Close menu before logout
     logout();
     navigate('/login');
   };
@@ -57,10 +67,10 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-brand">
-  <img src="/logo.png" alt="Anti-Akinator" className="brand-logo" />
-  <span>Anti-Akinator</span>
-</Link>
+        <Link to="/" className="navbar-brand" onClick={closeMobileMenu}>
+          <img src="/logo.png" alt="Anti-Akinator" className="brand-logo" />
+          <span>Anti-Akinator</span>
+        </Link>
 
         {/* ===== SEARCH BAR ===== */}
         <div className="search-wrapper" ref={searchRef}>
@@ -115,12 +125,12 @@ const Navbar = () => {
         <div className="navbar-menu">
           {isAuthenticated ? (
             <>
-              <Link to="/game" className="nav-link">Play</Link>
-              <Link to="/leaderboard" className="nav-link">Leaderboard</Link>
+              <Link to="/game" className="nav-link" onClick={closeMobileMenu}>Play</Link>
+              <Link to="/leaderboard" className="nav-link" onClick={closeMobileMenu}>Leaderboard</Link>
               {user?.role === 'admin' && (
-                <Link to="/admin" className="nav-link admin-link">Admin</Link>
+                <Link to="/admin" className="nav-link admin-link" onClick={closeMobileMenu}>Admin</Link>
               )}
-              <Link to="/profile" className="nav-link">
+              <Link to="/profile" className="nav-link" onClick={closeMobileMenu}>
                 <span className="user-avatar">
                   {profilePhotoUrl ? (
                     <img src={profilePhotoUrl} alt={user.username} className="navbar-avatar-img" />
@@ -130,21 +140,24 @@ const Navbar = () => {
                 </span>
                 <span className="username">{user?.username}</span>
               </Link>
-              <button onClick={handleLogout} className="nav-link logout-btn">
+              <button onClick={() => { closeMobileMenu(); handleLogout(); }} className="nav-link logout-btn">
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="nav-link">Login</Link>
-              <Link to="/register" className="nav-link register-btn">Register</Link>
+              <Link to="/login" className="nav-link" onClick={closeMobileMenu}>Login</Link>
+              <Link to="/register" className="nav-link register-btn" onClick={closeMobileMenu}>Register</Link>
             </>
           )}
         </div>
 
-        <button className="mobile-menu-btn" onClick={() => {
-          document.querySelector('.navbar-menu').classList.toggle('active');
-        }}>
+        <button 
+          className="mobile-menu-btn" 
+          onClick={() => {
+            document.querySelector('.navbar-menu').classList.toggle('active');
+          }}
+        >
           ☰
         </button>
       </div>
@@ -152,4 +165,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;  // 👈 ONLY ONE export default
+export default Navbar;
