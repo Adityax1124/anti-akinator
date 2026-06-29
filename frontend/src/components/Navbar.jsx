@@ -7,14 +7,13 @@ import './Navbar.css';
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // 👈 NEW: Get current route
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchRef = useRef(null);
 
-  // 👈 NEW: Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -79,7 +78,6 @@ const Navbar = () => {
           <span>Anti-Akinator</span>
         </Link>
 
-        {/* ===== SEARCH BAR ===== */}
         <div className="search-wrapper" ref={searchRef}>
           <div className="search-container">
             <input
@@ -128,7 +126,6 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* ===== NAV LINKS ===== */}
         <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`}>
           {isAuthenticated ? (
             <>

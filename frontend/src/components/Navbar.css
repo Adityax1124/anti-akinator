@@ -1,6 +1,3 @@
-/* ============================================================
-   NAVBAR – Neon Cyberpunk
-   ============================================================ */
 .navbar {
   position: fixed;
   top: 0;
@@ -26,9 +23,6 @@
   align-items: center;
 }
 
-/* ============================================================
-   BRAND / LOGO
-   ============================================================ */
 .navbar-brand {
   display: flex;
   align-items: center;
@@ -44,9 +38,7 @@
   transition: transform 0.3s ease;
 }
 
-.navbar-brand:hover {
-  transform: scale(1.04);
-}
+.navbar-brand:hover { transform: scale(1.04); }
 
 .brand-logo {
   height: 40px;
@@ -60,9 +52,6 @@
   -webkit-text-fill-color: initial;
 }
 
-/* ============================================================
-   NAV LINKS
-   ============================================================ */
 .navbar-menu {
   display: flex;
   align-items: center;
@@ -85,24 +74,11 @@
   transition: all 0.3s;
 }
 
-.nav-link:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
-}
+.nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+.nav-link.active { color: #00d4ff; background: rgba(0, 212, 255, 0.08); }
 
-.nav-link.active {
-  color: #00d4ff;
-  background: rgba(0, 212, 255, 0.08);
-}
-
-.admin-link {
-  color: #7b2ffc;
-}
-
-.admin-link:hover {
-  color: #9b4dff;
-  background: rgba(123, 47, 252, 0.08);
-}
+.admin-link { color: #7b2ffc; }
+.admin-link:hover { color: #9b4dff; background: rgba(123, 47, 252, 0.08); }
 
 .register-btn {
   background: linear-gradient(135deg, #00d4ff, #7b2ffc);
@@ -117,18 +93,9 @@
   color: #fff !important;
 }
 
-.logout-btn {
-  color: #fd79a8;
-}
+.logout-btn { color: #fd79a8; }
+.logout-btn:hover { background: rgba(231, 76, 60, 0.08); color: #e74c3c; }
 
-.logout-btn:hover {
-  background: rgba(231, 76, 60, 0.08);
-  color: #e74c3c;
-}
-
-/* ============================================================
-   USER AVATAR
-   ============================================================ */
 .user-avatar {
   width: 32px;
   height: 32px;
@@ -151,14 +118,8 @@
   object-fit: cover;
 }
 
-.username {
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-}
+.username { font-weight: 600; color: rgba(255, 255, 255, 0.8); }
 
-/* ============================================================
-   SEARCH BAR
-   ============================================================ */
 .search-wrapper {
   position: relative;
   flex: 1;
@@ -184,10 +145,7 @@
   outline: none;
 }
 
-.search-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
+.search-input::placeholder { color: rgba(255, 255, 255, 0.3); }
 .search-input:focus {
   border-color: rgba(0, 212, 255, 0.3);
   background: rgba(255, 255, 255, 0.08);
@@ -201,9 +159,6 @@
   font-size: 14px;
 }
 
-/* ============================================================
-   SEARCH RESULTS DROPDOWN
-   ============================================================ */
 .search-results {
   position: absolute;
   top: 100%;
@@ -230,9 +185,7 @@
   transition: all 0.3s ease;
 }
 
-.search-result-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
+.search-result-item:hover { background: rgba(255, 255, 255, 0.04); }
 
 .search-avatar {
   width: 36px;
@@ -256,22 +209,9 @@
   border: 2px solid rgba(255, 255, 255, 0.05);
 }
 
-.search-user-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.search-username {
-  font-weight: 600;
-  color: #fff;
-  font-size: 14px;
-}
-
-.search-stats {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
+.search-user-info { display: flex; flex-direction: column; }
+.search-username { font-weight: 600; color: #fff; font-size: 14px; }
+.search-stats { font-size: 12px; color: rgba(255, 255, 255, 0.4); }
 .search-no-results {
   padding: 16px;
   text-align: center;
@@ -279,9 +219,6 @@
   font-size: 14px;
 }
 
-/* ============================================================
-   MOBILE MENU BUTTON
-   ============================================================ */
 .mobile-menu-btn {
   display: none;
   background: none;
@@ -293,18 +230,26 @@
   transition: all 0.3s ease;
 }
 
-.mobile-menu-btn:hover {
-  color: #fff;
-}
+.mobile-menu-btn:hover { color: #fff; }
 
-/* ============================================================
-   RESPONSIVE – TABLETS & MOBILE
-   ============================================================ */
 @media (max-width: 768px) {
-  .mobile-menu-btn {
-    display: block;
+  .mobile-menu-btn { display: block; }
+  
+  .search-wrapper {
+    max-width: 100%;
+    margin: 8px 0;
+    order: 3;
+    width: 100%;
   }
-
+  
+  .search-results {
+    position: fixed;
+    top: auto;
+    left: 10px;
+    right: 10px;
+    margin-top: 4px;
+  }
+  
   .navbar-menu {
     display: none;
     position: absolute;
@@ -317,90 +262,22 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     gap: 4px;
   }
-
-  .navbar-menu.active {
-    display: flex;
-  }
-
-  .nav-link {
-    width: 100%;
-    justify-content: center;
-    padding: 12px;
-    font-size: 15px;
-  }
-
-  .navbar-brand {
-    font-size: 20px;
-  }
-
-  .brand-logo {
-    height: 32px;
-  }
-
-  .search-wrapper {
-    max-width: 100%;
-    margin: 8px 0;
-    order: 3;
-    width: 100%;
-  }
-
-  .search-results {
-    position: fixed;
-    top: auto;
-    left: 10px;
-    right: 10px;
-    margin-top: 4px;
-  }
+  
+  .navbar-menu.active { display: flex; }
+  .nav-link { width: 100%; justify-content: center; padding: 12px; font-size: 15px; }
+  .navbar-brand { font-size: 20px; }
+  .brand-logo { height: 32px; }
 }
 
-/* ============================================================
-   RESPONSIVE – SMALL PHONES
-   ============================================================ */
 @media (max-width: 480px) {
-  .navbar {
-    padding: 0 12px;
-    height: 56px;
-  }
-
-  .navbar-brand {
-    font-size: 16px;
-    gap: 8px;
-  }
-
-  .brand-logo {
-    height: 28px;
-  }
-
-  .brand-icon {
-    font-size: 20px;
-  }
-
-  .nav-link {
-    font-size: 13px;
-    padding: 10px;
-  }
-
-  .user-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .navbar-avatar-img {
-    width: 28px;
-    height: 28px;
-  }
-
-  .mobile-menu-btn {
-    font-size: 24px;
-  }
-
-  .search-input {
-    font-size: 13px;
-    padding: 6px 32px 6px 12px;
-  }
-
-  .search-wrapper {
-    margin: 4px 0;
-  }
+  .navbar { padding: 0 12px; height: 56px; }
+  .navbar-brand { font-size: 16px; gap: 8px; }
+  .brand-logo { height: 28px; }
+  .brand-icon { font-size: 20px; }
+  .nav-link { font-size: 13px; padding: 10px; }
+  .user-avatar { width: 28px; height: 28px; font-size: 12px; }
+  .navbar-avatar-img { width: 28px; height: 28px; }
+  .mobile-menu-btn { font-size: 24px; }
+  .search-input { font-size: 13px; padding: 6px 32px 6px 12px; }
+  .search-wrapper { margin: 4px 0; }
 }
