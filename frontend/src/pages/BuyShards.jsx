@@ -18,7 +18,7 @@ const BuyShards = () => {
     { id: 1, shards: 50, price: 35, label: 'Starter' },
     { id: 2, shards: 150, price: 105, label: 'Enthusiast' },  // ❌ Removed isPopular
     { id: 3, shards: 350, price: 210, label: 'Pro' },
-    { id: 4, shards: 750, price: 375, label: 'Popular', isPopular: true },  // ✅ Added isPopular here
+    { id: 4, shards: 750, price: 375, label: '', isPopular: true },  // ✅ Added isPopular here
     { id: 5, shards: 1500, price: 750, label: 'Ultimate', isUltimate: true },
     { id: 6, shards: 3000, price: 1350, label: 'Legendary', isLegendary: true },
   ];
