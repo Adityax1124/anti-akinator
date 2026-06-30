@@ -26,18 +26,16 @@ const Game = () => {
   const [shards, setShards] = useState(0);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
+  
+  // Track if game has already ended
+  const hasEnded = useRef(false);
+  // Track if user has been warned
+  const hasWarned = useRef(false);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [gameState.questions]);
-
+  // ===== FETCH SHARDS =====
   useEffect(() => {
     fetchUserShards();
   }, []);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const fetchUserShards = async () => {
     try {
@@ -48,9 +46,174 @@ const Game = () => {
     }
   };
 
+  // ===== SCROLL TO BOTTOM =====
+  useEffect(() => {
+    scrollToBottom();
+  }, [gameState.questions]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // ===== HANDLE GAME ABANDON =====
+  const handleGameAbandon = async () => {
+    if (hasEnded.current) return;
+    if (!gameState.gameId) return;
+    if (gameState.status !== 'playing') return;
+
+    hasEnded.current = true;
+
+    try {
+      // ✅ This resets the streak on the backend
+      await api.post('/game/giveup', {
+        gameId: gameState.gameId
+      });
+      
+      setGameState(prev => ({
+        ...prev,
+        status: 'lost',
+        character: 'Unknown',
+        questions: [...prev.questions, {
+          type: 'system',
+          text: '💔 You left the game! Your streak has been reset.'
+        }]
+      }));
+      
+      console.log('🏳️ Game abandoned - streak reset');
+    } catch (error) {
+      console.error('Error abandoning game:', error);
+    }
+  };
+
+  // ===== DETECT PAGE LEAVE (PC & Mobile) =====
+  useEffect(() => {
+    // Only track if game is active
+    if (gameState.status !== 'playing') return;
+
+    // Reset flags when game starts
+    hasEnded.current = false;
+    hasWarned.current = false;
+
+    // ===== Navigation away (within app) – THIS CATCHES "BACK" BUTTON =====
+    const unlisten = navigate((location) => {
+      // If user navigates away from /game to any other page
+      if (gameState.status === 'playing' && !hasEnded.current && location.pathname !== '/game') {
+        if (!hasWarned.current) {
+          hasWarned.current = true;
+          const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
+          if (confirmLeave) {
+            handleGameAbandon();
+          } else {
+            hasWarned.current = false;
+            // User cancelled – stay on the game
+            navigate('/game');
+          }
+        } else {
+          // Second time – count as loss
+          handleGameAbandon();
+        }
+      }
+    });
+
+    // ===== Clicking back button (popstate) =====
+    const handlePopState = () => {
+      if (gameState.status === 'playing' && !hasEnded.current) {
+        if (!hasWarned.current) {
+          hasWarned.current = true;
+          const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
+          if (confirmLeave) {
+            handleGameAbandon();
+          } else {
+            hasWarned.current = false;
+            // Push state back to game
+            window.history.pushState(null, '', '/game');
+          }
+        } else {
+          handleGameAbandon();
+        }
+      }
+    };
+
+    // ===== PC: Tab/Window visibility change =====
+    const handleVisibilityChange = () => {
+      if (document.hidden && gameState.status === 'playing' && !hasEnded.current) {
+        if (!hasWarned.current) {
+          hasWarned.current = true;
+          alert('⚠️ You switched to another tab! If you leave again, your streak will be reset!');
+        } else {
+          handleGameAbandon();
+        }
+      }
+    };
+
+    // ===== PC: Before unload (refresh, close tab) =====
+    const handleBeforeUnload = (e) => {
+      if (gameState.status === 'playing' && !hasEnded.current) {
+        e.preventDefault();
+        e.returnValue = '⚠️ If you leave now, your streak will be reset! Are you sure?';
+        handleGameAbandon();
+        return e.returnValue;
+      }
+    };
+
+    // ===== Mobile: App goes to background =====
+    const handlePageHide = () => {
+      if (gameState.status === 'playing' && !hasEnded.current) {
+        if (!hasWarned.current) {
+          hasWarned.current = true;
+        } else {
+          handleGameAbandon();
+        }
+      }
+    };
+
+    // ===== Mobile: Freeze detection (iOS) =====
+    const handleFreeze = () => {
+      if (gameState.status === 'playing' && !hasEnded.current) {
+        if (!hasWarned.current) {
+          hasWarned.current = true;
+        } else {
+          handleGameAbandon();
+        }
+      }
+    };
+
+    // ===== Push state to catch back button =====
+    window.history.pushState(null, '', '/game');
+
+    // ===== Register event listeners =====
+    window.addEventListener('popstate', handlePopState);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('freeze', handleFreeze);
+
+    // ===== CLEANUP =====
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('freeze', handleFreeze);
+      unlisten();
+    };
+  }, [gameState.status, gameState.gameId]);
+
+  // ===== CLEANUP ON UNMOUNT (component unmounts) =====
+  useEffect(() => {
+    return () => {
+      if (gameState.status === 'playing' && !hasEnded.current) {
+        handleGameAbandon();
+      }
+    };
+  }, [gameState.status]);
+
+  // ===== START GAME =====
   const startGame = async () => {
     setError('');
     setGameState(prev => ({ ...prev, loading: true }));
+    hasEnded.current = false;
+    hasWarned.current = false;
 
     try {
       await fetchUserShards();
@@ -72,12 +235,12 @@ const Game = () => {
       setHintText('');
       setError('');
     } catch (error) {
-      console.error('Start game error:', error);
       setError('Failed to start game. Please try again.');
       setGameState(prev => ({ ...prev, loading: false }));
     }
   };
 
+  // ===== ASK QUESTION =====
   const askQuestion = async (e) => {
     e.preventDefault();
     if (!question.trim() || gameState.status !== 'playing' || gameState.loading) return;
@@ -118,13 +281,13 @@ const Game = () => {
         setError('You have used all 10 questions! Time to guess.');
         setGameState(prev => ({ ...prev, loading: false }));
       } else {
-        console.error('Question error:', error);
         setError('Failed to get answer. Please try again.');
         setGameState(prev => ({ ...prev, loading: false }));
       }
     }
   };
 
+  // ===== USE HINT =====
   const useHint = async () => {
     if (hintUsed || gameState.status !== 'playing') return;
 
@@ -147,15 +310,14 @@ const Game = () => {
         }));
       }
     } catch (error) {
-      console.error('Hint error:', error);
       setError(error.response?.data?.message || 'Failed to use hint');
     }
   };
 
+  // ===== MAKE GUESS =====
   const makeGuess = async (e) => {
     e.preventDefault();
     
-    // Validate guess
     if (!guess.trim()) {
       setError('Please enter a guess!');
       return;
@@ -168,7 +330,6 @@ const Game = () => {
     
     if (gameState.loading) return;
 
-    // Check if gameId exists
     if (!gameState.gameId) {
       setError('No active game found. Please start a new game.');
       return;
@@ -229,7 +390,6 @@ const Game = () => {
         setError(error.response?.data?.message || 'Invalid guess. Please try again.');
       } else if (error.response?.status === 404) {
         setError('Game not found. Please start a new game.');
-        // Reset game state
         setGameState(prev => ({ ...prev, status: 'idle', gameId: null }));
       } else {
         setError('Failed to make guess. Please try again.');
@@ -238,6 +398,7 @@ const Game = () => {
     }
   };
 
+  // ===== GIVE UP =====
   const giveUp = async () => {
     if (!window.confirm('Are you sure you want to give up?')) return;
 
@@ -257,11 +418,11 @@ const Game = () => {
         }]
       }));
     } catch (error) {
-      console.error('Give up error:', error);
       setError('Failed to give up. Please try again.');
     }
   };
 
+  // ===== CLOSE UNLOCK POPUP =====
   const closeUnlockPopup = () => {
     if (currentUnlockIndex < unlockNotifications.length - 1) {
       setCurrentUnlockIndex(prev => prev + 1);
@@ -271,6 +432,7 @@ const Game = () => {
     }
   };
 
+  // ===== PLAY AGAIN =====
   const playAgain = () => {
     setGameState({
       gameId: null,
@@ -291,14 +453,18 @@ const Game = () => {
     setCurrentUnlockIndex(0);
     setHintUsed(false);
     setHintText('');
+    hasEnded.current = false;
+    hasWarned.current = false;
   };
 
+  // ===== GO HOME =====
   const goHome = () => {
     navigate('/');
   };
 
   const currentUnlock = unlockNotifications[currentUnlockIndex] || null;
 
+  // ===== RENDER IDLE =====
   if (gameState.status === 'idle') {
     return (
       <div className="game-container fade-in">
@@ -309,6 +475,7 @@ const Game = () => {
             <p className="game-hint">💡 You have 3 wrong guesses before game over</p>
             <p className="game-hint">📝 You have 10 questions per game</p>
             <p className="game-hint">🎴 You have {shards} Shards</p>
+            <p className="game-hint-warning">⚠️ If you leave the game, your streak will be reset!</p>
             <button
               className="btn btn-primary start-btn"
               onClick={startGame}
@@ -323,6 +490,7 @@ const Game = () => {
     );
   }
 
+  // ===== RENDER GAME =====
   return (
     <div className="game-container fade-in">
       {currentUnlock && (
