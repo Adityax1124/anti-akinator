@@ -13,14 +13,14 @@ const BuyShards = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const shardsPacks = [
-    { id: 1, shards: 50, price: 20, label: 'Starter' },
-    { id: 2, shards: 150, price: 60, label: 'Popular', isPopular: true },
-    { id: 3, shards: 350, price: 140, label: 'Pro' },
-    { id: 4, shards: 750, price: 300, label: 'Enthusiast' },
-    { id: 5, shards: 1500, price: 600, label: 'Ultimate', isUltimate: true },
-    { id: 6, shards: 3000, price: 1200, label: 'Legendary', isLegendary: true },
-  ];
+const shardsPacks = [
+  { id: 1, shards: 50, price: 35, label: 'Starter' },
+  { id: 2, shards: 150, price: 105, label: 'Popular', isPopular: true },
+  { id: 3, shards: 350, price: 210, label: 'Pro' },
+  { id: 4, shards: 750, price: 375, label: 'Enthusiast' },
+  { id: 5, shards: 1500, price: 750, label: 'Ultimate', isUltimate: true },
+  { id: 6, shards: 3000, price: 1350, label: 'Legendary', isLegendary: true },
+];
 
   // Load Razorpay script
   useEffect(() => {
