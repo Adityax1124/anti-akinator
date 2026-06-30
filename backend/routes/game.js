@@ -1,14 +1,11 @@
 const express = require('express');
-const Groq = require('groq-sdk');
 const Character = require('../models/Character');
 const GameSession = require('../models/GameSession');
 const User = require('../models/User');
 const ProfilePhoto = require('../models/ProfilePhoto');
 const { checkAndUnlockAchievements, unlockProfilePhoto } = require('../utils/achievementUtils');
+const { askAI } = require('../utils/aiRouter');
 const router = express.Router();
-
-// Initialize Groq
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Helper: normalize string for flexible matching
 function normalize(str) {
@@ -82,61 +79,68 @@ router.post('/question', async (req, res) => {
 
     const character = game.character;
 
-    // ===== SHORTENED CHARACTER DATA =====
+    // ===== OPTIMIZED CHARACTER DATA (Reduced Tokens) =====
     const context = `
-SECRET CHARACTER:
 Anime: ${character.anime}
-Description: ${character.description}
+Description: ${character.description.substring(0, 150)}...
 Gender: ${character.traits.gender}
 Species: ${character.traits.species}
 Age: ${character.traits.age || 'Unknown'}
-Occupation: ${character.traits.occupation || 'Unknown'}
-Powers: ${character.traits.powers.join(', ') || 'None'}
-Personality: ${character.traits.personality.join(', ') || 'Unknown'}
-Affiliations: ${character.traits.affiliations.join(', ') || 'None'}
-Key Events: ${character.traits.keyEvents.join(', ') || 'None'}
-Main Character: ${character.attributes.isMainCharacter}
-Villain: ${character.attributes.isVillain}
-Female: ${character.attributes.isFemale}
-Has Powers: ${character.attributes.hasPowers}
+Powers: ${character.traits.powers.slice(0, 3).join(', ') || 'None'}
+Personality: ${character.traits.personality.slice(0, 3).join(', ') || 'Unknown'}
+Affiliations: ${character.traits.affiliations.slice(0, 2).join(', ') || 'None'}
+Main: ${character.attributes.isMainCharacter ? 'Yes' : 'No'}
+Villain: ${character.attributes.isVillain ? 'Yes' : 'No'}
+Female: ${character.attributes.isFemale ? 'Yes' : 'No'}
 
-USER'S QUESTION: "${question}"
+USER: "${question}"`;
 
-ANSWER based ONLY on the data above.`;
+    // ===== SHORT SYSTEM PROMPT =====
+    const systemPrompt = `
+You are the answer engine for an Anti-Akinator game.
+You are NOT the player and must NEVER identify or guess the secret character. Use ONLY the provided character data. Never use reasoning, inference, deduction, outside knowledge, anime knowledge, or combinations of facts. If a fact is not explicitly provided, treat it as unknown.
+If the user asks whether the character is any specific person (name, nickname, alias, title), ALWAYS reply:
+Maybe
+Never confirm, deny, eliminate, or hint at the character's identity, even if the answer seems obvious from the data.
+Answer only from explicit facts in the provided data. If the answer is not explicitly stated, reply:
+Maybe
+Allowed replies only:
+Yes
+No
+Maybe
+Very likely
+Unlikely
+Return exactly one allowed reply with no explanation, punctuation, or extra words.
+`;
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: context }
+    ];
 
-    // ===== SHORT, POWERFUL SYSTEM PROMPT =====
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: `You are a strict YES/NO question-answering engine.
+    // ===== CALL AI WITH AUTO-FAILOVER =====
+    let answer = "Maybe";
+    let usedProvider = 'none';
 
-CRITICAL RULES:
-1. You DO NOT know the character's name. Never reveal it.
-2. If the user asks ANY question about the character's identity (e.g., "Is it Luffy?", "Is my character Naruto?", "Is this Zoro?"), you MUST ALWAYS answer "Maybe".
-3. NEVER answer Yes, No, Very likely, or Unlikely to identity questions.
-4. For all other questions, answer based ONLY on the provided character data.
-5. Valid answers: Yes, No, Maybe, Very likely, Unlikely.
-6. If unsure, answer "Maybe".
-7. Be concise. Only return one word.`
-        },
-        {
-          role: "user",
-          content: context
-        }
-      ],
-      model: "llama-3.1-8b-instant",
-      temperature: 0.1,
-      max_tokens: 10
-    });
+    try {
+      const result = await askAI(messages);
+      answer = result.answer;
+      usedProvider = result.provider;
+      console.log(`✅ Answer from ${usedProvider}: ${answer}`);
+    } catch (error) {
+      console.error('All AI providers failed:', error);
+      return res.status(503).json({
+        message: 'AI service unavailable. Please try again.',
+        success: false
+      });
+    }
 
-    let answer = completion.choices[0]?.message?.content || "Maybe";
+    // Clean up answer
     const validAnswers = ['Yes', 'No', 'Maybe', 'Very likely', 'Unlikely'];
     const matchedAnswer = validAnswers.find(a => answer.toLowerCase().includes(a.toLowerCase()));
-    answer = matchedAnswer || 'Maybe';
+    const finalAnswer = matchedAnswer || 'Maybe';
 
     // Save question
-    game.questions.push({ question, answer, confidence: 0.8 });
+    game.questions.push({ question, answer: finalAnswer, confidence: 0.8 });
     game.totalQuestions += 1;
     await game.save();
 
@@ -146,8 +150,9 @@ CRITICAL RULES:
 
     res.json({
       success: true,
-      answer: answer,
-      questionCount: game.totalQuestions
+      answer: finalAnswer,
+      questionCount: game.totalQuestions,
+      provider: usedProvider
     });
 
   } catch (error) {
