@@ -31,6 +31,8 @@ const Game = () => {
   const hasEnded = useRef(false);
   // Track if user has been warned
   const hasWarned = useRef(false);
+  // Track if user is navigating away
+  const isNavigating = useRef(false);
 
   // ===== FETCH SHARDS =====
   useEffect(() => {
@@ -64,7 +66,6 @@ const Game = () => {
     hasEnded.current = true;
 
     try {
-      // ✅ This resets the streak on the backend
       await api.post('/game/giveup', {
         gameId: gameState.gameId
       });
@@ -93,19 +94,26 @@ const Game = () => {
     // Reset flags when game starts
     hasEnded.current = false;
     hasWarned.current = false;
+    isNavigating.current = false;
 
-    // ===== Navigation away (within app) – THIS CATCHES "BACK" BUTTON =====
+    // ===== Navigation away (within app) – FIXED =====
     const unlisten = navigate((location) => {
       // If user navigates away from /game to any other page
       if (gameState.status === 'playing' && !hasEnded.current && location.pathname !== '/game') {
+        // Mark that we're navigating
+        isNavigating.current = true;
+        
         if (!hasWarned.current) {
           hasWarned.current = true;
           const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
           if (confirmLeave) {
+            // User confirmed – abandon the game
             handleGameAbandon();
+            // Navigate to the target page (already happening)
           } else {
-            hasWarned.current = false;
             // User cancelled – stay on the game
+            hasWarned.current = false;
+            isNavigating.current = false;
             navigate('/game');
           }
         } else {
@@ -202,7 +210,8 @@ const Game = () => {
   // ===== CLEANUP ON UNMOUNT (component unmounts) =====
   useEffect(() => {
     return () => {
-      if (gameState.status === 'playing' && !hasEnded.current) {
+      // Only abandon if user is not actively navigating and game is still active
+      if (gameState.status === 'playing' && !hasEnded.current && !isNavigating.current) {
         handleGameAbandon();
       }
     };
@@ -214,6 +223,7 @@ const Game = () => {
     setGameState(prev => ({ ...prev, loading: true }));
     hasEnded.current = false;
     hasWarned.current = false;
+    isNavigating.current = false;
 
     try {
       await fetchUserShards();
@@ -455,6 +465,7 @@ const Game = () => {
     setHintText('');
     hasEnded.current = false;
     hasWarned.current = false;
+    isNavigating.current = false;
   };
 
   // ===== GO HOME =====
