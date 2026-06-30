@@ -381,6 +381,7 @@ router.post('/guess', async (req, res) => {
       
       // Initialize seasonStats if it doesn't exist
       if (!user.seasonStats) {
+        console.log(`🆕 Initializing seasonStats for ${user.username}`);
         user.seasonStats = {
           currentSeason: 202606,
           seasonWins: 0,
@@ -389,7 +390,7 @@ router.post('/guess', async (req, res) => {
         };
       }
       
-      // ✅ Update season stats
+      // Update season stats
       user.seasonStats.seasonWins += 1;
       user.seasonStats.seasonPlayed += 1;
       user.seasonStats.seasonStreak += 1;
@@ -416,6 +417,8 @@ router.post('/guess', async (req, res) => {
       if (unlockedAchievements.length > 0) allUnlocked = allUnlocked.concat(unlockedAchievements);
 
       await user.save();
+
+      console.log(`✅ ${user.username} saved with seasonStats:`, user.seasonStats);
 
       res.json({
         success: true,
@@ -481,15 +484,19 @@ router.post('/giveup', async (req, res) => {
     const { gameId } = req.body;
 
     if (!gameId) {
+      console.log('❌ Missing gameId in giveup request');
       return res.status(400).json({
         message: 'Game ID is required',
         success: false
       });
     }
 
+    console.log('🏳️ Giveup request for gameId:', gameId);
+
     const game = await GameSession.findById(gameId).populate('character');
 
     if (!game || game.status !== 'active') {
+      console.log('❌ Game not found or not active:', gameId);
       return res.status(400).json({
         message: 'Invalid game session',
         success: false
@@ -497,6 +504,7 @@ router.post('/giveup', async (req, res) => {
     }
 
     if (game.user.toString() !== req.user._id.toString()) {
+      console.log('❌ User not authorized for this game');
       return res.status(403).json({
         message: 'Not authorized',
         success: false
