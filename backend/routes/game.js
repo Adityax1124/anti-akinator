@@ -419,8 +419,10 @@ router.post('/guess', async (req, res) => {
       await user.save();
 
       console.log(`✅ ${user.username} saved with seasonStats:`, user.seasonStats);
+      console.log('🔍 AFTER update - user.seasonStats:', user.seasonStats);
+      console.log('🔍 AFTER update - user._id:', user._id);
 
-      res.json({
+      return res.json({
         success: true,
         isCorrect: true,
         character: game.character.name,
@@ -442,14 +444,17 @@ router.post('/guess', async (req, res) => {
         await game.save();
 
         await User.findByIdAndUpdate(req.user._id, {
-          $inc: { 'stats.gamesPlayed': 1 },
+          $inc: { 
+            'stats.gamesPlayed': 1,
+            'seasonStats.seasonPlayed': 1
+          },
           $set: { 
             'stats.winStreak': 0,
             'seasonStats.seasonStreak': 0
           }
         });
 
-        res.json({
+        return res.json({
           success: true,
           isCorrect: false,
           gameOver: true,
@@ -460,7 +465,7 @@ router.post('/guess', async (req, res) => {
         });
       } else {
         await game.save();
-        res.json({
+        return res.json({
           success: true,
           isCorrect: false,
           message: `❌ Not ${guess}. Try again! (${3 - newWrongGuesses.length} guesses left)`,
@@ -517,14 +522,17 @@ router.post('/giveup', async (req, res) => {
     await game.save();
 
     await User.findByIdAndUpdate(req.user._id, {
-      $inc: { 'stats.gamesPlayed': 1 },
+      $inc: { 
+        'stats.gamesPlayed': 1,
+        'seasonStats.seasonPlayed': 1
+      },
       $set: { 
         'stats.winStreak': 0,
         'seasonStats.seasonStreak': 0
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       character: game.character.name,
       anime: game.character.anime,

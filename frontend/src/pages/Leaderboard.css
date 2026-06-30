@@ -2,7 +2,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 30px 20px;
-  background: rgba(0, 0, 0, 0.7);  /* 👈 dark overlay */
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(12px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -24,14 +24,36 @@
 }
 
 .leaderboard-header p {
-  color: rgba(255, 255, 255, 0.85);  /* brighter for contrast */
+  color: rgba(255, 255, 255, 0.85);
   font-size: 16px;
   font-weight: 500;
 }
 
-/* Leaderboard card – now with lighter background inside */
+.prize-message {
+  color: #ffd700 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  margin-bottom: 4px;
+}
+
+.prize-message strong {
+  color: #ff6b35;
+}
+
+.season-countdown {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.season-countdown strong {
+  color: #ffd700;
+  font-weight: 700;
+}
+
 .leaderboard-card {
-  background: rgba(255, 255, 255, 0.04);  /* subtle inner glass */
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 16px;
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.04);
@@ -160,70 +182,80 @@
   to { transform: rotate(360deg); }
 }
 
-/* Responsive */
-@media (max-width: 600px) {
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
   .leaderboard-container {
-    padding: 16px 12px;
+    padding: 20px 12px;
+    border-radius: 16px;
   }
+
+  .leaderboard-header h1 {
+    font-size: 28px;
+  }
+
   .leaderboard-item {
     grid-template-columns: 40px 40px 1fr 60px 60px;
     font-size: 13px;
     padding: 8px 12px;
     gap: 4px;
   }
-  .leaderboard-header h1 {
-    font-size: 28px;
-  }
+
   .leaderboard-avatar {
     width: 26px;
     height: 26px;
   }
+
   .leaderboard-avatar-placeholder {
     width: 26px;
     height: 26px;
     font-size: 12px;
   }
+
   .rank {
+    font-size: 14px;
+  }
+
+  .prize-message {
+    font-size: 15px !important;
+  }
+
+  .season-countdown {
     font-size: 14px;
   }
 }
 
-/* ===== Mobile Leaderboard ===== */
 @media (max-width: 480px) {
+  .leaderboard-container {
+    padding: 14px 8px;
+    border-radius: 12px;
+  }
+
   .leaderboard-item {
     grid-template-columns: 30px 30px 1fr 40px 40px;
     font-size: 11px;
     padding: 6px 8px;
     gap: 2px;
   }
-  
-  .leaderboard-avatar {
-    width: 22px;
-    height: 22px;
-  }
-  
+
   .leaderboard-avatar-placeholder {
     width: 22px;
     height: 22px;
     font-size: 10px;
   }
-  
-  .leaderboard-container {
-    padding: 10px;
-  }
-  
-  .leaderboard-header h1 {
-    font-size: 24px;
-  }
-}
-.season-countdown {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 16px;
-  margin-top: 8px;
-  font-weight: 500;
-}
 
-.season-countdown strong {
-  color: #ffd700;
-  font-weight: 700;
+  .rank {
+    font-size: 12px;
+  }
+
+  .leaderboard-header h1 {
+    font-size: 22px;
+  }
+
+  .prize-message {
+    font-size: 13px !important;
+  }
+
+  .season-countdown {
+    font-size: 12px;
+  }
 }

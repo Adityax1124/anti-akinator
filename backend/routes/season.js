@@ -1,124 +1,188 @@
 const express = require('express');
-const router = express.Router();
 const SeasonWinner = require('../models/SeasonWinner');
 const User = require('../models/User');
-const { 
-  getCurrentSeason, 
-  getSeasonDisplayName,
-  checkAndResetSeason 
-} = require('../utils/seasonUtils');
+const { getCurrentSeason, getSeasonDisplayName } = require('../utils/seasonUtils');
+const router = express.Router();
+
+// ===================== GET ALL SEASON WINNERS =====================
+router.get('/winners', async (req, res) => {
+  try {
+    const winners = await SeasonWinner.find()
+      .sort({ season: -1 })
+      .lean();
+
+    const winnersWithDisplay = await Promise.all(
+      winners.map(async (winner) => {
+        const displayNumber = await getSeasonDisplayName(winner.season);
+        return {
+          ...winner,
+          displaySeason: `Season ${displayNumber}`,
+          seasonCode: winner.season
+        };
+      })
+    );
+
+    const currentSeasonCode = getCurrentSeason();
+    const currentDisplayNumber = await getSeasonDisplayName(currentSeasonCode);
+
+    res.json({
+      success: true,
+      currentSeason: {
+        code: currentSeasonCode,
+        display: `Season ${currentDisplayNumber}`
+      },
+      winners: winnersWithDisplay
+    });
+  } catch (error) {
+    console.error('Error fetching season winners:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching season winners'
+    });
+  }
+});
+
+// ===================== GET SINGLE SEASON WINNER =====================
+router.get('/winners/:season', async (req, res) => {
+  try {
+    const { season } = req.params;
+    
+    const winner = await SeasonWinner.findOne({ season: parseInt(season) });
+    
+    if (!winner) {
+      return res.status(404).json({
+        success: false,
+        message: 'No winner found for this season'
+      });
+    }
+
+    const displayNumber = await getSeasonDisplayName(winner.season);
+
+    res.json({
+      success: true,
+      winner: {
+        ...winner.toObject(),
+        displaySeason: `Season ${displayNumber}`
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching season winner:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching season winner'
+    });
+  }
+});
+
+// ===================== GET CURRENT SEASON =====================
+router.get('/current', async (req, res) => {
+  try {
+    const currentSeasonCode = getCurrentSeason();
+    const displayNumber = await getSeasonDisplayName(currentSeasonCode);
+    
+    res.json({
+      success: true,
+      season: currentSeasonCode,
+      display: `Season ${displayNumber}`
+    });
+  } catch (error) {
+    console.error('Error fetching current season:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching current season'
+    });
+  }
+});
 
 // ===================== GET LEADERBOARD =====================
 router.get('/leaderboard', async (req, res) => {
   try {
-    let currentSeason = getCurrentSeason();
+    const { limit = 10, season } = req.query;
     
-    try {
-      await checkAndResetSeason();
-      currentSeason = getCurrentSeason();
-    } catch (seasonError) {
-      console.error('Season reset error:', seasonError);
+    let query = {};
+    
+    if (season) {
+      const seasonWinners = await SeasonWinner.find({ season: parseInt(season) });
+      return res.json({
+        success: true,
+        leaderboard: seasonWinners.map((w, index) => ({
+          rank: index + 1,
+          username: w.username,
+          wins: w.wins,
+          streak: w.streak,
+          prize: w.prize
+        }))
+      });
     }
+    
+    const currentSeason = getCurrentSeason();
+    
+    const users = await User.find({
+      'seasonStats.currentSeason': currentSeason
+    })
+    .select('username seasonStats stats shards')
+    .sort({ 
+      'seasonStats.seasonWins': -1,
+      'seasonStats.seasonStreak': -1,
+      'seasonStats.seasonPlayed': -1
+    })
+    .limit(parseInt(limit));
 
-    const players = await User.find()
-      .select('username seasonStats stats')
-      .limit(100);
-
-    // Sort: highest streak first, then FEWEST wins
-    const sortedPlayers = players.sort((a, b) => {
-      const streakA = a.seasonStats?.seasonStreak || 0;
-      const streakB = b.seasonStats?.seasonStreak || 0;
-      const winsA = a.seasonStats?.seasonWins || 0;
-      const winsB = b.seasonStats?.seasonWins || 0;
-
-      console.log(`Comparing: ${a.username} (streak:${streakA}, wins:${winsA}) vs ${b.username} (streak:${streakB}, wins:${winsB})`);
-      
-      if (streakA !== streakB) {
-        return streakB - streakA;
-      }
-      return winsA - winsB;
-    });
-
-    // Debug: log sorted order
-    console.log('📊 Sorted Leaderboard:');
-    sortedPlayers.forEach((p, i) => {
-      console.log(`  ${i + 1}. ${p.username} - Streak: ${p.seasonStats?.seasonStreak || 0}, Wins: ${p.seasonStats?.seasonWins || 0}`);
-    });
-
-    const seasonDisplayName = await getSeasonDisplayName(currentSeason);
-
-    const leaderboard = sortedPlayers.map((player, index) => ({
+    const leaderboard = users.map((user, index) => ({
       rank: index + 1,
-      username: player.username,
-      streak: player.seasonStats?.seasonStreak || player.stats?.winStreak || 0,
-      wins: player.seasonStats?.seasonWins || player.stats?.gamesWon || 0,
-      gamesPlayed: player.seasonStats?.seasonPlayed || player.stats?.gamesPlayed || 0
+      username: user.username,
+      wins: user.seasonStats?.seasonWins || 0,
+      streak: user.seasonStats?.seasonStreak || 0,
+      played: user.seasonStats?.seasonPlayed || 0,
+      shards: user.shards || 0
     }));
 
     res.json({
       success: true,
       season: currentSeason,
-      seasonDisplayName: `Season ${seasonDisplayName}`,
-      leaderboard
+      leaderboard: leaderboard,
+      totalPlayers: users.length
     });
   } catch (error) {
-    console.error('Leaderboard error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to load leaderboard' 
+    console.error('Error fetching leaderboard:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching leaderboard'
     });
   }
 });
 
-router.get('/winners', async (req, res) => {
+// ===================== GET SEASON STATS FOR A USER =====================
+router.get('/user/:userId', async (req, res) => {
   try {
-    const winners = await SeasonWinner.find()
-      .sort({ season: -1 })
-      .limit(20);
+    const { userId } = req.params;
     
-    const currentSeason = getCurrentSeason();
-    const validWinners = winners.filter(w => w.season < currentSeason);
-    
-    const winnersWithDisplay = [];
-    for (const winner of validWinners) {
-      const seasonNumber = await getSeasonDisplayName(winner.season);
-      winnersWithDisplay.push({
-        ...winner.toObject(),
-        displayName: `Season ${seasonNumber}`
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
-    
-    res.json({ success: true, winners: winnersWithDisplay });
-  } catch (error) {
-    console.error('Winners error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
 
-router.get('/current', async (req, res) => {
-  try {
-    await checkAndResetSeason();
-    const season = getCurrentSeason();
-    const seasonDisplayName = await getSeasonDisplayName(season);
+    const currentSeasonCode = getCurrentSeason();
+    const currentDisplayNumber = await getSeasonDisplayName(currentSeasonCode);
+
     res.json({
       success: true,
-      season,
-      seasonDisplayName: `Season ${seasonDisplayName}`,
-      message: `Season ${seasonDisplayName} is live!`
+      currentSeason: {
+        code: currentSeasonCode,
+        display: `Season ${currentDisplayNumber}`
+      },
+      seasonStats: user.seasonStats,
+      seasonHistory: user.seasonHistory || []
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.get('/winner/:season', async (req, res) => {
-  try {
-    const winner = await SeasonWinner.findOne({ 
-      season: parseInt(req.params.season) 
-    }).populate('winner', 'username');
-    res.json({ success: true, winner });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error fetching user season stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user season stats'
+    });
   }
 });
 

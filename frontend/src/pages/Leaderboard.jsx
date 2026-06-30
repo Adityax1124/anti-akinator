@@ -99,7 +99,7 @@ const Leaderboard = () => {
             
             {leaderboard.map((player, index) => (
               <div 
-                key={player.username} 
+                key={player.username || index} 
                 className={`leaderboard-item ${index < 3 ? 'top' : ''}`}
                 onClick={() => handlePlayerClick(player.username)}
                 style={{ cursor: 'pointer' }}
@@ -109,10 +109,10 @@ const Leaderboard = () => {
                 </span>
                 <span className="avatar-col">
                   <span className="leaderboard-avatar-placeholder">
-                    {player.username.charAt(0).toUpperCase()}
+                    {player.username?.charAt(0).toUpperCase() || '?'}
                   </span>
                 </span>
-                <span className="player">{player.username}</span>
+                <span className="player">{player.username || 'Unknown'}</span>
                 <span className="games">{player.wins || 0}</span>
                 <span className="streak">{player.streak || 0}</span>
               </div>

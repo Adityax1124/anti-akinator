@@ -1,6 +1,10 @@
 const SeasonWinner = require('../models/SeasonWinner');
 const User = require('../models/User');
 
+// ===== STATE TO PREVENT MULTIPLE RESETS =====
+let isResetting = false;
+let lastResetSeason = 0;
+
 // Get current season number (YYYYMM format)
 function getCurrentSeason() {
   const now = new Date();
@@ -21,12 +25,31 @@ async function getSeasonDisplayName(seasonCode) {
 // Check if season has changed and reset if needed
 async function checkAndResetSeason() {
   const currentSeason = getCurrentSeason();
+  
+  // ===== GUARD 1: Prevent resetting the same season twice =====
+  if (lastResetSeason === currentSeason) {
+    console.log(`⏭️ Season ${currentSeason} already reset, skipping...`);
+    return false;
+  }
+  
+  // ===== GUARD 2: Prevent concurrent resets =====
+  if (isResetting) {
+    console.log('⏳ Season reset already in progress, skipping...');
+    return false;
+  }
+  
   const lastWinner = await SeasonWinner.findOne().sort({ season: -1 });
   const lastSeason = lastWinner?.season || 0;
 
   if (currentSeason > lastSeason) {
-    await resetSeason(currentSeason);
-    return true;
+    isResetting = true;
+    try {
+      await resetSeason(currentSeason);
+      lastResetSeason = currentSeason;
+      return true;
+    } finally {
+      isResetting = false;
+    }
   }
   return false;
 }

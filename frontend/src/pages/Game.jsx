@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import './Game.css';
 
@@ -26,6 +26,7 @@ const Game = () => {
   const [shards, setShards] = useState(0);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Track if game has already ended
   const hasEnded = useRef(false);
@@ -33,6 +34,8 @@ const Game = () => {
   const hasWarned = useRef(false);
   // Track if user is navigating away
   const isNavigating = useRef(false);
+  // Store previous path to detect navigation
+  const prevPathRef = useRef(location.pathname);
 
   // ===== FETCH SHARDS =====
   useEffect(() => {
@@ -59,6 +62,7 @@ const Game = () => {
 
   // ===== HANDLE GAME ABANDON =====
   const handleGameAbandon = async () => {
+    // ✅ Only abandon if game is active
     if (hasEnded.current) return;
     if (!gameState.gameId) return;
     if (gameState.status !== 'playing') return;
@@ -66,6 +70,8 @@ const Game = () => {
     hasEnded.current = true;
 
     try {
+      console.log('🏳️ Abandoning game with gameId:', gameState.gameId);
+      
       await api.post('/game/giveup', {
         gameId: gameState.gameId
       });
@@ -82,9 +88,48 @@ const Game = () => {
       
       console.log('🏳️ Game abandoned - streak reset');
     } catch (error) {
+      // ✅ If game is already ended, ignore the error
+      if (error.response?.status === 400) {
+        console.log('ℹ️ Game already ended, ignoring abandon');
+        return;
+      }
       console.error('Error abandoning game:', error);
     }
   };
+
+  // ===== DETECT NAVIGATION AWAY (within app) =====
+  useEffect(() => {
+    // Only track if game is active
+    if (gameState.status !== 'playing') return;
+
+    // Reset flags when game starts
+    hasEnded.current = false;
+    hasWarned.current = false;
+    isNavigating.current = false;
+    prevPathRef.current = location.pathname;
+
+    // Check if we navigated away from /game
+    if (prevPathRef.current === '/game' && location.pathname !== '/game' && location.pathname !== '') {
+      // User navigated away from the game
+      if (gameState.status === 'playing' && !hasEnded.current) {
+        if (!hasWarned.current) {
+          hasWarned.current = true;
+          const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
+          if (confirmLeave) {
+            handleGameAbandon();
+          } else {
+            hasWarned.current = false;
+            navigate('/game');
+          }
+        } else {
+          handleGameAbandon();
+        }
+      }
+    }
+    
+    // Update previous path
+    prevPathRef.current = location.pathname;
+  }, [location.pathname, gameState.status]);
 
   // ===== DETECT PAGE LEAVE (PC & Mobile) =====
   useEffect(() => {
@@ -95,52 +140,6 @@ const Game = () => {
     hasEnded.current = false;
     hasWarned.current = false;
     isNavigating.current = false;
-
-    // ===== Navigation away (within app) – FIXED =====
-    const unlisten = navigate((location) => {
-      // If user navigates away from /game to any other page
-      if (gameState.status === 'playing' && !hasEnded.current && location.pathname !== '/game') {
-        // Mark that we're navigating
-        isNavigating.current = true;
-        
-        if (!hasWarned.current) {
-          hasWarned.current = true;
-          const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
-          if (confirmLeave) {
-            // User confirmed – abandon the game
-            handleGameAbandon();
-            // Navigate to the target page (already happening)
-          } else {
-            // User cancelled – stay on the game
-            hasWarned.current = false;
-            isNavigating.current = false;
-            navigate('/game');
-          }
-        } else {
-          // Second time – count as loss
-          handleGameAbandon();
-        }
-      }
-    });
-
-    // ===== Clicking back button (popstate) =====
-    const handlePopState = () => {
-      if (gameState.status === 'playing' && !hasEnded.current) {
-        if (!hasWarned.current) {
-          hasWarned.current = true;
-          const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
-          if (confirmLeave) {
-            handleGameAbandon();
-          } else {
-            hasWarned.current = false;
-            // Push state back to game
-            window.history.pushState(null, '', '/game');
-          }
-        } else {
-          handleGameAbandon();
-        }
-      }
-    };
 
     // ===== PC: Tab/Window visibility change =====
     const handleVisibilityChange = () => {
@@ -186,6 +185,24 @@ const Game = () => {
       }
     };
 
+    // ===== Popstate (back button) =====
+    const handlePopState = () => {
+      if (gameState.status === 'playing' && !hasEnded.current) {
+        if (!hasWarned.current) {
+          hasWarned.current = true;
+          const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
+          if (confirmLeave) {
+            handleGameAbandon();
+          } else {
+            hasWarned.current = false;
+            window.history.pushState(null, '', '/game');
+          }
+        } else {
+          handleGameAbandon();
+        }
+      }
+    };
+
     // ===== Push state to catch back button =====
     window.history.pushState(null, '', '/game');
 
@@ -203,18 +220,25 @@ const Game = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('freeze', handleFreeze);
-      unlisten();
     };
   }, [gameState.status, gameState.gameId]);
 
-  // ===== CLEANUP ON UNMOUNT (component unmounts) =====
+  // ===== CLEANUP ON UNMOUNT =====
   useEffect(() => {
     return () => {
-      // Only abandon if user is not actively navigating and game is still active
-      if (gameState.status === 'playing' && !hasEnded.current && !isNavigating.current) {
+      // ✅ Only abandon if game is still active (not won/lost/idle)
+      if (gameState.status === 'playing' && !hasEnded.current) {
         handleGameAbandon();
       }
     };
+  }, [gameState.status]);
+
+  // ===== HANDLE NAVIGATION AWAY FROM RESULT =====
+  useEffect(() => {
+    // ✅ If game is won or lost, mark as ended to prevent abandon
+    if (gameState.status === 'won' || gameState.status === 'lost') {
+      hasEnded.current = true;
+    }
   }, [gameState.status]);
 
   // ===== START GAME =====
