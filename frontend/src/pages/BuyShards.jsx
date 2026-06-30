@@ -13,14 +13,15 @@ const BuyShards = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-const shardsPacks = [
-  { id: 1, shards: 50, price: 35, label: 'Starter' },
-  { id: 2, shards: 150, price: 105, label: 'Enthusiast', isPopular: true },
-  { id: 3, shards: 350, price: 210, label: 'Pro' },
-  { id: 4, shards: 750, price: 375, label: 'Popular' },
-  { id: 5, shards: 1500, price: 750, label: 'Ultimate', isUltimate: true },
-  { id: 6, shards: 3000, price: 1350, label: 'Legendary', isLegendary: true },
-];
+  // ✅ UPDATED: Popular badge moved to 750 Shards (id: 4)
+  const shardsPacks = [
+    { id: 1, shards: 50, price: 35, label: 'Starter' },
+    { id: 2, shards: 150, price: 105, label: 'Enthusiast' },  // ❌ Removed isPopular
+    { id: 3, shards: 350, price: 210, label: 'Pro' },
+    { id: 4, shards: 750, price: 375, label: 'Popular', isPopular: true },  // ✅ Added isPopular here
+    { id: 5, shards: 1500, price: 750, label: 'Ultimate', isUltimate: true },
+    { id: 6, shards: 3000, price: 1350, label: 'Legendary', isLegendary: true },
+  ];
 
   // Load Razorpay script
   useEffect(() => {
@@ -148,8 +149,10 @@ const shardsPacks = [
             className={`shards-pack ${selectedPack?.id === pack.id ? 'selected' : ''}`}
             onClick={() => handleSelectPack(pack)}
           >
+            {/* ✅ UPDATED: Popular badge shows on id: 4 with YELLOW color */}
             <div className={`pack-label ${pack.isPopular ? 'popular' : ''} ${pack.isUltimate ? 'ultimate' : ''} ${pack.isLegendary ? 'legendary' : ''}`}>
               {pack.label}
+              {pack.isPopular && <span className="popular-badge">⭐ POPULAR</span>}
             </div>
             <div className="pack-shards">🎴 {pack.shards} Shards</div>
             <div className="pack-price">₹{pack.price} <span>INR</span></div>
