@@ -15,20 +15,35 @@ const Leaderboard = () => {
   useEffect(() => {
     fetchLeaderboard();
     calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 60000); // Update every minute
+    const timer = setInterval(calculateTimeLeft, 60000);
     return () => clearInterval(timer);
   }, []);
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await api.get('/season/leaderboard');
-      setLeaderboard(response.data.leaderboard || []);
-      setSeason(response.data.season || 1);
-      setSeasonDisplayName(response.data.seasonDisplayName || 'Season 1');
+      const response = await api.get('/season/leaderboard?_t=' + Date.now());
+      
+      const data = response.data;
+      
+      setLeaderboard(data.leaderboard || []);
+      setSeason(data.season || 1);
+      
+      if (data.seasonDisplayName) {
+        setSeasonDisplayName(data.seasonDisplayName);
+      } else {
+        setSeasonDisplayName(`Season ${data.season || 1}`);
+      }
+      
       setLoading(false);
     } catch (error) {
       console.error('Leaderboard fetch error:', error);
-      setError('Failed to load leaderboard');
+      
+      if (error.response?.status === 404) {
+        setError('Leaderboard feature coming soon! 🚀');
+      } else {
+        setError('Failed to load leaderboard. Please try again.');
+      }
+      
       setLoading(false);
     }
   };
@@ -51,7 +66,9 @@ const Leaderboard = () => {
   };
 
   const handlePlayerClick = (username) => {
-    navigate(`/profile/${username}`);
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
   };
 
   if (loading) {
@@ -73,7 +90,7 @@ const Leaderboard = () => {
           🥇 Season Winner will receive <strong>₹2,000 INR</strong>!
         </p>
         <p className="leaderboard-subtitle">
-          Ranked by highest streak • Fewest wins breaks ties
+          Ranked by season wins • Highest streak breaks ties
         </p>
         <p className="season-countdown">
           ⏳ Season ends in: <strong>{timeLeft}</strong>
@@ -83,11 +100,11 @@ const Leaderboard = () => {
       <div className="leaderboard-card">
         {error && <div className="leaderboard-error">{error}</div>}
         
-        {leaderboard.length === 0 ? (
+        {!error && leaderboard.length === 0 ? (
           <div className="leaderboard-empty">
             <p>No players yet. Be the first to play!</p>
           </div>
-        ) : (
+        ) : !error && (
           <div className="leaderboard-list">
             <div className="leaderboard-item header">
               <span className="rank">#</span>
@@ -102,15 +119,30 @@ const Leaderboard = () => {
                 key={player.username || index} 
                 className={`leaderboard-item ${index < 3 ? 'top' : ''}`}
                 onClick={() => handlePlayerClick(player.username)}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: player.username ? 'pointer' : 'default' }}
               >
                 <span className="rank">
                   {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                 </span>
                 <span className="avatar-col">
-                  <span className="leaderboard-avatar-placeholder">
-                    {player.username?.charAt(0).toUpperCase() || '?'}
-                  </span>
+                  {player.profilePhoto ? (
+                    <img 
+                      src={player.profilePhoto} 
+                      alt={player.username}
+                      className="leaderboard-avatar-img"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const placeholder = document.createElement('span');
+                        placeholder.className = 'leaderboard-avatar-placeholder';
+                        placeholder.textContent = player.username?.charAt(0).toUpperCase() || '?';
+                        e.target.parentElement.appendChild(placeholder);
+                      }}
+                    />
+                  ) : (
+                    <span className="leaderboard-avatar-placeholder">
+                      {player.username?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  )}
                 </span>
                 <span className="player">{player.username || 'Unknown'}</span>
                 <span className="games">{player.wins || 0}</span>

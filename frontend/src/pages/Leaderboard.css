@@ -1,261 +1,268 @@
 .leaderboard-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 30px 20px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  padding: 2rem 1rem;
+  min-height: 80vh;
 }
 
 .leaderboard-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
 }
 
 .leaderboard-header h1 {
-  font-size: 36px;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #f7971e, #ffd200);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.leaderboard-header p {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 16px;
-  font-weight: 500;
+  margin-bottom: 0.5rem;
 }
 
 .prize-message {
-  color: #ffd700 !important;
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  margin-bottom: 4px;
+  font-size: 1.1rem;
+  color: #4a4a4a;
+  background: #fff3e0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 0.5rem;
 }
 
 .prize-message strong {
-  color: #ff6b35;
+  color: #ff6f00;
+}
+
+.leaderboard-subtitle {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
 }
 
 .season-countdown {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 16px;
-  margin-top: 8px;
-  font-weight: 500;
+  color: #666;
+  font-size: 0.95rem;
 }
 
 .season-countdown strong {
-  color: #ffd700;
-  font-weight: 700;
+  color: #6c63ff;
 }
 
+/* ===== LEADERBOARD CARD ===== */
 .leaderboard-card {
-  background: rgba(255, 255, 255, 0.04);
+  background: white;
   border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  padding: 0.5rem 0;
 }
 
+.leaderboard-error {
+  padding: 2rem;
+  text-align: center;
+  color: #e74c3c;
+}
+
+.leaderboard-empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #999;
+}
+
+.leaderboard-empty p {
+  font-size: 1.1rem;
+}
+
+/* ===== LEADERBOARD LIST ===== */
 .leaderboard-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
+/* ===== LEADERBOARD ITEM ===== */
 .leaderboard-item {
   display: grid;
-  grid-template-columns: 50px 50px 1fr 100px 100px;
-  padding: 10px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  grid-template-columns: 50px 50px 1fr 100px 80px;
   align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s ease;
+  gap: 0.5rem;
+}
+
+.leaderboard-item:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-item:not(.header):hover {
+  background: #f8f7ff;
+  cursor: pointer;
 }
 
 .leaderboard-item.header {
-  background: transparent;
+  background: #f8f7ff;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #666;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e8e7f5;
 }
 
+/* ===== TOP 3 STYLING ===== */
 .leaderboard-item.top {
-  background: rgba(255, 215, 0, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  background: #fafafa;
 }
 
 .leaderboard-item.top:first-child {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: #ffd700;
+  background: linear-gradient(135deg, #fff9e6, #fff3d6);
 }
 
-.rank {
+.leaderboard-item.top:nth-child(2) {
+  background: linear-gradient(135deg, #f5f5f5, #ececec);
+}
+
+.leaderboard-item.top:nth-child(3) {
+  background: linear-gradient(135deg, #fdf5f0, #f8ede6);
+}
+
+/* ===== COLUMN STYLES ===== */
+.leaderboard-item .rank {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 1.1rem;
   text-align: center;
+  color: #444;
 }
 
-.avatar-col {
+.leaderboard-item.header .rank {
+  color: #999;
+  font-weight: 600;
+}
+
+.leaderboard-item .avatar-col {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.leaderboard-avatar {
-  width: 32px;
-  height: 32px;
+/* ===== AVATAR IMAGE ===== */
+.leaderboard-avatar-img {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid #6c63ff;
 }
 
+/* ===== AVATAR PLACEHOLDER ===== */
 .leaderboard-avatar-placeholder {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2d2d5e, #1a1a2e);
+  background: linear-gradient(135deg, #6c63ff, #3f3d9e);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.05);
+  text-transform: uppercase;
 }
 
-.player {
-  font-weight: 500;
-  color: #fff;
-  white-space: nowrap;
+/* ===== TOP 3 BIGGER AVATARS ===== */
+.leaderboard-item.top .leaderboard-avatar-img,
+.leaderboard-item.top .leaderboard-avatar-placeholder {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  border-width: 3px;
+}
+
+/* ===== PLAYER NAME ===== */
+.leaderboard-item .player {
+  font-weight: 600;
+  color: #222;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.games {
-  color: #a29bfe;
+/* ===== GAMES / STREAK ===== */
+.leaderboard-item .games,
+.leaderboard-item .streak {
   text-align: center;
+  font-weight: 500;
+  color: #555;
 }
 
-.streak {
-  color: #ff6b9d;
-  font-weight: 700;
-  text-align: center;
-}
-
-.leaderboard-empty {
-  text-align: center;
-  padding: 40px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.leaderboard-error {
-  color: #e74c3c;
-  text-align: center;
-  padding: 12px;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  gap: 16px;
-}
-
-.loader {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #00d4ff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.leaderboard-item .streak {
+  color: #e67e22;
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .leaderboard-container {
-    padding: 20px 12px;
-    border-radius: 16px;
+@media (max-width: 600px) {
+  .leaderboard-item {
+    grid-template-columns: 35px 40px 1fr 60px 55px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+    gap: 0.3rem;
   }
 
   .leaderboard-header h1 {
-    font-size: 28px;
-  }
-
-  .leaderboard-item {
-    grid-template-columns: 40px 40px 1fr 60px 60px;
-    font-size: 13px;
-    padding: 8px 12px;
-    gap: 4px;
-  }
-
-  .leaderboard-avatar {
-    width: 26px;
-    height: 26px;
-  }
-
-  .leaderboard-avatar-placeholder {
-    width: 26px;
-    height: 26px;
-    font-size: 12px;
-  }
-
-  .rank {
-    font-size: 14px;
+    font-size: 1.6rem;
   }
 
   .prize-message {
-    font-size: 15px !important;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.8rem;
   }
 
-  .season-countdown {
+  .leaderboard-item .rank {
+    font-size: 0.9rem;
+  }
+
+  .leaderboard-avatar-img,
+  .leaderboard-avatar-placeholder {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .leaderboard-item.top .leaderboard-avatar-img,
+  .leaderboard-item.top .leaderboard-avatar-placeholder {
+    width: 36px;
+    height: 36px;
     font-size: 14px;
+  }
+
+  .leaderboard-item.header {
+    font-size: 0.7rem;
+  }
+
+  .leaderboard-item .games,
+  .leaderboard-item .streak {
+    font-size: 0.8rem;
   }
 }
 
-@media (max-width: 480px) {
-  .leaderboard-container {
-    padding: 14px 8px;
-    border-radius: 12px;
-  }
-
+@media (max-width: 400px) {
   .leaderboard-item {
-    grid-template-columns: 30px 30px 1fr 40px 40px;
-    font-size: 11px;
-    padding: 6px 8px;
-    gap: 2px;
+    grid-template-columns: 30px 35px 1fr 50px 45px;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+    gap: 0.2rem;
   }
 
+  .leaderboard-avatar-img,
   .leaderboard-avatar-placeholder {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     font-size: 10px;
   }
 
-  .rank {
-    font-size: 12px;
-  }
-
-  .leaderboard-header h1 {
-    font-size: 22px;
-  }
-
-  .prize-message {
-    font-size: 13px !important;
-  }
-
-  .season-countdown {
+  .leaderboard-item.top .leaderboard-avatar-img,
+  .leaderboard-item.top .leaderboard-avatar-placeholder {
+    width: 30px;
+    height: 30px;
     font-size: 12px;
   }
 }

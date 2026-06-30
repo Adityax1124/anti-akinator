@@ -97,14 +97,19 @@ router.get('/current', async (req, res) => {
 // ===================== GET LEADERBOARD =====================
 router.get('/leaderboard', async (req, res) => {
   try {
-    const { limit = 10, season } = req.query;
+    const { limit = 50, season } = req.query;
     
-    let query = {};
+    const currentSeasonCode = getCurrentSeason();
+    const displayNumber = await getSeasonDisplayName(currentSeasonCode);
     
     if (season) {
       const seasonWinners = await SeasonWinner.find({ season: parseInt(season) });
+      const seasonDisplayNumber = await getSeasonDisplayName(parseInt(season));
+      
       return res.json({
         success: true,
+        season: parseInt(season),
+        seasonDisplayName: `Season ${seasonDisplayNumber}`,
         leaderboard: seasonWinners.map((w, index) => ({
           rank: index + 1,
           username: w.username,
@@ -115,12 +120,15 @@ router.get('/leaderboard', async (req, res) => {
       });
     }
     
-    const currentSeason = getCurrentSeason();
-    
+    // Find top players for current season WITH profile photo
     const users = await User.find({
-      'seasonStats.currentSeason': currentSeason
+      'seasonStats.currentSeason': currentSeasonCode
     })
-    .select('username seasonStats stats shards')
+    .select('username seasonStats stats shards equipped achievements')
+    .populate({
+      path: 'equipped.profilePhoto',
+      select: 'imageUrl'
+    })
     .sort({ 
       'seasonStats.seasonWins': -1,
       'seasonStats.seasonStreak': -1,
@@ -128,18 +136,47 @@ router.get('/leaderboard', async (req, res) => {
     })
     .limit(parseInt(limit));
 
-    const leaderboard = users.map((user, index) => ({
-      rank: index + 1,
-      username: user.username,
-      wins: user.seasonStats?.seasonWins || 0,
-      streak: user.seasonStats?.seasonStreak || 0,
-      played: user.seasonStats?.seasonPlayed || 0,
-      shards: user.shards || 0
-    }));
+    // Format leaderboard with profile photo
+    const leaderboard = users.map((user, index) => {
+      // Get the equipped profile photo URL
+      let profilePhotoUrl = null;
+      
+      // Check if user has an equipped profile photo
+      if (user.equipped?.profilePhoto) {
+        // If it's populated, get the imageUrl
+        if (user.equipped.profilePhoto.imageUrl) {
+          profilePhotoUrl = user.equipped.profilePhoto.imageUrl;
+        }
+      }
+      
+      // If no equipped photo, check achievements for equipped
+      if (!profilePhotoUrl && user.achievements?.profilePhotos) {
+        const equippedPhoto = user.achievements.profilePhotos.find(
+          p => p.isEquipped === true
+        );
+        if (equippedPhoto && equippedPhoto.photoId) {
+          // Try to get imageUrl if populated
+          if (equippedPhoto.photoId.imageUrl) {
+            profilePhotoUrl = equippedPhoto.photoId.imageUrl;
+          }
+        }
+      }
+      
+      return {
+        rank: index + 1,
+        username: user.username,
+        wins: user.seasonStats?.seasonWins || 0,
+        streak: user.seasonStats?.seasonStreak || 0,
+        played: user.seasonStats?.seasonPlayed || 0,
+        shards: user.shards || 0,
+        profilePhoto: profilePhotoUrl
+      };
+    });
 
     res.json({
       success: true,
-      season: currentSeason,
+      season: currentSeasonCode,
+      seasonDisplayName: `Season ${displayNumber}`,
       leaderboard: leaderboard,
       totalPlayers: users.length
     });
@@ -152,8 +189,8 @@ router.get('/leaderboard', async (req, res) => {
   }
 });
 
-// ===================== GET SEASON STATS FOR A USER =====================
-router.get('/user/:userId', async (req, res) => {
+// ===================== GET SEASON RANK =====================
+router.get('/rank/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     
@@ -165,23 +202,33 @@ router.get('/user/:userId', async (req, res) => {
       });
     }
 
-    const currentSeasonCode = getCurrentSeason();
-    const currentDisplayNumber = await getSeasonDisplayName(currentSeasonCode);
+    const currentSeason = getCurrentSeason();
+    
+    // Get all users with season stats for current season
+    const allUsers = await User.find({
+      'seasonStats.currentSeason': currentSeason
+    })
+    .select('username seasonStats')
+    .sort({ 
+      'seasonStats.seasonWins': -1,
+      'seasonStats.seasonStreak': -1
+    });
+
+    // Find user's rank
+    const rank = allUsers.findIndex(u => u._id.toString() === userId) + 1;
 
     res.json({
       success: true,
-      currentSeason: {
-        code: currentSeasonCode,
-        display: `Season ${currentDisplayNumber}`
-      },
-      seasonStats: user.seasonStats,
-      seasonHistory: user.seasonHistory || []
+      rank: rank > 0 ? rank : null,
+      totalPlayers: allUsers.length,
+      season: currentSeason,
+      userStats: user.seasonStats
     });
   } catch (error) {
-    console.error('Error fetching user season stats:', error);
+    console.error('Error fetching user rank:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching user season stats'
+      message: 'Error fetching user rank'
     });
   }
 });
