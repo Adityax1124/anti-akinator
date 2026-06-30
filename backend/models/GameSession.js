@@ -31,6 +31,10 @@ const gameSessionSchema = new mongoose.Schema({
     isCorrect: Boolean,
     timestamp: { type: Date, default: Date.now }
   }],
+  hintUsed: {
+  type: Boolean,
+  default: false
+},
   startedAt: {
     type: Date,
     default: Date.now

@@ -74,8 +74,8 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand" onClick={closeMobileMenu}>
-  <span>Anti-Akinator</span>
-</Link>
+          <span>Anti-Akinator</span>
+        </Link>
 
         <div className="search-wrapper" ref={searchRef}>
           <div className="search-container">
@@ -130,19 +130,22 @@ const Navbar = () => {
             <>
               <Link to="/game" className="nav-link" onClick={closeMobileMenu}>Play</Link>
               <Link to="/leaderboard" className="nav-link" onClick={closeMobileMenu}>Leaderboard</Link>
+              <Link to="/season-winners" className="nav-link" onClick={closeMobileMenu}>🏆 Winners</Link>
               {user?.role === 'admin' && (
                 <Link to="/admin" className="nav-link admin-link" onClick={closeMobileMenu}>Admin</Link>
               )}
+              <Link to="/buy-shards" className="nav-link" onClick={closeMobileMenu}>🎴 Buy Shards</Link>
               <Link to="/profile" className="nav-link" onClick={closeMobileMenu}>
-                <span className="user-avatar">
-                  {profilePhotoUrl ? (
-                    <img src={profilePhotoUrl} alt={user.username} className="navbar-avatar-img" />
-                  ) : (
-                    user?.username?.charAt(0).toUpperCase() || 'U'
-                  )}
-                </span>
-                <span className="username">{user?.username}</span>
-              </Link>
+  <span className="user-avatar">
+    {profilePhotoUrl ? (
+      <img src={profilePhotoUrl} alt={user.username} className="navbar-avatar-img" />
+    ) : (
+      user?.username?.charAt(0).toUpperCase() || 'U'
+    )}
+  </span>
+  <span className="username">{user?.username}</span>
+  <span className="shards-display">🎴 {user?.shards || 0}</span>
+</Link>
               <button onClick={() => { closeMobileMenu(); handleLogout(); }} className="nav-link logout-btn">
                 Logout
               </button>

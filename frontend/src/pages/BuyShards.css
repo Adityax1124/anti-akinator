@@ -1,0 +1,345 @@
+/* ============================================================
+   BUY SHARDS PAGE – Premium Dark Theme
+   ============================================================ */
+
+.buy-shards-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.buy-shards-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.buy-shards-header h1 {
+  font-size: 36px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+
+.buy-shards-header p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+}
+
+.current-shards {
+  margin-top: 8px;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.current-shards strong {
+  color: #fdcb6e;
+  font-size: 22px;
+}
+
+.buy-shards-error {
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  color: #fd79a8;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.buy-shards-success {
+  background: rgba(0, 184, 148, 0.15);
+  border: 1px solid rgba(0, 184, 148, 0.2);
+  color: #00b894;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* ===== SHARDS PACKS GRID – 3 PER ROW ===== */
+.shards-packs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.shards-pack {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 24px 20px;
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.shards-pack:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.shards-pack.selected {
+  border-color: #00d4ff;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.1);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.pack-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.2);
+  margin-bottom: 8px;
+}
+
+.pack-label.popular {
+  color: #ffd700;
+}
+
+.pack-label.ultimate {
+  color: #a855f7;
+}
+
+.pack-label.legendary {
+  color: #ff6b35;
+}
+
+.pack-shards {
+  font-size: 28px;
+  font-weight: 900;
+  color: #fdcb6e;
+  margin-bottom: 2px;
+}
+
+.pack-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.pack-price span {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 400;
+}
+
+.pack-hints {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.pack-hints strong {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.pack-selected-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #00d4ff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+/* ===== PURCHASE SECTION ===== */
+.purchase-section {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 24px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.purchase-summary {
+  margin-bottom: 16px;
+}
+
+.purchase-summary h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.purchase-summary p {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  padding: 4px 0;
+}
+
+.purchase-summary p strong {
+  color: #fff;
+}
+
+/* ===== AGREEMENT CHECKBOX ===== */
+.agreement-section {
+  margin: 16px 0;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.agreement-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.agreement-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  margin-top: 2px;
+  accent-color: #00d4ff;
+  cursor: pointer;
+}
+
+.agreement-checkbox a {
+  color: #00d4ff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.agreement-checkbox a:hover {
+  color: #7b2ffc;
+  text-decoration: underline;
+}
+
+.purchase-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  margin-top: 8px;
+  border-radius: 12px;
+}
+
+.purchase-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .shards-packs-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .buy-shards-container {
+    padding: 24px 16px;
+    border-radius: 16px;
+  }
+
+  .shards-packs-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .shards-pack {
+    padding: 18px 14px;
+  }
+
+  .pack-shards {
+    font-size: 22px;
+  }
+
+  .pack-price {
+    font-size: 17px;
+  }
+
+  .purchase-section {
+    padding: 18px 16px;
+  }
+
+  .buy-shards-header h1 {
+    font-size: 28px;
+  }
+
+  .buy-shards-header p {
+    font-size: 14px;
+  }
+
+  .current-shards {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .buy-shards-container {
+    padding: 16px 12px;
+    border-radius: 12px;
+  }
+
+  .shards-packs-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .shards-pack {
+    padding: 14px 10px;
+    border-radius: 12px;
+  }
+
+  .pack-shards {
+    font-size: 18px;
+  }
+
+  .pack-price {
+    font-size: 15px;
+  }
+
+  .pack-label {
+    font-size: 9px;
+  }
+
+  .pack-hints {
+    font-size: 11px;
+  }
+
+  .agreement-checkbox {
+    font-size: 12px;
+  }
+
+  .purchase-summary p {
+    font-size: 13px;
+  }
+
+  .purchase-btn {
+    font-size: 15px;
+    padding: 14px;
+  }
+
+  .buy-shards-header h1 {
+    font-size: 24px;
+  }
+}

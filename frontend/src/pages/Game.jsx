@@ -10,6 +10,7 @@ const Game = () => {
     questions: [],
     questionCount: 0,
     remainingGuesses: 3,
+    remainingQuestions: 10,
     character: null,
     characterImage: null,
     loading: false
@@ -20,6 +21,9 @@ const Game = () => {
   const [error, setError] = useState('');
   const [unlockNotifications, setUnlockNotifications] = useState([]);
   const [currentUnlockIndex, setCurrentUnlockIndex] = useState(0);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [hintText, setHintText] = useState('');
+  const [shards, setShards] = useState(0);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -27,8 +31,21 @@ const Game = () => {
     scrollToBottom();
   }, [gameState.questions]);
 
+  useEffect(() => {
+    fetchUserShards();
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const fetchUserShards = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      setShards(response.data.user.shards || 0);
+    } catch (error) {
+      console.error('Failed to fetch shards:', error);
+    }
   };
 
   const startGame = async () => {
@@ -36,23 +53,26 @@ const Game = () => {
     setGameState(prev => ({ ...prev, loading: true }));
 
     try {
+      await fetchUserShards();
+      
       const response = await api.post('/game/start');
-      if (response.data.success) {
-        setGameState({
-          gameId: response.data.gameId,
-          status: 'playing',
-          questions: [],
-          questionCount: 0,
-          remainingGuesses: 3,
-          character: null,
-          characterImage: null,
-          loading: false
-        });
-      } else {
-        setError(response.data.message || 'Failed to start game');
-        setGameState(prev => ({ ...prev, loading: false }));
-      }
+      
+      setGameState({
+        gameId: response.data.gameId,
+        status: 'playing',
+        questions: [],
+        questionCount: 0,
+        remainingGuesses: 3,
+        remainingQuestions: 10,
+        character: null,
+        characterImage: null,
+        loading: false
+      });
+      setHintUsed(false);
+      setHintText('');
+      setError('');
     } catch (error) {
+      console.error('Start game error:', error);
       setError('Failed to start game. Please try again.');
       setGameState(prev => ({ ...prev, loading: false }));
     }
@@ -61,6 +81,10 @@ const Game = () => {
   const askQuestion = async (e) => {
     e.preventDefault();
     if (!question.trim() || gameState.status !== 'playing' || gameState.loading) return;
+    if (gameState.remainingQuestions <= 0) {
+      setError('You have used all 10 questions! Time to guess.');
+      return;
+    }
 
     setError('');
     setGameState(prev => ({ ...prev, loading: true }));
@@ -80,23 +104,75 @@ const Game = () => {
 
       setGameState(prev => ({
         ...prev,
-        questions: [...prev.questions, {
-          type: 'ai',
+        questions: [...prev.questions, { 
+          type: 'ai', 
           text: response.data.answer,
           questionCount: response.data.questionCount
         }],
         questionCount: response.data.questionCount,
+        remainingQuestions: 10 - response.data.questionCount,
         loading: false
       }));
     } catch (error) {
-      setError('Failed to get answer. Please try again.');
-      setGameState(prev => ({ ...prev, loading: false }));
+      if (error.response?.data?.limitReached) {
+        setError('You have used all 10 questions! Time to guess.');
+        setGameState(prev => ({ ...prev, loading: false }));
+      } else {
+        console.error('Question error:', error);
+        setError('Failed to get answer. Please try again.');
+        setGameState(prev => ({ ...prev, loading: false }));
+      }
+    }
+  };
+
+  const useHint = async () => {
+    if (hintUsed || gameState.status !== 'playing') return;
+
+    try {
+      const response = await api.post('/game/hint', {
+        gameId: gameState.gameId
+      });
+
+      if (response.data.success) {
+        setHintUsed(true);
+        setHintText(response.data.hint);
+        setShards(response.data.shards);
+        
+        setGameState(prev => ({
+          ...prev,
+          questions: [...prev.questions, {
+            type: 'hint',
+            text: `💡 Hint: ${response.data.hint}`
+          }]
+        }));
+      }
+    } catch (error) {
+      console.error('Hint error:', error);
+      setError(error.response?.data?.message || 'Failed to use hint');
     }
   };
 
   const makeGuess = async (e) => {
     e.preventDefault();
-    if (!guess.trim() || gameState.status !== 'playing' || gameState.loading) return;
+    
+    // Validate guess
+    if (!guess.trim()) {
+      setError('Please enter a guess!');
+      return;
+    }
+    
+    if (gameState.status !== 'playing') {
+      setError('Game is not active!');
+      return;
+    }
+    
+    if (gameState.loading) return;
+
+    // Check if gameId exists
+    if (!gameState.gameId) {
+      setError('No active game found. Please start a new game.');
+      return;
+    }
 
     setError('');
     setGameState(prev => ({ ...prev, loading: true }));
@@ -118,10 +194,12 @@ const Game = () => {
         setGuess('');
         setShowGuessInput(false);
 
-        // Show unlock notifications
         if (response.data.unlockedItems && response.data.unlockedItems.length > 0) {
           setUnlockNotifications(response.data.unlockedItems);
           setCurrentUnlockIndex(0);
+        }
+        if (response.data.shards !== undefined) {
+          setShards(response.data.shards);
         }
       } else if (response.data.gameOver) {
         setGameState(prev => ({
@@ -144,10 +222,18 @@ const Game = () => {
           }]
         }));
         setGuess('');
-        setShowGuessInput(false);
       }
     } catch (error) {
-      setError('Failed to make guess. Please try again.');
+      console.error('Guess error:', error);
+      if (error.response?.status === 400) {
+        setError(error.response?.data?.message || 'Invalid guess. Please try again.');
+      } else if (error.response?.status === 404) {
+        setError('Game not found. Please start a new game.');
+        // Reset game state
+        setGameState(prev => ({ ...prev, status: 'idle', gameId: null }));
+      } else {
+        setError('Failed to make guess. Please try again.');
+      }
       setGameState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -171,6 +257,7 @@ const Game = () => {
         }]
       }));
     } catch (error) {
+      console.error('Give up error:', error);
       setError('Failed to give up. Please try again.');
     }
   };
@@ -191,6 +278,7 @@ const Game = () => {
       questions: [],
       questionCount: 0,
       remainingGuesses: 3,
+      remainingQuestions: 10,
       character: null,
       characterImage: null,
       loading: false
@@ -201,6 +289,8 @@ const Game = () => {
     setError('');
     setUnlockNotifications([]);
     setCurrentUnlockIndex(0);
+    setHintUsed(false);
+    setHintText('');
   };
 
   const goHome = () => {
@@ -209,7 +299,6 @@ const Game = () => {
 
   const currentUnlock = unlockNotifications[currentUnlockIndex] || null;
 
-  // ===== IDLE STATE =====
   if (gameState.status === 'idle') {
     return (
       <div className="game-container fade-in">
@@ -218,6 +307,8 @@ const Game = () => {
             <h1>🎯 Ready to Play?</h1>
             <p>AI will pick a secret anime character. You ask questions and guess!</p>
             <p className="game-hint">💡 You have 3 wrong guesses before game over</p>
+            <p className="game-hint">📝 You have 10 questions per game</p>
+            <p className="game-hint">🎴 You have {shards} Shards</p>
             <button
               className="btn btn-primary start-btn"
               onClick={startGame}
@@ -225,16 +316,15 @@ const Game = () => {
             >
               {gameState.loading ? 'Starting...' : 'Start New Game 🚀'}
             </button>
+            {error && <div className="game-error">{error}</div>}
           </div>
         </div>
       </div>
     );
   }
 
-  // ===== PLAYING, WON, LOST STATES =====
   return (
     <div className="game-container fade-in">
-      {/* Unlock Popup */}
       {currentUnlock && (
         <div className="unlock-popup">
           <div className="unlock-popup-content">
@@ -283,7 +373,6 @@ const Game = () => {
         </div>
       )}
 
-      {/* Game Header */}
       <div className="game-header">
         <div className="game-info">
           <span className="game-status">
@@ -291,10 +380,11 @@ const Game = () => {
             {gameState.status === 'won' && '🎉 Won!'}
             {gameState.status === 'lost' && '😔 Game Over'}
           </span>
-          <span className="game-count">Questions: {gameState.questionCount}</span>
+          <span className="game-count">Questions: {gameState.remainingQuestions} left</span>
           {gameState.status === 'playing' && (
             <span className="game-guesses">Guesses left: {gameState.remainingGuesses}</span>
           )}
+          <span className="game-shards">🎴 {shards} Shards</span>
         </div>
         {gameState.status === 'playing' && (
           <button className="btn btn-danger btn-sm" onClick={giveUp}>
@@ -303,7 +393,6 @@ const Game = () => {
         )}
       </div>
 
-      {/* Chat Container */}
       <div className="chat-container">
         <div className="chat-messages">
           {gameState.questions.length === 0 && (
@@ -313,19 +402,36 @@ const Game = () => {
             </div>
           )}
           
-          {gameState.questions.map((msg, index) => (
-            <div key={index} className={`chat-message ${msg.type}`}>
-              <div className="message-avatar">
-                {msg.type === 'user' ? '👤' : msg.type === 'ai' ? '🤖' : '📢'}
+          {gameState.questions.map((msg, index) => {
+            let avatar = '📢';
+            let msgClass = 'system';
+            
+            if (msg.type === 'user') {
+              avatar = '👤';
+              msgClass = 'user';
+            } else if (msg.type === 'ai') {
+              avatar = '🤖';
+              msgClass = 'ai';
+            } else if (msg.type === 'hint') {
+              avatar = '💡';
+              msgClass = 'hint';
+            } else {
+              avatar = '📢';
+              msgClass = 'system';
+            }
+
+            return (
+              <div key={index} className={`chat-message ${msgClass}`}>
+                <div className="message-avatar">{avatar}</div>
+                <div className="message-content">
+                  <div className="message-text">{msg.text}</div>
+                  {msg.type === 'ai' && msg.questionCount && (
+                    <div className="message-meta">Question #{msg.questionCount}</div>
+                  )}
+                </div>
               </div>
-              <div className="message-content">
-                <div className="message-text">{msg.text}</div>
-                {msg.type === 'ai' && msg.questionCount && (
-                  <div className="message-meta">Question #{msg.questionCount}</div>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           
           {gameState.loading && (
             <div className="chat-message ai">
@@ -343,7 +449,6 @@ const Game = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Result States */}
         {gameState.status === 'won' && (
           <div className="game-result win">
             <h2>🎉 Congratulations!</h2>
@@ -380,7 +485,6 @@ const Game = () => {
           </div>
         )}
 
-        {/* Input Area */}
         {gameState.status === 'playing' && (
           <div className="chat-input-area">
             <div className="input-tabs">
@@ -389,6 +493,12 @@ const Game = () => {
                 onClick={() => setShowGuessInput(false)}
               >
                 Ask Question
+                {gameState.remainingQuestions > 0 && (
+                  <span className="tab-badge">{gameState.remainingQuestions} left</span>
+                )}
+                {gameState.remainingQuestions <= 0 && (
+                  <span className="tab-badge disabled">🔒</span>
+                )}
               </button>
               <button 
                 className={`tab-btn ${showGuessInput ? 'active' : ''}`}
@@ -398,23 +508,40 @@ const Game = () => {
               </button>
             </div>
 
+            {gameState.remainingQuestions <= 0 && !showGuessInput && (
+              <div className="no-questions-message">
+                ⚠️ You've used all 10 questions! Switch to <strong>Make Guess</strong> tab to guess the character.
+              </div>
+            )}
+
             {!showGuessInput ? (
               <form onSubmit={askQuestion} className="chat-form">
                 <input
                   type="text"
                   className="form-control chat-input"
-                  placeholder="Ask a question... (e.g., 'Is she from Naruto?')"
+                  placeholder={gameState.remainingQuestions <= 0 ? "No questions left! Make a guess." : "Ask a question... (e.g., 'Is she from Naruto?')"}
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  disabled={gameState.loading}
+                  disabled={gameState.loading || gameState.remainingQuestions <= 0}
                 />
-                <button 
-                  type="submit" 
-                  className="btn btn-primary send-btn"
-                  disabled={!question.trim() || gameState.loading}
-                >
-                  Ask ➤
-                </button>
+                <div className="button-group">
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary send-btn"
+                    disabled={!question.trim() || gameState.loading || gameState.remainingQuestions <= 0}
+                  >
+                    Ask ➤
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn btn-warning hint-btn ${hintUsed ? 'used' : ''}`}
+                    onClick={useHint}
+                    disabled={hintUsed || gameState.loading}
+                    title={hintUsed ? 'Hint already used' : 'Use 50 Shards for a hint'}
+                  >
+                    {hintUsed ? '💡 Used' : '💡 Hint (50 Shards)'}
+                  </button>
+                </div>
               </form>
             ) : (
               <form onSubmit={makeGuess} className="chat-form">

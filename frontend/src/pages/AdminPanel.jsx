@@ -17,6 +17,7 @@ const AdminPanel = () => {
     anime: '',
     image: '',
     description: '',
+    crucialHint: '',
     traits: {
       gender: 'Unknown',
       species: 'Human',
@@ -121,8 +122,17 @@ const AdminPanel = () => {
   };
 
   // ===================== CHARACTER CRUD =====================
+
   const handleCharChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Handle crucialHint (top-level field)
+    if (name === 'crucialHint') {
+      setCharForm(prev => ({ ...prev, crucialHint: value }));
+      return;
+    }
+    
+    // Handle nested fields (e.g., traits.gender, attributes.isMainCharacter)
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setCharForm(prev => ({
@@ -132,11 +142,17 @@ const AdminPanel = () => {
           [child]: type === 'checkbox' ? checked : value
         }
       }));
-    } else if (type === 'checkbox') {
-      setCharForm(prev => ({ ...prev, [name]: checked }));
-    } else {
-      setCharForm(prev => ({ ...prev, [name]: value }));
+      return;
     }
+    
+    // Handle top-level checkbox fields
+    if (type === 'checkbox') {
+      setCharForm(prev => ({ ...prev, [name]: checked }));
+      return;
+    }
+    
+    // Handle all other top-level fields
+    setCharForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleCharArray = (e, field) => {
@@ -175,6 +191,7 @@ const AdminPanel = () => {
       anime: '',
       image: '',
       description: '',
+      crucialHint: '',
       traits: {
         gender: 'Unknown',
         species: 'Human',
@@ -203,6 +220,7 @@ const AdminPanel = () => {
       anime: char.anime,
       image: char.image || '',
       description: char.description,
+      crucialHint: char.crucialHint || '',
       traits: {
         gender: char.traits.gender || 'Unknown',
         species: char.traits.species || 'Human',
@@ -244,7 +262,6 @@ const AdminPanel = () => {
     if (type === 'checkbox') {
       setBannerForm(prev => ({ ...prev, [name]: checked }));
     } else if (name === 'unlockType') {
-      // Reset condition when type changes
       let condition = {};
       if (value === 'total_guesses') condition = { totalGuesses: '' };
       else if (value === 'anime_guesses') condition = { anime: '', count: '' };
@@ -266,7 +283,6 @@ const AdminPanel = () => {
     setError('');
     setSuccess('');
     try {
-      // Convert numeric values
       const form = { ...bannerForm };
       if (form.unlockCondition.totalGuesses) form.unlockCondition.totalGuesses = Number(form.unlockCondition.totalGuesses);
       if (form.unlockCondition.count) form.unlockCondition.count = Number(form.unlockCondition.count);
@@ -619,8 +635,29 @@ const AdminPanel = () => {
                 <input type="text" className="form-control" value={charForm.traits.affiliations.join(', ')} onChange={(e) => handleCharArray(e, 'affiliations')} />
               </div>
               <div className="form-group">
+                <label>Relationships (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.relationships.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'relationships')}
+                  placeholder="e.g., Brother of Ace, Student of Mihawk"
+                />
+              </div>
+              <div className="form-group">
                 <label>Key Events (comma separated)</label>
                 <input type="text" className="form-control" value={charForm.traits.keyEvents.join(', ')} onChange={(e) => handleCharArray(e, 'keyEvents')} />
+              </div>
+              <div className="form-group">
+                <label>Crucial Hint</label>
+                <input
+                  type="text"
+                  name="crucialHint"
+                  className="form-control"
+                  placeholder="e.g., This character ate a Devil Fruit"
+                  value={charForm.crucialHint || ''}
+                  onChange={handleCharChange}
+                />
               </div>
               <div className="form-row checkboxes">
                 <label className="checkbox-label"><input type="checkbox" name="attributes.isMainCharacter" checked={charForm.attributes.isMainCharacter} onChange={handleCharChange} /> Main</label>

@@ -27,13 +27,34 @@ const userSchema = new mongoose.Schema({
     enum: ['player', 'admin'],
     default: 'player'
   },
+  // ===== LIFETIME STATS =====
   stats: {
     gamesPlayed: { type: Number, default: 0 },
     gamesWon: { type: Number, default: 0 },
     totalQuestions: { type: Number, default: 0 },
     winStreak: { type: Number, default: 0 }
   },
-  // ===== ACHIEVEMENTS SYSTEM =====
+  // ===== SEASON STATS =====
+  seasonStats: {
+    currentSeason: { type: Number, default: 1 },
+    seasonWins: { type: Number, default: 0 },
+    seasonPlayed: { type: Number, default: 0 },
+    seasonStreak: { type: Number, default: 0 }
+  },
+  // ===== SEASON HISTORY =====
+  seasonHistory: [{
+    season: { type: Number, required: true },
+    wins: { type: Number, default: 0 },
+    streak: { type: Number, default: 0 },
+    rank: { type: Number, default: null },
+    isWinner: { type: Boolean, default: false }
+  }],
+  // ===== SHARDS (Game Currency) =====
+  shards: {
+    type: Number,
+    default: 0
+  },
+  // ===== ACHIEVEMENTS =====
   totalGuesses: { type: Number, default: 0 },
   animeGuesses: { type: Map, of: Number, default: {} },
   achievements: {

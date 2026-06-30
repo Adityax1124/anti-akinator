@@ -281,3 +281,14 @@
   .search-input { font-size: 13px; padding: 6px 32px 6px 12px; }
   .search-wrapper { margin: 4px 0; }
 }
+.shards-display {
+  margin-left: 8px;
+  padding: 2px 10px;
+  background: rgba(253, 203, 110, 0.15);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fdcb6e;
+  border: 1px solid rgba(253, 203, 110, 0.2);
+  white-space: nowrap;
+}

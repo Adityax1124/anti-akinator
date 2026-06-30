@@ -20,6 +20,10 @@ const characterSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+    crucialHint: {                    // 👈 ADD THIS
+    type: String,
+    required: true
+  },
   traits: {
     gender: { type: String, enum: ['Male', 'Female', 'Other', 'Unknown'], default: 'Unknown' },
     species: { type: String, default: 'Human' },

@@ -12,7 +12,13 @@ import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import AdminPanel from './pages/AdminPanel';
+import SeasonWinners from './pages/SeasonWinners';
 import './App.css';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Refund from './pages/Refund';
+import Footer from './components/Footer';
+import BuyShards from './pages/BuyShards';
 
 function App() {
   return (
@@ -31,8 +37,14 @@ function App() {
               <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
               <Route path="/profile/:username" element={<PrivateRoute><PublicProfile /></PrivateRoute>} />
               <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
+              <Route path="/season-winners" element={<PrivateRoute><SeasonWinners /></PrivateRoute>} />
               <Route path="*" element={<Navigate to="/" />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/refund" element={<Refund />} />
+              <Route path="/buy-shards" element={<PrivateRoute><BuyShards /></PrivateRoute>} />
             </Routes>
+            <Footer />
           </main>
         </div>
       </Router>

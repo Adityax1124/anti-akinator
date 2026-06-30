@@ -1,5 +1,5 @@
 /* ============================================================
-   PROFILE PAGE – Cover Banner with Stats bottom‑right
+   PROFILE PAGE – Premium Anime Profile
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap');
@@ -12,12 +12,12 @@
 }
 
 /* ============================================================
-   PROFILE BANNER (Cover)
+   PROFILE BANNER – Bigger & Full
    ============================================================ */
 .profile-banner {
   position: relative;
   width: 100%;
-  height: 280px;
+  height: 260px;
   border-radius: 24px;
   background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
   background-size: cover;
@@ -34,11 +34,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%);
   z-index: 1;
 }
 
-/* ---- Edit Banner Button ---- */
 .banner-edit-btn {
   position: absolute;
   top: 16px;
@@ -59,23 +58,32 @@
   transform: scale(1.05);
 }
 
-/* ---- User Info (bottom‑left) ---- */
-.banner-user-row {
+.banner-bottom-row {
   position: absolute;
-  bottom: 30px;
-  left: 30px;
+  bottom: 20px;
+  left: 28px;
+  right: 28px;
   z-index: 5;
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 16px;
+}
+
+.banner-left {
+  display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+  flex-shrink: 0;
 }
 
 .profile-photo-large {
-  width: 100px;
-  height: 100px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
-  border: 4px solid rgba(255, 255, 255, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.2);
   background-size: cover;
   background-position: center;
   cursor: pointer;
@@ -96,7 +104,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 900;
   color: rgba(255, 255, 255, 0.3);
   background: linear-gradient(135deg, #2d2d5e, #1a1a2e);
@@ -108,33 +116,37 @@
   right: 0;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
-  padding: 4px 8px;
-  border-radius: 10px;
-  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  font-size: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-/* ===== TITLE DISPLAY (below username) ===== */
+
 .banner-user-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0px;
+}
+
+.banner-username {
+  font-size: 26px;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
+  margin: 0;
+  line-height: 1.2;
 }
 
 .title-display {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  padding: 2px 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: fit-content;
-}
-
-.title-display:hover {
-  transform: scale(1.02);
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
 }
 
 .title-name {
@@ -144,9 +156,9 @@
 .title-placeholder {
   color: rgba(255, 255, 255, 0.3);
   font-weight: 400;
-  font-size: 14px;
+  font-size: 12px;
   border: 1px dashed rgba(255, 255, 255, 0.15);
-  padding: 2px 12px;
+  padding: 1px 10px;
   border-radius: 20px;
   transition: all 0.3s ease;
 }
@@ -157,262 +169,49 @@
 }
 
 .title-rarity-badge {
-  font-size: 14px;
-}
-
-/* ===== Mobile Responsive ===== */
-@media (max-width: 480px) {
-  .title-display {
-    font-size: 14px;
-  }
-  
-  .title-placeholder {
-    font-size: 11px;
-    padding: 1px 10px;
-  }
-}
-.banner-user-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.banner-username {
-  font-size: 32px;
-  font-weight: 900;
-  color: white;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
-  margin: 0;
-  line-height: 1.2;
-}
-
-/* ============================================================
-   TOP 10 PROFILE PHOTOS
-   ============================================================ */
-.profile-photos-section {
-  background: rgba(14, 14, 30, 0.6);
-  backdrop-filter: blur(12px);
-  padding: 24px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  margin-bottom: 30px;
-}
-
-.photos-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.photos-section-header h2 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.photos-count {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
-  font-weight: 600;
-}
-
-.top-photos-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
-}
-
-.top-photo-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.top-photo-item.unlocked:hover {
-  transform: scale(1.05);
-}
-
-.top-photo-item.locked {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.top-photo-item.equipped .top-photo-preview {
-  border-color: #00d4ff;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-}
-
-.top-photo-preview {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: #1a1a2e;
-  background-size: cover;
-  background-position: center;
-  border: 3px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.top-photo-preview:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.locked-preview {
-  background: rgba(255, 255, 255, 0.02);
-  border: 3px dashed rgba(255, 255, 255, 0.05);
-}
-
-.lock-icon-small {
-  font-size: 20px;
-  opacity: 0.3;
-}
-
-.photo-rarity-badge {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  font-size: 14px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  padding: 2px;
-  backdrop-filter: blur(4px);
-}
-
-.photo-equipped-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  font-size: 14px;
-  background: rgba(0, 212, 255, 0.2);
-  border-radius: 50%;
-  padding: 2px;
-}
-
-.top-photo-name {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-  max-width: 70px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .top-photos-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-  }
-  
-  .top-photo-preview {
-    width: 56px;
-    height: 56px;
-  }
-  
-  .top-photo-name {
-    font-size: 10px;
-    max-width: 56px;
-  }
-  
-  .photos-section-header h2 {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .top-photos-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
-  }
-  
-  .top-photo-preview {
-    width: 44px;
-    height: 44px;
-    border-width: 2px;
-  }
-  
-  .top-photo-name {
-    font-size: 8px;
-    max-width: 44px;
-  }
-  
-  .lock-icon-small {
-    font-size: 14px;
-  }
-  
-  .photo-rarity-badge {
-    font-size: 10px;
-  }
-}
-
-.title-prefix {
-  font-weight: 700;
-  margin-right: 6px;
-}
-.title-suffix {
-  font-weight: 700;
-  margin-left: 6px;
-}
-
-.title-edit-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  padding: 2px 16px;
-  border-radius: 20px;
   font-size: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: fit-content;
-}
-.title-edit-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
 }
 
-/* ---- Stats – bottom‑right ---- */
+/* ===== Stats – Vertical Stack ===== */
 .banner-stats {
-  position: absolute;
-  bottom: 30px;
-  right: 30px;
-  z-index: 5;
   display: flex;
-  gap: 24px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(12px);
-  padding: 10px 24px;
-  border-radius: 16px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  padding: 6px 16px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .banner-stat {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0px 0;
 }
+
 .banner-stat-value {
-  display: block;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: #fff;
+  min-width: 28px;
+  text-align: right;
 }
+
 .banner-stat-label {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  min-width: 55px;
 }
 
 /* ============================================================
-   PROFILE STATS GRID (unchanged)
+   PROFILE STATS GRID
    ============================================================ */
 .profile-stats-grid {
   display: grid;
@@ -449,7 +248,120 @@
 }
 
 /* ============================================================
-   GAME HISTORY (same as before)
+   TOP 10 PROFILE PHOTOS
+   ============================================================ */
+.profile-photos-section {
+  background: rgba(14, 14, 30, 0.6);
+  backdrop-filter: blur(12px);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  margin-bottom: 30px;
+}
+
+.photos-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.photos-section-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+.photos-count {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.top-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.top-photo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.top-photo-item.unlocked:hover {
+  transform: scale(1.05);
+}
+.top-photo-item.locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.top-photo-item.equipped .top-photo-preview {
+  border-color: #00d4ff;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+.top-photo-preview {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #1a1a2e;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.top-photo-preview:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.locked-preview {
+  background: rgba(255, 255, 255, 0.02);
+  border: 3px dashed rgba(255, 255, 255, 0.05);
+}
+.lock-icon-small {
+  font-size: 20px;
+  opacity: 0.3;
+}
+
+.photo-rarity-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  padding: 2px;
+  backdrop-filter: blur(4px);
+}
+
+.photo-equipped-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 14px;
+  background: rgba(0, 212, 255, 0.2);
+  border-radius: 50%;
+  padding: 2px;
+}
+
+.top-photo-name {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  max-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   GAME HISTORY
    ============================================================ */
 .profile-history {
   background: rgba(14, 14, 30, 0.6);
@@ -464,6 +376,7 @@
   margin-bottom: 16px;
   color: #fff;
 }
+
 .history-list {
   display: flex;
   flex-direction: column;
@@ -484,6 +397,7 @@
 .history-item:hover {
   border-color: rgba(0, 212, 255, 0.15);
 }
+
 .history-status {
   display: flex;
   align-items: center;
@@ -496,6 +410,7 @@
 .status-lost { color: #e74c3c; }
 .status-abandoned { color: #fdcb6e; }
 .status-unknown { color: #888; }
+
 .history-details {
   flex: 1;
   display: flex;
@@ -531,7 +446,7 @@
 }
 
 /* ============================================================
-   MODALS (Banner, Title, Photo)
+   MODALS
    ============================================================ */
 .modal-overlay {
   position: fixed;
@@ -548,6 +463,7 @@
   padding: 20px;
   animation: fadeInUp 0.3s ease-out;
 }
+
 .modal-content {
   background: rgba(14, 14, 30, 0.95);
   backdrop-filter: blur(20px);
@@ -560,6 +476,7 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
 }
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -584,7 +501,7 @@
   transform: rotate(90deg);
 }
 
-/* ---- Banner Grid ---- */
+/* ===== BANNER GRID ===== */
 .banner-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -610,6 +527,7 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
 .banner-preview {
   height: 120px;
   background-size: cover;
@@ -648,6 +566,7 @@
   font-size: 32px;
   opacity: 0.3;
 }
+
 .banner-info {
   padding: 12px;
 }
@@ -661,7 +580,7 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* ---- Title Grid ---- */
+/* ===== TITLE GRID ===== */
 .title-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -679,6 +598,7 @@
   border-color: #00d4ff;
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
 }
+
 .title-card {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
@@ -719,7 +639,7 @@
   font-weight: 700;
 }
 
-/* ---- Photo Grid ---- */
+/* ===== PHOTO GRID ===== */
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -737,6 +657,7 @@
   border-color: #00d4ff;
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
 }
+
 .photo-preview {
   width: 100%;
   aspect-ratio: 1;
@@ -760,6 +681,7 @@
   right: 4px;
   font-size: 16px;
 }
+
 .photo-info {
   padding: 8px 4px;
   text-align: center;
@@ -776,6 +698,60 @@
 .photo-rarity {
   font-size: 11px;
   font-weight: 600;
+}
+
+/* ============================================================
+   PHOTO SEARCH
+   ============================================================ */
+.photo-search-container {
+  position: relative;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.photo-search-input {
+  width: 100%;
+  padding: 10px 40px 10px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: white;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.photo-search-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.photo-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.photo-search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.3s ease;
+}
+
+.photo-search-clear:hover {
+  color: white;
+}
+
+.photo-search-empty {
+  text-align: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
 }
 
 /* ============================================================
@@ -811,139 +787,246 @@
 }
 
 /* ============================================================
-   RESPONSIVE
+   MOBILE RESPONSIVE
    ============================================================ */
-@media (max-width: 1024px) {
-  .banner-stats {
-    bottom: 20px;
-    right: 20px;
-    padding: 8px 16px;
-    gap: 16px;
-  }
-  .banner-stat-value { font-size: 18px; }
-}
 
 @media (max-width: 768px) {
   .profile-banner {
-    height: 220px;
+    height: 200px;
   }
-  .banner-user-row {
-    bottom: 20px;
-    left: 20px;
-    gap: 16px;
-  }
-  .profile-photo-large {
-    width: 70px;
-    height: 70px;
-  }
-  .banner-username {
-    font-size: 24px;
-  }
-  .banner-stats {
-    bottom: 16px;
+  
+  .banner-bottom-row {
+    bottom: 14px;
+    left: 16px;
     right: 16px;
-    padding: 6px 14px;
+    gap: 10px;
+  }
+  
+  .banner-left {
     gap: 12px;
   }
-  .banner-stat-value { font-size: 16px; }
-  .banner-stat-label { font-size: 9px; }
+  
+  .profile-photo-large {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .banner-username {
+    font-size: 18px;
+  }
+  
+  .title-display {
+    font-size: 12px;
+  }
+  
+  .banner-stats {
+    padding: 4px 12px;
+  }
+  
+  .banner-stat-value {
+    font-size: 16px;
+    min-width: 22px;
+  }
+  
+  .banner-stat-label {
+    font-size: 9px;
+    min-width: 45px;
+  }
+  
   .profile-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
   .history-item {
     flex-direction: column;
     align-items: stretch;
   }
-  .history-status { justify-content: center; }
-  .history-details { flex-direction: column; align-items: center; }
-  .history-meta { flex-direction: column; gap: 4px; }
+  
+  .history-status {
+    justify-content: center;
+  }
+  
+  .history-details {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .history-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .modal-content {
+    padding: 20px;
+    max-height: 90vh;
+  }
+  
+  .top-photos-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  
+  .top-photo-preview {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .top-photo-name {
+    font-size: 10px;
+    max-width: 56px;
+  }
+  
+  .photos-section-header h2 {
+    font-size: 16px;
+  }
+  
+  .banner-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  .banner-preview {
+    height: 80px !important;
+  }
+  
+  .banner-info h4 {
+    font-size: 12px !important;
+  }
+  
+  .banner-info p {
+    font-size: 10px !important;
+  }
+  
+  .photo-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  .photo-info h4 {
+    font-size: 10px !important;
+  }
+  
+  .photo-anime {
+    font-size: 9px !important;
+  }
+  
+  .photo-rarity {
+    font-size: 9px !important;
+  }
+  
+  .title-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  .title-preview {
+    font-size: 13px !important;
+    padding: 6px !important;
+  }
+  
+  .title-card h4 {
+    font-size: 12px !important;
+  }
+  
+  .title-card p {
+    font-size: 10px !important;
+  }
 }
 
 @media (max-width: 480px) {
   .profile-banner {
-    height: 180px;
+    height: 170px;
     border-radius: 16px;
   }
-  .banner-user-row {
-    bottom: 12px;
-    left: 12px;
-    gap: 12px;
-  }
-  .profile-photo-large {
-    width: 60px;
-    height: 60px;
-    border-width: 3px;
-  }
-  .profile-photo-placeholder {
-    font-size: 28px;
-  }
-  .banner-username {
-    font-size: 20px;
-  }
-  .title-edit-btn {
-    font-size: 10px;
-    padding: 1px 12px;
-  }
-  .banner-stats {
+  
+  .banner-bottom-row {
     bottom: 10px;
-    right: 10px;
-    padding: 4px 12px;
+    left: 12px;
+    right: 12px;
+    gap: 6px;
+  }
+  
+  .banner-left {
     gap: 8px;
   }
-  .banner-stat-value { font-size: 14px; }
-  .banner-stat-label { font-size: 8px; }
+  
+  .profile-photo-large {
+    width: 44px;
+    height: 44px;
+    border-width: 2px;
+  }
+  
+  .banner-username {
+    font-size: 14px;
+  }
+  
+  .title-display {
+    font-size: 10px;
+  }
+  
+  .banner-stats {
+    padding: 4px 10px;
+  }
+  
+  .banner-stat-value {
+    font-size: 13px;
+    min-width: 18px;
+  }
+  
+  .banner-stat-label {
+    font-size: 8px;
+    min-width: 38px;
+  }
+  
+  .profile-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .profile-stats-grid .stat-number {
+    font-size: 24px;
+  }
+  
+  .modal-content {
+    padding: 16px;
+  }
+  
+  .modal-header h2 {
+    font-size: 18px;
+  }
+  
   .banner-edit-btn {
     top: 8px;
     right: 8px;
     padding: 4px 10px;
     font-size: 12px;
   }
-  .photo-edit-badge { font-size: 10px; padding: 2px 6px; }
-  .profile-stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .profile-stats-grid .stat-number { font-size: 24px; }
-}
-
-/* ===== Mobile Profile Banner ===== */
-@media (max-width: 480px) {
-  .profile-banner {
-    height: 160px;  /* shorter */
-    border-radius: 12px;
+  
+  .photo-edit-badge {
+    font-size: 8px;
+    padding: 2px 4px;
   }
   
-  .banner-user-row {
-    bottom: 10px;
-    left: 10px;
-    gap: 10px;
+  .top-photos-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
   }
   
-  .profile-photo-large {
-    width: 50px;
-    height: 50px;
+  .top-photo-preview {
+    width: 44px;
+    height: 44px;
+    border-width: 2px;
   }
   
-  .banner-username {
-    font-size: 16px;
+  .top-photo-name {
+    font-size: 8px;
+    max-width: 44px;
   }
   
-  .banner-stats {
-    bottom: 8px;
-    right: 8px;
-    padding: 4px 8px;
-    gap: 6px;
+  .lock-icon-small {
+    font-size: 14px;
   }
   
-  .banner-stat-value {
-    font-size: 12px;
-  }
-  
-  .banner-stat-label {
-    font-size: 7px;
-  }
-  
-  .title-edit-btn {
-    font-size: 9px;
-    padding: 1px 8px;
+  .photo-rarity-badge {
+    font-size: 10px;
   }
 }

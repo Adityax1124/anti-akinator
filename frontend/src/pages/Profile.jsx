@@ -18,6 +18,7 @@ const Profile = () => {
     title: null,
     profilePhoto: null
   });
+  const [photoSearchTerm, setPhotoSearchTerm] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -130,6 +131,11 @@ const Profile = () => {
     }
   };
 
+  const filteredPhotos = profilePhotos.filter(photo => 
+    photo.isUnlocked && 
+    photo.name.toLowerCase().includes(photoSearchTerm.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="profile-container">
@@ -166,54 +172,56 @@ const Profile = () => {
           ✏️
         </button>
 
-        <div className="banner-user-row">
-          <div 
-            className="profile-photo-large"
-            onClick={() => setShowPhotoModal(true)}
-            style={equippedPhoto?.imageUrl ? { backgroundImage: `url(${equippedPhoto.imageUrl})` } : {}}
-          >
-            {!equippedPhoto && (
-              <div className="profile-photo-placeholder">
-                <span>{user?.username?.charAt(0).toUpperCase() || 'U'}</span>
-              </div>
-            )}
-            <div className="photo-edit-badge">📷</div>
-          </div>
-
-          <div className="banner-user-info">
-            <h1 className="banner-username">{user?.username}</h1>
-            
+        {/* Bottom row with photo, username, title, and stats */}
+        <div className="banner-bottom-row">
+          <div className="banner-left">
             <div 
-              className="title-display"
-              onClick={() => setShowTitleModal(true)}
-              style={{ color: equippedTitle ? getRarityColor(equippedTitle.rarity) : 'rgba(255,255,255,0.4)' }}
+              className="profile-photo-large"
+              onClick={() => setShowPhotoModal(true)}
+              style={equippedPhoto?.imageUrl ? { backgroundImage: `url(${equippedPhoto.imageUrl})` } : {}}
             >
-              {equippedTitle ? (
-                <>
-                  <span className="title-name">{equippedTitle.displayName}</span>
-                  <span className="title-rarity-badge" style={{ color: getRarityColor(equippedTitle.rarity) }}>
-                    {getRarityEmoji(equippedTitle.rarity)}
-                  </span>
-                </>
-              ) : (
-                <span className="title-placeholder">✏️ Set Title</span>
+              {!equippedPhoto && (
+                <div className="profile-photo-placeholder">
+                  <span>{user?.username?.charAt(0).toUpperCase() || 'U'}</span>
+                </div>
               )}
+              <div className="photo-edit-badge">📷</div>
+            </div>
+
+            <div className="banner-user-info">
+              <h1 className="banner-username">{user?.username}</h1>
+              <div 
+                className="title-display"
+                onClick={() => setShowTitleModal(true)}
+                style={{ color: equippedTitle ? getRarityColor(equippedTitle.rarity) : 'rgba(255,255,255,0.4)' }}
+              >
+                {equippedTitle ? (
+                  <>
+                    <span className="title-name">{equippedTitle.displayName}</span>
+                    <span className="title-rarity-badge" style={{ color: getRarityColor(equippedTitle.rarity) }}>
+                      {getRarityEmoji(equippedTitle.rarity)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="title-placeholder">✏️ Set Title</span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="banner-stats">
-          <div className="banner-stat">
-            <span className="banner-stat-value">{user?.stats?.gamesWon || 0}</span>
-            <span className="banner-stat-label">Wins</span>
-          </div>
-          <div className="banner-stat">
-            <span className="banner-stat-value">🔥 {user?.stats?.winStreak || 0}</span>
-            <span className="banner-stat-label">Streak</span>
-          </div>
-          <div className="banner-stat">
-            <span className="banner-stat-value">{user?.totalGuesses || 0}</span>
-            <span className="banner-stat-label">Guesses</span>
+          <div className="banner-stats">
+            <div className="banner-stat">
+              <span className="banner-stat-value">{user?.stats?.gamesWon || 0}</span>
+              <span className="banner-stat-label">WINS</span>
+            </div>
+            <div className="banner-stat">
+              <span className="banner-stat-value">🔥 {user?.stats?.winStreak || 0}</span>
+              <span className="banner-stat-label">STREAK</span>
+            </div>
+            <div className="banner-stat">
+              <span className="banner-stat-value">{user?.totalGuesses || 0}</span>
+              <span className="banner-stat-label">GUESSES</span>
+            </div>
           </div>
         </div>
       </div>
@@ -277,7 +285,7 @@ const Profile = () => {
                         </div>
                       )}
                     </div>
-                    <div className="top-photo-name">{photo?.name || 'Unknown'}</div>
+                    <div className="top-photo-name">{photo?.name || 'Unknown'} {photo?.rarity && `(${photo.rarity})`}</div>
                   </>
                 ) : (
                   <>
@@ -328,7 +336,7 @@ const Profile = () => {
         )}
       </div>
 
-      {/* ===== MODALS ===== */}
+      {/* ===== BANNER MODAL ===== */}
       {showBannerModal && (
         <div className="modal-overlay" onClick={() => setShowBannerModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -379,6 +387,7 @@ const Profile = () => {
         </div>
       )}
 
+      {/* ===== TITLE MODAL ===== */}
       {showTitleModal && (
         <div className="modal-overlay" onClick={() => setShowTitleModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -413,6 +422,7 @@ const Profile = () => {
         </div>
       )}
 
+      {/* ===== PROFILE PHOTO MODAL with Search ===== */}
       {showPhotoModal && (
         <div className="modal-overlay" onClick={() => setShowPhotoModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -420,8 +430,27 @@ const Profile = () => {
               <h2>📸 Profile Photos</h2>
               <button className="modal-close" onClick={() => setShowPhotoModal(false)}>✕</button>
             </div>
+            
+            <div className="photo-search-container">
+              <input
+                type="text"
+                className="photo-search-input"
+                placeholder="🔍 Search photos..."
+                value={photoSearchTerm}
+                onChange={(e) => setPhotoSearchTerm(e.target.value)}
+              />
+              {photoSearchTerm && (
+                <button 
+                  className="photo-search-clear"
+                  onClick={() => setPhotoSearchTerm('')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            
             <div className="photo-grid">
-              {profilePhotos.map((photo) => (
+              {(photoSearchTerm ? filteredPhotos : profilePhotos).map((photo) => (
                 <div 
                   key={photo._id} 
                   className={`photo-item ${photo.isUnlocked ? '' : 'locked'} ${equipped.profilePhoto === photo._id ? 'equipped' : ''}`}
@@ -445,6 +474,10 @@ const Profile = () => {
                 </div>
               ))}
             </div>
+            
+            {photoSearchTerm && filteredPhotos.length === 0 && (
+              <div className="photo-search-empty">No photos found matching "{photoSearchTerm}"</div>
+            )}
           </div>
         </div>
       )}

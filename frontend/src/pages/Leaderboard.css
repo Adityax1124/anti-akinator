@@ -216,3 +216,14 @@
     font-size: 24px;
   }
 }
+.season-countdown {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.season-countdown strong {
+  color: #ffd700;
+  font-weight: 700;
+}

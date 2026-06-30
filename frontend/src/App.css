@@ -22,7 +22,19 @@ body {
   margin: 0;
   padding: 0;
 }
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
+.main-content {
+  flex: 1;
+  padding: 80px 20px 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
   width: 8px;
