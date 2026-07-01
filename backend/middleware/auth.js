@@ -1,60 +1,143 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-/**
- * Middleware to authenticate the user via JWT token.
- * Attaches user object to req.user if valid token is provided.
- */
+// ===== AUTH MIDDLEWARE =====
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided. Please login.'
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+
     if (!token) {
       return res.status(401).json({
-        message: 'No token provided. Please authenticate.',
-        success: false
+        success: false,
+        message: 'No token provided. Please login.'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Token expired. Please login again.',
+          code: 'TOKEN_EXPIRED'
+        });
+      }
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token. Please login again.',
+          code: 'INVALID_TOKEN'
+        });
+      }
+      throw error;
+    }
+
+    // Get user from database
+    const user = await User.findById(decoded.userId)
+      .select('-password')
+      .populate('equipped.banner', 'gifUrl')
+      .populate('equipped.title', 'displayName displayType')
+      .populate('equipped.profilePhoto', 'imageUrl');
+
     if (!user) {
       return res.status(401).json({
-        message: 'User not found. Please authenticate.',
-        success: false
+        success: false,
+        message: 'User not found. Please login again.'
       });
     }
 
+    // Check if user is active/banned (if you have such fields)
+    // if (user.isBanned) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Your account has been suspended. Please contact support.'
+    //   });
+    // }
+
+    // Attach user to request
     req.user = user;
-    req.token = token;
+    req.userId = user._id;
+    req.userRole = user.role;
+
     next();
   } catch (error) {
-    res.status(401).json({
-      message: 'Invalid or expired token. Please authenticate again.',
-      success: false
+    console.error('Auth middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication error. Please try again.'
     });
   }
 };
 
-/**
- * Middleware to check if the authenticated user is an admin.
- * Must be used after authMiddleware.
- */
+// ===== ADMIN MIDDLEWARE =====
 const adminMiddleware = async (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({
-      message: 'Authentication required.',
-      success: false
+  try {
+    // First ensure user is authenticated
+    await authMiddleware(req, res, () => {});
+    
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Admin middleware error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Admin verification failed.'
     });
   }
-
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({
-      message: 'Admin access required.',
-      success: false
-    });
-  }
-
-  next();
 };
 
-module.exports = { authMiddleware, adminMiddleware };
+// ===== OPTIONAL: RATE LIMIT BY USER =====
+// You can use this in routes that need stricter rate limiting per user
+const userRateLimits = new Map();
+
+const checkUserRateLimit = (userId, endpoint, maxRequests, timeWindow) => {
+  const key = `${userId}:${endpoint}`;
+  const now = Date.now();
+  
+  if (!userRateLimits.has(key)) {
+    userRateLimits.set(key, {
+      timestamps: [now],
+      count: 1
+    });
+    return true;
+  }
+  
+  const data = userRateLimits.get(key);
+  const timestamps = data.timestamps.filter(t => now - t < timeWindow);
+  
+  if (timestamps.length >= maxRequests) {
+    return false;
+  }
+  
+  timestamps.push(now);
+  data.timestamps = timestamps;
+  data.count = timestamps.length;
+  userRateLimits.set(key, data);
+  return true;
+};
+
+module.exports = { 
+  authMiddleware, 
+  adminMiddleware,
+  checkUserRateLimit
+};

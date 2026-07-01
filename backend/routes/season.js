@@ -1,8 +1,40 @@
 const express = require('express');
+const { param, query, validationResult } = require('express-validator');
 const SeasonWinner = require('../models/SeasonWinner');
 const User = require('../models/User');
 const { getCurrentSeason, getSeasonDisplayName } = require('../utils/seasonUtils');
 const router = express.Router();
+
+// ===== HELPER: Sanitize input =====
+function sanitizeInput(str) {
+  if (!str) return '';
+  return str.replace(/[<>]/g, '').trim();
+}
+
+// ===== VALIDATION RULES =====
+const validateSeason = [
+  param('season')
+    .optional()
+    .isInt({ min: 202001, max: 209912 })
+    .withMessage('Invalid season format')
+];
+
+const validateUserId = [
+  param('userId')
+    .isMongoId()
+    .withMessage('Invalid user ID format')
+];
+
+const validateLeaderboard = [
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  query('season')
+    .optional()
+    .isInt({ min: 202001, max: 209912 })
+    .withMessage('Invalid season format')
+];
 
 // ===================== GET ALL SEASON WINNERS =====================
 router.get('/winners', async (req, res) => {
@@ -31,10 +63,11 @@ router.get('/winners', async (req, res) => {
         code: currentSeasonCode,
         display: `Season ${currentDisplayNumber}`
       },
-      winners: winnersWithDisplay
+      winners: winnersWithDisplay,
+      count: winnersWithDisplay.length
     });
   } catch (error) {
-    console.error('Error fetching season winners:', error);
+    console.error('Error fetching season winners:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching season winners'
@@ -43,11 +76,21 @@ router.get('/winners', async (req, res) => {
 });
 
 // ===================== GET SINGLE SEASON WINNER =====================
-router.get('/winners/:season', async (req, res) => {
+router.get('/winners/:season', validateSeason, async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
     const { season } = req.params;
+    const sanitizedSeason = parseInt(sanitizeInput(season));
     
-    const winner = await SeasonWinner.findOne({ season: parseInt(season) });
+    const winner = await SeasonWinner.findOne({ season: sanitizedSeason });
     
     if (!winner) {
       return res.status(404).json({
@@ -66,7 +109,7 @@ router.get('/winners/:season', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching season winner:', error);
+    console.error('Error fetching season winner:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching season winner'
@@ -86,7 +129,7 @@ router.get('/current', async (req, res) => {
       display: `Season ${displayNumber}`
     });
   } catch (error) {
-    console.error('Error fetching current season:', error);
+    console.error('Error fetching current season:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching current season'
@@ -95,20 +138,31 @@ router.get('/current', async (req, res) => {
 });
 
 // ===================== GET LEADERBOARD =====================
-router.get('/leaderboard', async (req, res) => {
+router.get('/leaderboard', validateLeaderboard, async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
     const { limit = 50, season } = req.query;
+    const sanitizedLimit = Math.min(parseInt(limit) || 50, 100);
     
     const currentSeasonCode = getCurrentSeason();
     const displayNumber = await getSeasonDisplayName(currentSeasonCode);
     
     if (season) {
-      const seasonWinners = await SeasonWinner.find({ season: parseInt(season) });
-      const seasonDisplayNumber = await getSeasonDisplayName(parseInt(season));
+      const sanitizedSeason = parseInt(sanitizeInput(season));
+      const seasonWinners = await SeasonWinner.find({ season: sanitizedSeason });
+      const seasonDisplayNumber = await getSeasonDisplayName(sanitizedSeason);
       
       return res.json({
         success: true,
-        season: parseInt(season),
+        season: sanitizedSeason,
         seasonDisplayName: `Season ${seasonDisplayNumber}`,
         leaderboard: seasonWinners.map((w, index) => ({
           rank: index + 1,
@@ -134,28 +188,23 @@ router.get('/leaderboard', async (req, res) => {
       'seasonStats.seasonStreak': -1,
       'seasonStats.seasonPlayed': -1
     })
-    .limit(parseInt(limit));
+    .limit(sanitizedLimit);
 
     // Format leaderboard with profile photo
     const leaderboard = users.map((user, index) => {
-      // Get the equipped profile photo URL
       let profilePhotoUrl = null;
       
-      // Check if user has an equipped profile photo
       if (user.equipped?.profilePhoto) {
-        // If it's populated, get the imageUrl
         if (user.equipped.profilePhoto.imageUrl) {
           profilePhotoUrl = user.equipped.profilePhoto.imageUrl;
         }
       }
       
-      // If no equipped photo, check achievements for equipped
       if (!profilePhotoUrl && user.achievements?.profilePhotos) {
         const equippedPhoto = user.achievements.profilePhotos.find(
           p => p.isEquipped === true
         );
         if (equippedPhoto && equippedPhoto.photoId) {
-          // Try to get imageUrl if populated
           if (equippedPhoto.photoId.imageUrl) {
             profilePhotoUrl = equippedPhoto.photoId.imageUrl;
           }
@@ -181,7 +230,7 @@ router.get('/leaderboard', async (req, res) => {
       totalPlayers: users.length
     });
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
+    console.error('Error fetching leaderboard:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching leaderboard'
@@ -190,8 +239,17 @@ router.get('/leaderboard', async (req, res) => {
 });
 
 // ===================== GET SEASON RANK =====================
-router.get('/rank/:userId', async (req, res) => {
+router.get('/rank/:userId', validateUserId, async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
     const { userId } = req.params;
     
     const user = await User.findById(userId);
@@ -225,7 +283,7 @@ router.get('/rank/:userId', async (req, res) => {
       userStats: user.seasonStats
     });
   } catch (error) {
-    console.error('Error fetching user rank:', error);
+    console.error('Error fetching user rank:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching user rank'

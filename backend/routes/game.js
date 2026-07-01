@@ -1,4 +1,5 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 const Character = require('../models/Character');
 const GameSession = require('../models/GameSession');
 const User = require('../models/User');
@@ -8,103 +9,185 @@ const { checkAndResetSeason } = require('../utils/seasonUtils');
 const { askAI } = require('../utils/aiRouter');
 const router = express.Router();
 
-// Helper: normalize string for flexible matching
+// ===== HELPER: Normalize string for flexible matching =====
 function normalize(str) {
+  if (!str) return '';
   return str.toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
+// ===== HELPER: Sanitize user input =====
+function sanitizeInput(str) {
+  if (!str) return '';
+  return str.replace(/[<>]/g, '').trim();
+}
+
+// ===== VALIDATION RULES =====
+const validateGameId = [
+  body('gameId')
+    .notEmpty()
+    .withMessage('Game ID is required')
+    .isMongoId()
+    .withMessage('Invalid game ID format')
+];
+
+const validateQuestion = [
+  body('question')
+    .trim()
+    .escape()
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Question must be between 1 and 500 characters')
+];
+
+const validateGuess = [
+  body('guess')
+    .trim()
+    .escape()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Guess must be between 1 and 100 characters')
+    .matches(/^[a-zA-Z0-9\s\-'.,!?]+$/)
+    .withMessage('Guess contains invalid characters')
+];
+
 // ===================== START GAME =====================
 router.post('/start', async (req, res) => {
   try {
-    const characters = await Character.find();
-    if (characters.length === 0) {
+    // Get total characters count
+    const characterCount = await Character.countDocuments();
+    
+    if (characterCount === 0) {
       return res.status(400).json({
-        message: 'No characters available. Please add some first.',
-        success: false
+        success: false,
+        message: 'No characters available. Please contact support.'
       });
     }
 
-    const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
+    // Randomly select a character
+    const randomIndex = Math.floor(Math.random() * characterCount);
+    const randomCharacter = await Character.findOne().skip(randomIndex);
 
-    const game = new GameSession({
+    if (!randomCharacter) {
+      return res.status(404).json({
+        success: false,
+        message: 'No character found. Please try again.'
+      });
+    }
+
+    // Check if user already has an active game
+    const activeGame = await GameSession.findOne({
       user: req.user._id,
-      character: randomCharacter._id,
       status: 'active'
     });
 
+    // If active game exists, end it first (cleanup)
+    if (activeGame) {
+      activeGame.status = 'abandoned';
+      activeGame.endedAt = new Date();
+      await activeGame.save();
+    }
+
+    // Create new game
+    const game = new GameSession({
+      user: req.user._id,
+      character: randomCharacter._id,
+      status: 'active',
+      startedAt: new Date()
+    });
+
     await game.save();
+
+    // Log (sanitized)
+    console.log(`🎮 Game started: ${game._id} for user ${req.user.username}`);
 
     res.json({
       success: true,
       gameId: game._id,
       message: 'Game started! Ask your first question.'
     });
+
   } catch (error) {
-    console.error('Start game error:', error);
+    console.error('Start game error:', {
+      message: error.message,
+      userId: req.user?._id,
+      ip: req.ip
+    });
     res.status(500).json({
-      message: 'Error starting game',
-      success: false
+      success: false,
+      message: 'Error starting game. Please try again.'
     });
   }
 });
 
 // ===================== ASK QUESTION =====================
-router.post('/question', async (req, res) => {
+router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
     const { gameId, question } = req.body;
+    const sanitizedQuestion = sanitizeInput(question);
 
-    if (!question || question.trim().length === 0) {
-      return res.status(400).json({
-        message: 'Please ask a question',
-        success: false
-      });
-    }
-
+    // Find game
     const game = await GameSession.findById(gameId).populate('character');
-    if (!game || game.status !== 'active') {
-      return res.status(400).json({
-        message: 'Invalid or ended game session',
-        success: false
+    
+    if (!game) {
+      return res.status(404).json({
+        success: false,
+        message: 'Game not found'
       });
     }
 
+    if (game.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Game is not active. Start a new game.'
+      });
+    }
+
+    // Verify ownership
     if (game.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
-        message: 'Not authorized',
-        success: false
+        success: false,
+        message: 'Not authorized to access this game'
       });
     }
 
-    // ===== CHECK 10 QUESTION LIMIT =====
+    // Check question limit
     if (game.totalQuestions >= 10) {
       return res.status(400).json({
-        message: 'You have used all 10 questions for this game! Use the Guess button.',
         success: false,
+        message: 'You have used all 10 questions. Please make a guess.',
         limitReached: true
       });
     }
 
     const character = game.character;
 
-    // ===== OPTIMIZED CHARACTER DATA (Reduced Tokens) =====
+    // ===== PREPARE CONTEXT FOR AI (Sanitized) =====
     const context = `
 Anime: ${character.anime}
 Description: ${character.description.substring(0, 150)}...
-Gender: ${character.traits.gender}
-Species: ${character.traits.species}
-Age: ${character.traits.age || 'Unknown'}
-Powers: ${character.traits.powers.slice(0, 3).join(', ') || 'None'}
-Personality: ${character.traits.personality.slice(0, 3).join(', ') || 'Unknown'}
-Affiliations: ${character.traits.affiliations.slice(0, 2).join(', ') || 'None'}
-Relationships: ${character.traits.relationships.slice(0, 2).join(', ') || 'None'}
-Main: ${character.attributes.isMainCharacter ? 'Yes' : 'No'}
-Villain: ${character.attributes.isVillain ? 'Yes' : 'No'}
-Female: ${character.attributes.isFemale ? 'Yes' : 'No'}
+Gender: ${character.traits?.gender || 'Unknown'}
+Species: ${character.traits?.species || 'Unknown'}
+Age: ${character.traits?.age || 'Unknown'}
+Powers: ${character.traits?.powers?.slice(0, 3).join(', ') || 'None'}
+Personality: ${character.traits?.personality?.slice(0, 3).join(', ') || 'Unknown'}
+Affiliations: ${character.traits?.affiliations?.slice(0, 2).join(', ') || 'None'}
+Relationships: ${character.traits?.relationships?.slice(0, 2).join(', ') || 'None'}
+Main: ${character.attributes?.isMainCharacter ? 'Yes' : 'No'}
+Villain: ${character.attributes?.isVillain ? 'Yes' : 'No'}
+Female: ${character.attributes?.isFemale ? 'Yes' : 'No'}
 
-USER: "${question}"`;
+USER: "${sanitizedQuestion}"`;
 
     // ===== SYSTEM PROMPT =====
     const systemPrompt = `
@@ -114,35 +197,20 @@ YOUR JOB:
 - Answer YES/NO questions about a secret anime character.
 - Use your anime knowledge to understand character traits, relationships, and abilities.
 - You are ALLOWED to infer answers from the provided data and your knowledge.
-- You are SMART enough to understand what "one eye closed" means if the description says "has a scar over his left eye".
 
 CRITICAL RULES – NEVER BREAK THESE:
 1. You DO NOT know the character's name. The name is NEVER provided to you.
 2. You CANNOT reveal, hint at, or confirm the character's identity in ANY way.
-3. If the user asks ANY question that attempts to identify the character (e.g., "Is it Luffy?", "Is my character Naruto?", "Is this Zoro?", "Is your character Goku?"), you MUST ALWAYS answer "Maybe".
+3. If the user asks ANY question that attempts to identify the character (e.g., "Is it Luffy?"), you MUST ALWAYS answer "Maybe".
 4. NEVER say "Yes" or "No" to identity questions. ONLY "Maybe".
-5. Even if you are 100% sure who the character is, you MUST pretend you don't know.
-6. You are answering questions about TRAITS, POWERS, RELATIONSHIPS, and APPEARANCE – NOT about identity.
-
-WHAT YOU CAN ANSWER:
-- "Does he have a scar?" → Yes/No (based on data/knowledge)
-- "Is he a swordsman?" → Yes/No
-- "Does he use fire?" → Yes/No
-- "Is he from One Piece?" → Yes/No (this is about anime, not identity)
-- "Is he a student of Mihawk?" → Yes/No (this is about a relationship, not identity)
-
-WHAT YOU CANNOT ANSWER:
-- "Is it Luffy?" → ALWAYS "Maybe"
-- "Is my character Zoro?" → ALWAYS "Maybe"
-- "Is your character Goku?" → ALWAYS "Maybe"
-- Any question that asks "Is it X?" or "Is my character X?" → ALWAYS "Maybe"
+5. You are answering questions about TRAITS, POWERS, RELATIONSHIPS, and APPEARANCE – NOT about identity.
 
 ALLOWED REPLIES ONLY:
 Yes, No, Maybe, Very likely, Unlikely
 
 Return EXACTLY one reply with NO explanation, punctuation, or extra words.
 
-REMEMBER: You are a SMART AI that understands anime traits. But you are BLIND to the character's name. You NEVER reveal it.
+REMEMBER: You are BLIND to the character's name. You NEVER reveal it.
 `;
 
     const messages = [
@@ -156,27 +224,35 @@ REMEMBER: You are a SMART AI that understands anime traits. But you are BLIND to
 
     try {
       const result = await askAI(messages);
-      answer = result.answer;
-      usedProvider = result.provider;
-      console.log(`✅ Answer from ${usedProvider}: ${answer}`);
+      answer = result.answer || 'Maybe';
+      usedProvider = result.provider || 'none';
+      // Log only provider (not the question)
+      console.log(`✅ Answer from ${usedProvider}`);
     } catch (error) {
-      console.error('All AI providers failed:', error);
+      console.error('AI provider error:', error.message);
       return res.status(503).json({
-        message: 'AI service unavailable. Please try again.',
-        success: false
+        success: false,
+        message: 'AI service unavailable. Please try again.'
       });
     }
 
-    // Clean up answer
+    // Clean up answer (sanitize)
     const validAnswers = ['Yes', 'No', 'Maybe', 'Very likely', 'Unlikely'];
-    const matchedAnswer = validAnswers.find(a => answer.toLowerCase().includes(a.toLowerCase()));
+    const matchedAnswer = validAnswers.find(a => 
+      answer.toLowerCase().includes(a.toLowerCase())
+    );
     const finalAnswer = matchedAnswer || 'Maybe';
 
-    // Save question
-    game.questions.push({ question, answer: finalAnswer, confidence: 0.8 });
+    // Save question (sanitized)
+    game.questions.push({ 
+      question: sanitizedQuestion, 
+      answer: finalAnswer, 
+      confidence: 0.8 
+    });
     game.totalQuestions += 1;
     await game.save();
 
+    // Update user stats
     await User.findByIdAndUpdate(req.user._id, {
       $inc: { 'stats.totalQuestions': 1 }
     });
@@ -190,46 +266,53 @@ REMEMBER: You are a SMART AI that understands anime traits. But you are BLIND to
     });
 
   } catch (error) {
-    console.error('Question error:', error);
+    console.error('Question error:', {
+      message: error.message,
+      userId: req.user?._id,
+      ip: req.ip
+    });
     res.status(500).json({
-      message: 'Error processing question',
-      success: false
+      success: false,
+      message: 'Error processing question. Please try again.'
     });
   }
 });
 
 // ===================== USE HINT =====================
-router.post('/hint', async (req, res) => {
+router.post('/hint', validateGameId, async (req, res) => {
   try {
-    const { gameId } = req.body;
-
-    if (!gameId) {
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
-        message: 'Game ID is required',
-        success: false
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
       });
     }
+
+    const { gameId } = req.body;
 
     const game = await GameSession.findById(gameId).populate('character');
 
     if (!game) {
       return res.status(404).json({
-        message: 'Game not found',
-        success: false
+        success: false,
+        message: 'Game not found'
       });
     }
 
     if (game.status !== 'active') {
       return res.status(400).json({
-        message: 'Game is not active',
-        success: false
+        success: false,
+        message: 'Game is not active'
       });
     }
 
     if (game.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
-        message: 'Not authorized',
-        success: false
+        success: false,
+        message: 'Not authorized'
       });
     }
 
@@ -238,16 +321,16 @@ router.post('/hint', async (req, res) => {
     // Check if hint already used
     if (game.hintUsed) {
       return res.status(400).json({
-        message: 'Hint already used for this game!',
-        success: false
+        success: false,
+        message: 'Hint already used for this game!'
       });
     }
 
     // Check shards (50 required)
     if (user.shards < 50) {
       return res.status(400).json({
-        message: `Not enough Character Shards! You have ${user.shards}, need 50.`,
         success: false,
+        message: `Not enough Character Shards! You have ${user.shards}, need 50.`,
         shards: user.shards
       });
     }
@@ -261,6 +344,9 @@ router.post('/hint', async (req, res) => {
 
     const hint = game.character.crucialHint || 'No hint available for this character.';
 
+    // Log (sanitized)
+    console.log(`💡 Hint used: ${gameId} by ${user.username}`);
+
     res.json({
       success: true,
       hint: hint,
@@ -269,75 +355,74 @@ router.post('/hint', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Hint error:', error);
+    console.error('Hint error:', {
+      message: error.message,
+      userId: req.user?._id,
+      ip: req.ip
+    });
     res.status(500).json({
-      message: 'Error using hint',
-      success: false
+      success: false,
+      message: 'Error using hint. Please try again.'
     });
   }
 });
 
 // ===================== MAKE GUESS =====================
-router.post('/guess', async (req, res) => {
+router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) => {
   try {
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
     const { gameId, guess } = req.body;
+    const sanitizedGuess = sanitizeInput(guess);
 
-    // ===== VALIDATION =====
-    if (!gameId) {
-      console.log('❌ Missing gameId in guess request');
-      return res.status(400).json({
-        message: 'Game ID is required',
-        success: false
-      });
-    }
-
-    if (!guess || guess.trim().length === 0) {
-      console.log('❌ Missing guess in guess request');
-      return res.status(400).json({
-        message: 'Please enter a guess',
-        success: false
-      });
-    }
-
-    console.log(`🔍 Guess attempt: gameId=${gameId}, guess=${guess}`);
+    // Log (sanitized - only gameId, not the guess)
+    console.log(`🔍 Guess attempt: gameId=${gameId}`);
 
     const game = await GameSession.findById(gameId).populate('character');
 
     if (!game) {
       console.log('❌ Game not found:', gameId);
       return res.status(404).json({
-        message: 'Game not found',
-        success: false
+        success: false,
+        message: 'Game not found'
       });
     }
 
     if (game.status !== 'active') {
       console.log('❌ Game is not active:', game.status);
       return res.status(400).json({
-        message: 'Game is not active',
-        success: false
+        success: false,
+        message: 'Game is not active. Start a new game.'
       });
     }
 
     if (game.user.toString() !== req.user._id.toString()) {
       console.log('❌ User not authorized for this game');
       return res.status(403).json({
-        message: 'Not authorized',
-        success: false
+        success: false,
+        message: 'Not authorized'
       });
     }
 
-    // ===== CHECK IF GAME HAS ENDED =====
+    // Check if game has ended
     const wrongGuesses = game.guesses ? game.guesses.filter(g => !g.isCorrect) : [];
     if (wrongGuesses.length >= 3) {
       return res.status(400).json({
-        message: 'Game already ended. Start a new game.',
-        success: false
+        success: false,
+        message: 'Game already ended. Start a new game.'
       });
     }
 
-    // Flexible matching
-    const normalizedGuess = normalize(guess);
+    // Flexible matching (sanitized)
+    const normalizedGuess = normalize(sanitizedGuess);
     const normalizedCharName = normalize(game.character.name);
 
     let isCorrect = normalizedGuess === normalizedCharName;
@@ -355,7 +440,8 @@ router.post('/guess', async (req, res) => {
       isCorrect = true;
     }
 
-    game.guesses.push({ guess, isCorrect });
+    // Save guess (sanitized)
+    game.guesses.push({ guess: sanitizedGuess, isCorrect });
 
     if (isCorrect) {
       // ===== WIN =====
@@ -372,43 +458,35 @@ router.post('/guess', async (req, res) => {
       user.stats.winStreak += 1;
       user.totalGuesses += 1;
 
-      // ===== SEASON STATS =====
+      // Update season stats
       try {
         await checkAndResetSeason();
       } catch (seasonError) {
         console.error('Season error:', seasonError);
       }
       
-      // Initialize seasonStats if it doesn't exist
       if (!user.seasonStats) {
-        console.log(`🆕 Initializing seasonStats for ${user.username}`);
         user.seasonStats = {
-          currentSeason: 202606,
+          currentSeason: new Date().getFullYear() * 100 + (new Date().getMonth() + 1),
           seasonWins: 0,
           seasonPlayed: 0,
           seasonStreak: 0
         };
       }
       
-      // Update season stats
       user.seasonStats.seasonWins += 1;
       user.seasonStats.seasonPlayed += 1;
       user.seasonStats.seasonStreak += 1;
 
-      console.log(`🏆 ${user.username} won! Season stats:`, {
-        wins: user.seasonStats.seasonWins,
-        streak: user.seasonStats.seasonStreak,
-        played: user.seasonStats.seasonPlayed
-      });
-
-      // Track anime-specific guesses
+      // Track anime-specific guesses (sanitized)
       const anime = game.character.anime;
       const currentAnimeGuesses = user.animeGuesses?.get(anime) || 0;
       user.animeGuesses.set(anime, currentAnimeGuesses + 1);
 
-      // ===== SHARDS REWARD =====
+      // Shards reward
       user.shards += 10;
 
+      // Check achievements
       const unlockedAchievements = await checkAndUnlockAchievements(user._id);
       const photoUnlock = await unlockProfilePhoto(user._id, game.character._id);
 
@@ -418,9 +496,12 @@ router.post('/guess', async (req, res) => {
 
       await user.save();
 
-      console.log(`✅ ${user.username} saved with seasonStats:`, user.seasonStats);
-      console.log('🔍 AFTER update - user.seasonStats:', user.seasonStats);
-      console.log('🔍 AFTER update - user._id:', user._id);
+      // Log (sanitized - only username, not character)
+      console.log(`🏆 ${user.username} won! Season stats:`, {
+        wins: user.seasonStats.seasonWins,
+        streak: user.seasonStats.seasonStreak,
+        played: user.seasonStats.seasonPlayed
+      });
 
       return res.json({
         success: true,
@@ -438,6 +519,7 @@ router.post('/guess', async (req, res) => {
       const newWrongGuesses = game.guesses.filter(g => !g.isCorrect);
       
       if (newWrongGuesses.length >= 3) {
+        // ===== LOSE =====
         game.status = 'lost';
         game.endedAt = new Date();
         game.totalQuestions = game.questions.length;
@@ -454,6 +536,8 @@ router.post('/guess', async (req, res) => {
           }
         });
 
+        console.log(`❌ ${req.user.username} lost! Character: ${game.character.name}`);
+
         return res.json({
           success: true,
           isCorrect: false,
@@ -468,51 +552,65 @@ router.post('/guess', async (req, res) => {
         return res.json({
           success: true,
           isCorrect: false,
-          message: `❌ Not ${guess}. Try again! (${3 - newWrongGuesses.length} guesses left)`,
+          message: `❌ Not ${sanitizedGuess}. Try again! (${3 - newWrongGuesses.length} guesses left)`,
           remainingGuesses: 3 - newWrongGuesses.length
         });
       }
     }
 
   } catch (error) {
-    console.error('Guess error:', error);
+    console.error('Guess error:', {
+      message: error.message,
+      userId: req.user?._id,
+      ip: req.ip
+    });
     res.status(500).json({
-      message: 'Error processing guess',
-      success: false
+      success: false,
+      message: 'Error processing guess. Please try again.'
     });
   }
 });
 
 // ===================== GIVE UP =====================
-router.post('/giveup', async (req, res) => {
+router.post('/giveup', validateGameId, async (req, res) => {
   try {
-    const { gameId } = req.body;
-
-    if (!gameId) {
-      console.log('❌ Missing gameId in giveup request');
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
-        message: 'Game ID is required',
-        success: false
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
       });
     }
 
-    console.log('🏳️ Giveup request for gameId:', gameId);
+    const { gameId } = req.body;
+
+    console.log(`🏳️ Giveup request: ${gameId} by ${req.user.username}`);
 
     const game = await GameSession.findById(gameId).populate('character');
 
-    if (!game || game.status !== 'active') {
-      console.log('❌ Game not found or not active:', gameId);
+    if (!game) {
+      console.log('❌ Game not found:', gameId);
+      return res.status(404).json({
+        success: false,
+        message: 'Game not found'
+      });
+    }
+
+    if (game.status !== 'active') {
+      console.log('❌ Game not active:', game.status);
       return res.status(400).json({
-        message: 'Invalid game session',
-        success: false
+        success: false,
+        message: 'Game is not active'
       });
     }
 
     if (game.user.toString() !== req.user._id.toString()) {
-      console.log('❌ User not authorized for this game');
+      console.log('❌ User not authorized');
       return res.status(403).json({
-        message: 'Not authorized',
-        success: false
+        success: false,
+        message: 'Not authorized'
       });
     }
 
@@ -541,10 +639,14 @@ router.post('/giveup', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Give up error:', error);
+    console.error('Give up error:', {
+      message: error.message,
+      userId: req.user?._id,
+      ip: req.ip
+    });
     res.status(500).json({
-      message: 'Error giving up',
-      success: false
+      success: false,
+      message: 'Error giving up. Please try again.'
     });
   }
 });
@@ -553,27 +655,32 @@ router.post('/giveup', async (req, res) => {
 router.get('/history', async (req, res) => {
   try {
     const games = await GameSession.find({ user: req.user._id })
-      .populate('character')
+      .populate('character', 'name anime image')
       .sort({ startedAt: -1 })
       .limit(20);
 
+    const sanitizedGames = games.map(game => ({
+      id: game._id,
+      character: game.character?.name || 'Unknown',
+      anime: game.character?.anime || 'Unknown',
+      status: game.status,
+      questions: game.totalQuestions || game.questions.length,
+      startedAt: game.startedAt,
+      endedAt: game.endedAt
+    }));
+
     res.json({
       success: true,
-      games: games.map(game => ({
-        id: game._id,
-        character: game.character?.name || 'Unknown',
-        anime: game.character?.anime || 'Unknown',
-        status: game.status,
-        questions: game.totalQuestions || game.questions.length,
-        startedAt: game.startedAt,
-        endedAt: game.endedAt
-      }))
+      games: sanitizedGames
     });
   } catch (error) {
-    console.error('History error:', error);
+    console.error('History error:', {
+      message: error.message,
+      userId: req.user?._id
+    });
     res.status(500).json({
-      message: 'Error fetching history',
-      success: false
+      success: false,
+      message: 'Error fetching history. Please try again.'
     });
   }
 });
