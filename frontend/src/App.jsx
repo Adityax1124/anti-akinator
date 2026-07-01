@@ -9,7 +9,7 @@ import Game from './pages/Game';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
-import PublicProfile from './pages/PublicProfile'; // ← ADD THIS IMPORT
+import PublicProfile from './pages/PublicProfile';
 import Leaderboard from './pages/Leaderboard';
 import SeasonWinners from './pages/SeasonWinners';
 import AdminPanel from './pages/AdminPanel';
