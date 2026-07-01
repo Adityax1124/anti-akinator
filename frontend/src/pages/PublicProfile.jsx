@@ -20,11 +20,13 @@ const PublicProfile = () => {
     setLoading(true);
     try {
       const response = await api.get(`/profile/public/${username}`, {
-        params: { _t: Date.now() } // Cache busting
+        params: { _t: Date.now() }
       });
+      console.log('📥 Profile data:', response.data.user);
       setProfile(response.data.user);
       setError('');
     } catch (error) {
+      console.error('Error fetching profile:', error);
       setError(error.response?.data?.message || 'User not found');
       setProfile(null);
     } finally {
@@ -54,7 +56,6 @@ const PublicProfile = () => {
     }
   };
 
-  // ===== CHECK IF OWN PROFILE =====
   const isOwnProfile = currentUser?.username === username;
 
   if (loading) {
@@ -82,20 +83,34 @@ const PublicProfile = () => {
     );
   }
 
-  // If it's the current user's own profile, redirect to profile
   if (isOwnProfile) {
     navigate('/profile');
     return null;
   }
 
-  // ===== FIX: Get unlocked photos correctly =====
-  // Check if profile has achievements and profilePhotos
+  // ===== FIX: Extract photos properly =====
   const unlockedPhotos = profile.achievements?.profilePhotos || [];
   
-  // Display up to 10 photos
+  // Build display array (up to 10)
   const displayPhotos = [];
   for (let i = 0; i < 10; i++) {
-    displayPhotos.push(unlockedPhotos[i] || null);
+    if (i < unlockedPhotos.length) {
+      const photoData = unlockedPhotos[i];
+      
+      // Check if photoId is populated (object) or just an ID
+      if (photoData.photoId && typeof photoData.photoId === 'object') {
+        displayPhotos.push({
+          ...photoData.photoId,
+          isEquipped: photoData.isEquipped || false,
+          unlockedAt: photoData.unlockedAt
+        });
+      } else {
+        // If photoId is not populated, push null (show as locked)
+        displayPhotos.push(null);
+      }
+    } else {
+      displayPhotos.push(null);
+    }
   }
 
   return (
@@ -107,9 +122,7 @@ const PublicProfile = () => {
       >
         <div className="public-banner-overlay"></div>
 
-        {/* User Info on Banner */}
         <div className="public-banner-user-row">
-          {/* Profile Photo */}
           <div 
             className="public-profile-photo"
             style={profile.equipped?.profilePhoto?.imageUrl ? { 
@@ -125,11 +138,9 @@ const PublicProfile = () => {
             )}
           </div>
 
-          {/* User Info */}
           <div className="public-banner-user-info">
             <h1 className="public-banner-username">{profile.username}</h1>
             
-            {/* ===== FIX: Title with rarity color ===== */}
             {profile.equipped?.title && (
               <div className="public-banner-title" style={{ color: getRarityColor(profile.equipped.title.rarity) }}>
                 {profile.equipped.title.displayName}
@@ -141,7 +152,6 @@ const PublicProfile = () => {
           </div>
         </div>
 
-        {/* Stats on the right */}
         <div className="public-banner-stats">
           <div className="public-banner-stat">
             <span className="public-banner-stat-value">{profile.stats?.gamesWon || 0}</span>
@@ -187,33 +197,37 @@ const PublicProfile = () => {
         
         <div className="public-top-photos-grid">
           {displayPhotos.map((photo, index) => {
-            const isUnlocked = photo !== null;
+            const isUnlocked = photo !== null && photo.imageUrl;
+            const isEquipped = isUnlocked && photo.isEquipped === true;
             
             return (
               <div 
                 key={index}
-                className={`public-top-photo-item ${isUnlocked ? 'unlocked' : 'locked'}`}
+                className={`public-top-photo-item ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
                 title={isUnlocked ? photo.name || 'Unknown' : 'Locked'}
               >
                 {isUnlocked ? (
                   <>
                     <div 
                       className="public-top-photo-preview" 
-                      style={photo?.imageUrl ? { 
+                      style={{ 
                         backgroundImage: `url(${photo.imageUrl})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center'
-                      } : {}}
+                      }}
                     >
-                      {photo?.rarity && (
+                      {isEquipped && (
+                        <div className="public-photo-equipped-badge">✅ Equipped</div>
+                      )}
+                      {photo.rarity && (
                         <div className="public-photo-rarity-badge" style={{ color: getRarityColor(photo.rarity) }}>
                           {getRarityEmoji(photo.rarity)}
                         </div>
                       )}
                     </div>
                     <div className="public-top-photo-name">
-                      {photo?.name || 'Unknown'}
-                      {photo?.rarity && ` (${photo.rarity})`}
+                      {photo.name || 'Unknown'}
+                      {photo.rarity && ` (${photo.rarity})`}
                     </div>
                   </>
                 ) : (
