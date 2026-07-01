@@ -52,9 +52,10 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         output: {
+          // ===== FIX: manualChunks as object, not function =====
           manualChunks: {
             'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-            'ui-vendor': ['axios'],
+            'ui-vendor': ['axios']
           },
           entryFileNames: 'assets/[name].[hash].js',
           chunkFileNames: 'assets/[name].[hash].js',
