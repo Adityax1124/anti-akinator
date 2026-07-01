@@ -18,9 +18,10 @@ const characterSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: true
+    required: true,
+    maxlength: 6000
   },
-    crucialHint: {                    // 👈 ADD THIS
+    crucialHint: {                    
     type: String,
     required: true
   },
