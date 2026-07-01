@@ -26,7 +26,7 @@ const Profile = () => {
   const [photosLoaded, setPhotosLoaded] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showcasePhotos, setShowcasePhotos] = useState(Array(10).fill(null));
-
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
   useEffect(() => {
     fetchProfileData();
   }, []);
