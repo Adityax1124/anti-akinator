@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import Stars from './components/Stars';
 import Home from './pages/Home';
 import Game from './pages/Game';
 import Login from './pages/Login';
@@ -54,6 +55,7 @@ function App() {
       <AuthProvider>
         <div className="app">
           <Navbar />
+          <Stars />
           <main className="main-content">
             <Routes>
               {/* Public Routes */}
