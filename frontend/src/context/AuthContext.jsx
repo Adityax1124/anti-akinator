@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ===== LOGOUT (Moved UP before resetSessionTimer) =====
+  // ===== LOGOUT (DEFINED FIRST) =====
   const logout = useCallback(async () => {
     try {
       await api.post('/auth/logout').catch(() => {});
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ===== SESSION MANAGEMENT (Moved AFTER logout) =====
+  // ===== SESSION MANAGEMENT =====
   const resetSessionTimer = useCallback(() => {
     if (sessionTimerRef.current) {
       clearTimeout(sessionTimerRef.current);
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
     fetchUserRef.current = true;
 
     try {
-      const response = await api.get('/auth/me');
+      const response = await api.get('/auth/me', { params: { _t: Date.now() } });
       setUser(response.data.user);
       setAuthError(null);
       resetSessionTimer();
@@ -116,6 +116,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, [logout, resetSessionTimer]);
 
+  // ===== REFRESH USER =====
+  const refreshUser = useCallback(async () => {
+    if (!token) {
+      setUser(null);
+      return null;
+    }
+    
+    setLoading(true);
+    const userData = await fetchUser();
+    setLoading(false);
+    return userData;
+  }, [token, fetchUser]);
+
   // ===== INITIALIZE AUTH =====
   useEffect(() => {
     if (token) {
@@ -126,7 +139,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, setAuthHeader, fetchUser]);
 
-  // ===== LOGIN (with 2FA Support) =====
+  // ===== LOGIN =====
   const login = useCallback(async (email, password) => {
     setAuthError(null);
     
@@ -156,7 +169,6 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      // Normal login flow
       const { token, user } = data;
       
       if (!token || !user) {
@@ -328,19 +340,6 @@ export const AuthProvider = ({ children }) => {
       };
     }
   }, [setAuthHeader]);
-
-  // ===== REFRESH USER =====
-  const refreshUser = useCallback(async () => {
-    if (!token) {
-      setUser(null);
-      return null;
-    }
-    
-    setLoading(true);
-    const userData = await fetchUser();
-    setLoading(false);
-    return userData;
-  }, [token, fetchUser]);
 
   // ===== CLEAR ERROR =====
   const clearError = useCallback(() => {
