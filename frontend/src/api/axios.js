@@ -20,22 +20,16 @@ function isSecureConnection() {
 }
 
 // ===== CREATE AXIOS INSTANCE =====
-// REMOVED custom headers that cause CORS issues
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest'
-    // ===== X-Content-Type-Options, X-Frame-Options, Referrer-Policy REMOVED =====
   },
   withCredentials: true,
   timeout: 30000,
-  maxContentLength: 10 * 1024 * 1024,
-  httpsAgent: process.env.NODE_ENV === 'production' ? new (require('https').Agent)({
-    rejectUnauthorized: true,
-    minVersion: 'TLSv1.2',
-    maxVersion: 'TLSv1.3'
-  }) : undefined
+  maxContentLength: 10 * 1024 * 1024
+  // ===== REMOVED httpsAgent - it doesn't work in browsers =====
 });
 
 // ===== REQUEST INTERCEPTOR =====
