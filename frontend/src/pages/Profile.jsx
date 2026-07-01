@@ -27,6 +27,7 @@ const Profile = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showcasePhotos, setShowcasePhotos] = useState(Array(10).fill(null));
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
+
   useEffect(() => {
     fetchProfileData();
   }, []);
@@ -83,10 +84,10 @@ const Profile = () => {
 
       setHistory(historyRes.data.games || []);
       
+      // Load photos for showcase
+      await loadPhotos();
+      
       console.log('✅ Profile loaded successfully');
-      console.log('📸 Equipped photo:', userData.equipped?.profilePhoto);
-      console.log('🎨 Equipped banner:', userData.equipped?.banner);
-      console.log('🏷️ Equipped title:', userData.equipped?.title);
       
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -121,11 +122,12 @@ const Profile = () => {
     }
   };
 
-  const loadPhotos = async () => {
-    if (photosLoaded) return;
+  const loadPhotos = async (forceRefresh = false) => {
+    if (photosLoaded && !forceRefresh) return;
     try {
       const res = await api.get('/profile/photos', { params: { _t: Date.now() } });
-      setProfilePhotos(res.data.photos || []);
+      const photos = res.data.photos || [];
+      setProfilePhotos(photos);
       setPhotosLoaded(true);
       
       // Load showcase from localStorage
@@ -134,7 +136,7 @@ const Profile = () => {
         try {
           const parsed = JSON.parse(savedShowcase);
           const validShowcase = parsed.map(id => {
-            const photo = res.data.photos.find(p => p._id === id && p.isUnlocked);
+            const photo = photos.find(p => p._id === id && p.isUnlocked);
             return photo || null;
           });
           while (validShowcase.length < 10) {
@@ -145,7 +147,7 @@ const Profile = () => {
           setShowcasePhotos(Array(10).fill(null));
         }
       } else {
-        const unlockedPhotos = res.data.photos.filter(p => p.isUnlocked);
+        const unlockedPhotos = photos.filter(p => p.isUnlocked);
         const defaultShowcase = [];
         for (let i = 0; i < 10; i++) {
           defaultShowcase.push(unlockedPhotos[i] || null);
@@ -194,6 +196,23 @@ const Profile = () => {
     const newShowcase = [...showcasePhotos];
     newShowcase[slotIndex] = null;
     saveShowcase(newShowcase);
+  };
+
+  // ============================================================
+  // SHOWCASE CLICK HANDLER
+  // ============================================================
+  const handleShowcaseClick = async (index, photo) => {
+    if (photo) {
+      // Remove photo from slot
+      if (window.confirm(`Remove "${photo.name}" from this slot?`)) {
+        removeShowcasePhoto(index);
+      }
+    } else {
+      // Add photo to empty slot - FIRST FETCH DATA
+      await loadPhotos(true);  // ← Force refresh data
+      setSelectedSlotIndex(index);
+      setShowPhotoModal(true);
+    }
   };
 
   // ============================================================
@@ -258,7 +277,7 @@ const Profile = () => {
         setSuccessMessage('✅ Profile photo equipped successfully!');
         await fetchProfileData();
         await refreshUser();
-        await loadPhotos();
+        await loadPhotos(true);
         setTimeout(() => {
           window.location.reload();
         }, 500);
@@ -346,6 +365,11 @@ const Profile = () => {
   const unlockedBanners = banners.filter(b => b.isUnlocked);
   const unlockedTitles = titles.filter(t => t.isUnlocked);
   const unlockedPhotos = profilePhotos.filter(p => p.isUnlocked);
+  
+  // Filter photos for search
+  const filteredPhotos = profilePhotos.filter(p => 
+    p.isUnlocked && p.name?.toLowerCase().includes(photoSearchTerm.toLowerCase())
+  );
 
   return (
     <div className="profile-container fade-in">
@@ -412,8 +436,7 @@ const Profile = () => {
             </div>
 
             <div className="banner-user-info">
-              {/* ✅ CORRECT - Title is separate from username */}
-<h1 className="banner-username">{username}</h1>
+              <h1 className="banner-username">{username}</h1>
               <div 
                 className="title-display"
                 onClick={openTitleModal}
@@ -486,16 +509,7 @@ const Profile = () => {
             <div 
               key={index}
               className={`top-photo-item ${photo ? 'unlocked' : 'empty'}`}
-              onClick={() => {
-                if (photo) {
-                  if (window.confirm(`Remove "${photo.name}" from this slot?`)) {
-                    removeShowcasePhoto(index);
-                  }
-                } else {
-                  setSelectedSlotIndex(index);
-                  setShowPhotoModal(true);
-                }
-              }}
+              onClick={() => handleShowcaseClick(index, photo)}
               title={photo ? `Click to remove ${photo.name}` : 'Click to add photo'}
             >
               {photo ? (
@@ -661,12 +675,22 @@ const Profile = () => {
 
       {/* ===== PHOTO MODAL ===== */}
       {showPhotoModal && (
-        <div className="modal-overlay" onClick={() => setShowPhotoModal(false)}>
+        <div className="modal-overlay" onClick={() => {
+          setShowPhotoModal(false);
+          setSelectedSlotIndex(null);
+        }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>📸 Profile Photos</h2>
-              <button className="modal-close" onClick={() => setShowPhotoModal(false)}>✕</button>
+              <h2>{selectedSlotIndex !== null ? `Select Photo for Slot ${selectedSlotIndex + 1}` : '📸 Profile Photos'}</h2>
+              <button className="modal-close" onClick={() => {
+                setShowPhotoModal(false);
+                setSelectedSlotIndex(null);
+              }}>✕</button>
             </div>
+            
+            {selectedSlotIndex !== null && (
+              <p className="modal-hint">Choose a photo to add to slot {selectedSlotIndex + 1}</p>
+            )}
             
             <div className="photo-search-container">
               <input
@@ -687,29 +711,37 @@ const Profile = () => {
             </div>
             
             <div className="photo-grid">
-              {(photoSearchTerm ? filteredPhotos : profilePhotos).map((photo) => {
+              {(photoSearchTerm ? filteredPhotos : profilePhotos.filter(p => p.isUnlocked)).map((photo) => {
                 const isEquipped = equippedPhoto?._id === photo._id || equipped.profilePhoto === photo._id;
                 return (
                   <div 
                     key={photo._id} 
-                    className={`photo-item ${photo.isUnlocked ? '' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
-                    onClick={() => photo.isUnlocked && equipPhoto(photo._id)}
+                    className={`photo-item ${isEquipped ? 'equipped' : ''}`}
+                    onClick={() => {
+                      if (selectedSlotIndex !== null) {
+                        // Setting photo for showcase slot
+                        setShowcasePhoto(selectedSlotIndex, photo._id);
+                      } else {
+                        // Equipping as main profile photo
+                        equipPhoto(photo._id);
+                      }
+                    }}
                   >
-                    <div className="photo-preview" style={photo.isUnlocked && photo.imageUrl ? { 
+                    <div className="photo-preview" style={photo.imageUrl ? { 
                       backgroundImage: `url(${photo.imageUrl})`, 
                       backgroundSize: 'cover', 
                       backgroundPosition: 'center' 
                     } : {}}>
-                      {!photo.isUnlocked && (
-                        <div className="lock-icon">🔒</div>
-                      )}
                       {isEquipped && (
                         <div className="photo-equipped-badge">✅</div>
                       )}
+                      {selectedSlotIndex !== null && !isEquipped && (
+                        <div className="photo-select-hint">➕</div>
+                      )}
                     </div>
                     <div className="photo-info">
-                      <h4>{photo.isUnlocked ? photo.name : '???'}</h4>
-                      <p className="photo-anime">{photo.isUnlocked ? photo.anime : 'Locked'}</p>
+                      <h4>{photo.name}</h4>
+                      <p className="photo-anime">{photo.anime}</p>
                       <span className="photo-rarity" style={{ color: getRarityColor(photo.rarity) }}>
                         {getRarityEmoji(photo.rarity)} {photo.rarity}
                       </span>

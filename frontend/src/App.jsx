@@ -12,6 +12,7 @@ import PublicProfile from './pages/PublicProfile'; // ← ADD THIS IMPORT
 import Leaderboard from './pages/Leaderboard';
 import SeasonWinners from './pages/SeasonWinners';
 import AdminPanel from './pages/AdminPanel';
+import BuyShards from './pages/BuyShards';
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
@@ -89,6 +90,11 @@ function App() {
               <Route path="/2fa-setup" element={
                 <PrivateRouteWrapper>
                   <TwoFactorSetup />
+                </PrivateRouteWrapper>
+              } />
+              <Route path="/buy-shards" element={
+                <PrivateRouteWrapper>
+                  <BuyShards />
                 </PrivateRouteWrapper>
               } />
               
