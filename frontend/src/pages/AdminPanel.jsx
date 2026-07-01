@@ -85,123 +85,6 @@ const AdminPanel = () => {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
 
-  // ===== VALIDATION FUNCTIONS =====
-  const validateUrl = (url) => {
-    if (!url || url.trim() === '') return false;
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const validateImageUrl = (url) => {
-    if (!url || url.trim() === '') return false;
-    if (!validateUrl(url)) return false;
-    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?.*)?$/i;
-    return imageExtensions.test(url);
-  };
-
-  const validateGifUrl = (url) => {
-    if (!url || url.trim() === '') return false;
-    if (!validateUrl(url)) return false;
-    const gifExtensions = /\.(gif|webp)(\?.*)?$/i;
-    return gifExtensions.test(url);
-  };
-
-  const validateRequired = (value) => {
-    return value && value.trim() !== '';
-  };
-
-  const validateArray = (arr) => {
-    return Array.isArray(arr) && arr.length > 0;
-  };
-
-  const validateCharacter = (form) => {
-    const errors = [];
-    
-    if (!validateRequired(form.name)) errors.push('Name is required');
-    if (!validateRequired(form.anime)) errors.push('Anime is required');
-    if (!validateRequired(form.description)) errors.push('Description is required');
-    if (!validateRequired(form.crucialHint)) errors.push('Crucial Hint is required');
-    
-    if (form.image && !validateImageUrl(form.image)) {
-      errors.push('Image URL must be a valid image link (ends with .jpg, .png, etc.)');
-    }
-    
-    return errors;
-  };
-
-  const validateBanner = (form) => {
-    const errors = [];
-    
-    if (!validateRequired(form.name)) errors.push('Banner name is required');
-    if (!validateRequired(form.gifUrl)) errors.push('GIF URL is required');
-    if (!validateGifUrl(form.gifUrl)) errors.push('GIF URL must be a valid GIF or WebP image URL');
-    
-    // Validate unlock condition
-    if (form.unlockType === 'total_guesses') {
-      if (!form.unlockCondition.totalGuesses || form.unlockCondition.totalGuesses <= 0) {
-        errors.push('Total guesses condition must be a positive number');
-      }
-    } else if (form.unlockType === 'anime_guesses') {
-      if (!validateRequired(form.unlockCondition.anime)) errors.push('Anime name is required for anime-specific condition');
-      if (!form.unlockCondition.count || form.unlockCondition.count <= 0) {
-        errors.push('Count must be a positive number for anime-specific condition');
-      }
-    } else if (form.unlockType === 'season_rank') {
-      if (!form.unlockCondition.seasonRank || form.unlockCondition.seasonRank <= 0) {
-        errors.push('Season rank must be a positive number');
-      }
-    }
-    
-    return errors;
-  };
-
-  const validateTitle = (form) => {
-    const errors = [];
-    
-    if (!validateRequired(form.name)) errors.push('Title ID is required');
-    if (!validateRequired(form.displayName)) errors.push('Display name is required');
-    
-    // Validate unlock condition
-    if (form.unlockType === 'total_guesses') {
-      if (!form.unlockCondition.totalGuesses || form.unlockCondition.totalGuesses <= 0) {
-        errors.push('Total guesses condition must be a positive number');
-      }
-    } else if (form.unlockType === 'anime_guesses') {
-      if (!validateRequired(form.unlockCondition.anime)) errors.push('Anime name is required for anime-specific condition');
-      if (!form.unlockCondition.count || form.unlockCondition.count <= 0) {
-        errors.push('Count must be a positive number for anime-specific condition');
-      }
-    } else if (form.unlockType === 'season_rank') {
-      if (!form.unlockCondition.seasonRank || form.unlockCondition.seasonRank <= 0) {
-        errors.push('Season rank must be a positive number');
-      }
-    } else if (form.unlockType === 'win_streak') {
-      if (!form.unlockCondition.streak || form.unlockCondition.streak <= 0) {
-        errors.push('Win streak must be a positive number');
-      }
-    }
-    
-    return errors;
-  };
-
-  const validatePhoto = (form) => {
-    const errors = [];
-    
-    if (!validateRequired(form.name)) errors.push('Photo name is required');
-    if (!validateRequired(form.characterName)) errors.push('Character name is required');
-    if (!validateRequired(form.imageUrl)) errors.push('Image URL is required');
-    if (!validateImageUrl(form.imageUrl)) {
-      errors.push('Image URL must be a valid image link (ends with .jpg, .png, .gif, .webp, etc.)');
-    }
-    if (!validateRequired(form.anime)) errors.push('Anime is required');
-    
-    return errors;
-  };
-
   useEffect(() => {
     if (user?.role !== 'admin') {
       setError('Access denied. Admin only.');
@@ -283,13 +166,6 @@ const AdminPanel = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
-    // ===== VALIDATE CHARACTER =====
-    const errors = validateCharacter(charForm);
-    if (errors.length > 0) {
-      setError('❌ ' + errors.join(' • '));
-      return;
-    }
 
     try {
       if (editingCharId) {
@@ -404,18 +280,18 @@ const AdminPanel = () => {
     setError('');
     setSuccess('');
 
-    // ===== VALIDATE BANNER =====
-    const errors = validateBanner(bannerForm);
-    if (errors.length > 0) {
-      setError('❌ ' + errors.join(' • '));
-      return;
-    }
-
     try {
       const form = { ...bannerForm };
-      if (form.unlockCondition.totalGuesses) form.unlockCondition.totalGuesses = Number(form.unlockCondition.totalGuesses);
-      if (form.unlockCondition.count) form.unlockCondition.count = Number(form.unlockCondition.count);
-      if (form.unlockCondition.seasonRank) form.unlockCondition.seasonRank = Number(form.unlockCondition.seasonRank);
+      
+      if (form.unlockCondition.totalGuesses) {
+        form.unlockCondition.totalGuesses = Number(form.unlockCondition.totalGuesses);
+      }
+      if (form.unlockCondition.count) {
+        form.unlockCondition.count = Number(form.unlockCondition.count);
+      }
+      if (form.unlockCondition.seasonRank) {
+        form.unlockCondition.seasonRank = Number(form.unlockCondition.seasonRank);
+      }
 
       if (editingBannerId) {
         await api.put(`/admin/banners/${editingBannerId}`, form);
@@ -500,13 +376,6 @@ const AdminPanel = () => {
     setError('');
     setSuccess('');
 
-    // ===== VALIDATE TITLE =====
-    const errors = validateTitle(titleForm);
-    if (errors.length > 0) {
-      setError('❌ ' + errors.join(' • '));
-      return;
-    }
-
     try {
       const form = { ...titleForm };
       if (form.unlockCondition.totalGuesses) form.unlockCondition.totalGuesses = Number(form.unlockCondition.totalGuesses);
@@ -583,13 +452,6 @@ const AdminPanel = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
-    // ===== VALIDATE PROFILE PHOTO =====
-    const errors = validatePhoto(photoForm);
-    if (errors.length > 0) {
-      setError('❌ ' + errors.join(' • '));
-      return;
-    }
 
     try {
       if (editingPhotoId) {
@@ -737,6 +599,7 @@ const AdminPanel = () => {
                     value={charForm.name} 
                     onChange={handleCharChange} 
                     required 
+                    placeholder="e.g., Luffy"
                   />
                 </div>
                 <div className="form-group">
@@ -748,6 +611,7 @@ const AdminPanel = () => {
                     value={charForm.anime} 
                     onChange={handleCharChange} 
                     required 
+                    placeholder="e.g., One Piece"
                   />
                 </div>
               </div>
@@ -759,22 +623,19 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.image} 
                   onChange={handleCharChange} 
+                  placeholder="https://example.com/image.jpg"
                 />
-                {charForm.image && !validateImageUrl(charForm.image) && (
-                  <small className="validation-error">⚠️ Must be a valid image URL (ends with .jpg, .png, etc.)</small>
-                )}
               </div>
               <div className="form-group">
-                <label>Crucial Hint *</label>
+                <label>Crucial Hint</label>
                 <input 
                   type="text" 
                   name="crucialHint" 
                   className="form-control" 
                   value={charForm.crucialHint || ''} 
                   onChange={handleCharChange} 
-                  required
+                  placeholder="e.g., This character ate a Devil Fruit"
                 />
-                <small className="form-hint">This hint is shown when a player uses the hint feature (costs 50 shards)</small>
               </div>
               <div className="form-group">
                 <label>Description *</label>
@@ -785,12 +646,8 @@ const AdminPanel = () => {
                   value={charForm.description} 
                   onChange={handleCharChange} 
                   required 
+                  placeholder="Brief description of the character"
                 />
-                <small className="form-hint">
-                  {charForm.description.length}/300+ characters
-                  {charForm.description.length < 150 && ' ⚠️ Try to add at least 150 characters for better AI performance'}
-                  {charForm.description.length >= 150 && ' ✅ Good length for AI'}
-                </small>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -810,6 +667,7 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={charForm.traits.species} 
                     onChange={handleCharChange} 
+                    placeholder="e.g., Human, Saiyan, Demon"
                   />
                 </div>
               </div>
@@ -822,6 +680,7 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={charForm.traits.age} 
                     onChange={handleCharChange} 
+                    placeholder="e.g., 19"
                   />
                 </div>
                 <div className="form-group">
@@ -832,6 +691,7 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={charForm.traits.occupation} 
                     onChange={handleCharChange} 
+                    placeholder="e.g., Pirate, Ninja"
                   />
                 </div>
               </div>
@@ -842,6 +702,7 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.powers.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'powers')} 
+                  placeholder="e.g., Gum-Gum Fruit, Haki"
                 />
               </div>
               <div className="form-group">
@@ -851,6 +712,7 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.personality.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'personality')} 
+                  placeholder="e.g., Carefree, Determined, Loyal"
                 />
               </div>
               <div className="form-group">
@@ -860,6 +722,7 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.affiliations.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'affiliations')} 
+                  placeholder="e.g., Straw Hat Pirates"
                 />
               </div>
               <div className="form-group">
@@ -869,6 +732,7 @@ const AdminPanel = () => {
                   className="form-control"
                   value={charForm.traits.relationships.join(', ')}
                   onChange={(e) => handleCharArray(e, 'relationships')}
+                  placeholder="e.g., Brother of Ace, Student of Mihawk"
                 />
               </div>
               <div className="form-group">
@@ -878,6 +742,7 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.keyEvents.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'keyEvents')} 
+                  placeholder="e.g., Ate the Gum-Gum Fruit, Defeated Kaido"
                 />
               </div>
               <div className="form-row checkboxes">
@@ -941,6 +806,7 @@ const AdminPanel = () => {
                     value={bannerForm.name} 
                     onChange={handleBannerChange} 
                     required 
+                    placeholder="e.g., Legendary Pirate"
                   />
                 </div>
                 <div className="form-group">
@@ -951,13 +817,9 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={bannerForm.gifUrl} 
                     onChange={handleBannerChange} 
+                    placeholder="https://example.com/banner.gif" 
                     required 
-                    maxLength="500"
                   />
-                  {bannerForm.gifUrl && !validateGifUrl(bannerForm.gifUrl) && (
-                    <small className="validation-error">⚠️ Must be a valid GIF or WebP URL</small>
-                  )}
-                  <small className="form-hint">Must end with .gif or .webp</small>
                 </div>
               </div>
               <div className="form-group">
@@ -968,6 +830,7 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={bannerForm.description} 
                   onChange={handleBannerChange} 
+                  placeholder="Brief description of this banner"
                 />
               </div>
               <div className="form-row">
@@ -1012,6 +875,7 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={bannerForm.unlockCondition.totalGuesses || ''} 
                       onChange={handleBannerChange} 
+                      placeholder="e.g., 100"
                       min="1"
                     />
                   )}
@@ -1023,6 +887,7 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={bannerForm.unlockCondition.anime || ''} 
                         onChange={handleBannerChange} 
+                        placeholder="e.g., One Piece"
                       />
                       <input 
                         type="number" 
@@ -1030,6 +895,7 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={bannerForm.unlockCondition.count || ''} 
                         onChange={handleBannerChange} 
+                        placeholder="e.g., 30"
                         min="1"
                         style={{ marginTop: 6 }}
                       />
@@ -1042,6 +908,7 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={bannerForm.unlockCondition.seasonRank || ''} 
                       onChange={handleBannerChange} 
+                      placeholder="e.g., 1"
                       min="1"
                     />
                   )}
@@ -1102,8 +969,8 @@ const AdminPanel = () => {
                     value={titleForm.name} 
                     onChange={handleTitleChange} 
                     required 
+                    placeholder="e.g., the_rookie"
                   />
-                  <small className="form-hint">Used internally, must be unique</small>
                 </div>
                 <div className="form-group">
                   <label>Display Name *</label>
@@ -1113,6 +980,7 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={titleForm.displayName} 
                     onChange={handleTitleChange} 
+                    placeholder="e.g., The Rookie" 
                     required 
                   />
                 </div>
@@ -1125,6 +993,7 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={titleForm.description} 
                   onChange={handleTitleChange} 
+                  placeholder="Brief description of this title"
                 />
               </div>
               <div className="form-row">
@@ -1165,6 +1034,7 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={titleForm.unlockCondition.totalGuesses || ''} 
                       onChange={handleTitleChange} 
+                      placeholder="e.g., 100"
                       min="1"
                     />
                   )}
@@ -1176,6 +1046,7 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={titleForm.unlockCondition.anime || ''} 
                         onChange={handleTitleChange} 
+                        placeholder="e.g., One Piece"
                       />
                       <input 
                         type="number" 
@@ -1183,6 +1054,7 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={titleForm.unlockCondition.count || ''} 
                         onChange={handleTitleChange} 
+                        placeholder="e.g., 50"
                         min="1"
                         style={{ marginTop: 6 }}
                       />
@@ -1195,6 +1067,7 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={titleForm.unlockCondition.seasonRank || ''} 
                       onChange={handleTitleChange} 
+                      placeholder="e.g., 1"
                       min="1"
                     />
                   )}
@@ -1205,6 +1078,7 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={titleForm.unlockCondition.streak || ''} 
                       onChange={handleTitleChange} 
+                      placeholder="e.g., 10"
                       min="1"
                     />
                   )}
@@ -1263,6 +1137,7 @@ const AdminPanel = () => {
                     value={photoForm.name} 
                     onChange={handlePhotoChange} 
                     required 
+                    placeholder="e.g., Shinobu Portrait"
                   />
                 </div>
                 <div className="form-group">
@@ -1274,8 +1149,8 @@ const AdminPanel = () => {
                     value={photoForm.characterName} 
                     onChange={handlePhotoChange} 
                     required 
+                    placeholder="e.g., Shinobu"
                   />
-                  <small className="form-hint">This must be unique. If "Shinobu" already exists, choose a different name.</small>
                 </div>
               </div>
               <div className="form-row">
@@ -1287,14 +1162,9 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={photoForm.imageUrl} 
                     onChange={handlePhotoChange} 
+                    placeholder="https://example.com/image.jpg" 
                     required 
                   />
-                  {photoForm.imageUrl && !validateImageUrl(photoForm.imageUrl) && (
-                    <small className="validation-error">⚠️ Must be a valid image URL (ends with .jpg, .png, .gif, .webp, etc.)</small>
-                  )}
-                  <small className="form-hint">
-                    Example: <strong>https://static.wikia.nocookie.net/onepiece/images/1/1d/Shinobu_Infobox.png</strong>
-                  </small>
                 </div>
                 <div className="form-group">
                   <label>Anime *</label>
@@ -1305,6 +1175,7 @@ const AdminPanel = () => {
                     value={photoForm.anime} 
                     onChange={handlePhotoChange} 
                     required 
+                    placeholder="e.g., One Piece"
                   />
                 </div>
               </div>
@@ -1316,6 +1187,7 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={photoForm.description} 
                   onChange={handlePhotoChange} 
+                  placeholder="Brief description of the character"
                 />
               </div>
               <div className="form-row">

@@ -5,31 +5,16 @@ const bannerSchema = new mongoose.Schema({
     type: String, 
     required: true, 
     unique: true,
-    trim: true,
-    minlength: 3,
-    maxlength: 100
+    trim: true
   },
   gifUrl: { 
     type: String, 
-    required: true,
-    validate: {
-      validator: function(v) {
-        // Check if URL is valid format
-        try {
-          new URL(v);
-        } catch {
-          return false;
-        }
-        // Check if URL ends with .gif or .webp (case insensitive)
-        return /\.(gif|webp)(\?.*)?$/i.test(v);
-      },
-      message: 'GIF URL must be a valid URL ending with .gif or .webp'
-    }
+    required: true
+    // ✅ No validation - accepts any URL
   },
   description: { 
     type: String, 
-    default: '',
-    maxlength: 500
+    default: ''
   },
   unlockType: { 
     type: String, 
@@ -38,27 +23,8 @@ const bannerSchema = new mongoose.Schema({
   },
   unlockCondition: { 
     type: mongoose.Schema.Types.Mixed, 
-    required: true,
-    validate: {
-      validator: function(v) {
-        // Validate based on unlockType
-        if (this.unlockType === 'total_guesses') {
-          return v && typeof v.totalGuesses === 'number' && v.totalGuesses > 0;
-        }
-        if (this.unlockType === 'anime_guesses') {
-          return v && v.anime && typeof v.anime === 'string' && v.anime.trim() !== '' &&
-                 typeof v.count === 'number' && v.count > 0;
-        }
-        if (this.unlockType === 'season_rank') {
-          return v && typeof v.seasonRank === 'number' && v.seasonRank > 0;
-        }
-        if (this.unlockType === 'special') {
-          return v && typeof v === 'object';
-        }
-        return true;
-      },
-      message: 'Invalid unlock condition for the selected unlock type'
-    }
+    required: true
+    // ✅ No validation - accepts any format
   },
   category: { 
     type: String, 
@@ -82,7 +48,7 @@ const bannerSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Add compound index for better performance
+// Add index for better performance
 bannerSchema.index({ name: 1 });
 bannerSchema.index({ isActive: 1, rarity: 1 });
 
