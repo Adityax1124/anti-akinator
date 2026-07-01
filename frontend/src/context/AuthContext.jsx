@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   
   const fetchUserRef = useRef(false);
   const sessionTimerRef = useRef(null);
-  const initialFetchDone = useRef(false); // ← ADD THIS
+  const initialFetchDone = useRef(false);
 
   // ===== SET AUTH HEADER =====
   const setAuthHeader = useCallback((token) => {
@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     // Allow refresh even if already fetched
-    fetchUserRef.current = false; // ← RESET for refresh
+    fetchUserRef.current = false;
     setLoading(true);
     const userData = await fetchUser();
     setLoading(false);
