@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// ===== HELPER: Get Current Season =====
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  return parseInt(`${year}${month.toString().padStart(2, '0')}`);
+}
+
 // ===== HELPER: Sanitize input =====
 function sanitizeInput(str) {
   if (!str) return '';
@@ -45,9 +53,13 @@ const userSchema = new mongoose.Schema({
     totalQuestions: { type: Number, default: 0, min: 0 },
     winStreak: { type: Number, default: 0, min: 0 }
   },
-  // ===== SEASON STATS =====
+  // ===== SEASON STATS (FIXED) =====
   seasonStats: {
-    currentSeason: { type: Number, default: 1, min: 1 },
+    currentSeason: { 
+      type: Number, 
+      default: getCurrentSeason,  // ✅ DYNAMIC! 
+      min: 1 
+    },
     seasonWins: { type: Number, default: 0, min: 0 },
     seasonPlayed: { type: Number, default: 0, min: 0 },
     seasonStreak: { type: Number, default: 0, min: 0 }

@@ -6,6 +6,14 @@ const TwoFactor = require('../models/TwoFactor');
 const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
+// ===== HELPER: Get Current Season =====
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  return parseInt(`${year}${month.toString().padStart(2, '0')}`);
+}
+
 // ===== VALIDATION RULES =====
 const registerValidation = [
   body('username')
@@ -72,11 +80,22 @@ router.post('/register', registerValidation, async (req, res) => {
       });
     }
 
+    // ✅ Get current season dynamically
+    const currentSeason = getCurrentSeason();
+
+    // ✅ Create user with CORRECT seasonStats
     const user = new User({ 
       username: username.trim(), 
       email: email.toLowerCase().trim(), 
-      password 
+      password,
+      seasonStats: {
+        currentSeason: currentSeason,  // ✅ FIXED: Dynamic season
+        seasonWins: 0,
+        seasonPlayed: 0,
+        seasonStreak: 0
+      }
     });
+    
     await user.save();
 
     const token = jwt.sign(
@@ -91,7 +110,8 @@ router.post('/register', registerValidation, async (req, res) => {
       email: user.email,
       role: user.role,
       stats: user.stats,
-      shards: user.shards
+      shards: user.shards,
+      seasonStats: user.seasonStats  // ✅ Include seasonStats in response
     };
 
     res.cookie('token', token, {
@@ -155,7 +175,6 @@ router.post('/login', loginValidation, async (req, res) => {
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      // Increment failed attempts
       await user.incrementFailedAttempts();
       return res.status(401).json({
         success: false,
@@ -163,14 +182,12 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
-    // Reset failed attempts on successful login
     await user.resetFailedAttempts();
 
     // ===== CHECK IF 2FA IS ENABLED =====
     const twoFactor = await TwoFactor.findOne({ user: user._id });
 
     if (twoFactor && twoFactor.enabled) {
-      // Return response requiring 2FA
       return res.json({
         success: true,
         requires2FA: true,
@@ -193,7 +210,8 @@ router.post('/login', loginValidation, async (req, res) => {
       email: user.email,
       role: user.role,
       stats: user.stats,
-      shards: user.shards
+      shards: user.shards,
+      seasonStats: user.seasonStats  // ✅ Include seasonStats in response
     };
 
     res.cookie('token', token, {
