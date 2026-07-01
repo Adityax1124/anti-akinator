@@ -209,7 +209,7 @@ AFFILIATIONS: If group listed → YES to "from X" or "part of X". If "(former)" 
 CONTEXT: Understand time (currently vs formerly). Connect synonyms naturally.
 IDENTITY: Ask "Is it X?" or "Is my character X?" → ALWAYS "MAYBE".
 UNSURE: Say "MAYBE".
-Your ONLY allowed responses: "Yes", "No", or "Maybe". Nothing else.
+Your ONLY allowed responses: "Yes", "No", "Maybe", or the EXACT anime name. Nothing else.
 EXAMPLES:
 - Data says "Gender: Male" → "Is it female?" = "No"
 - Data says "Powers: Fire" → "Does he use ice?" = "No"
