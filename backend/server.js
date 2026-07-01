@@ -14,7 +14,7 @@ const twoFactorRoutes = require('./routes/twofactor'); // ← ADD THIS
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
-
+app.set('trust proxy', true);
 // ===== SECURITY: HELMET =====
 app.use(helmet({
   hsts: {
