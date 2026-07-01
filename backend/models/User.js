@@ -21,7 +21,6 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
-    unique: true,
     lowercase: true,
     trim: true,
     match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address'],
@@ -205,7 +204,6 @@ const userSchema = new mongoose.Schema({
 
 // ===== INDEXES =====
 userSchema.index({ username: 1 });
-userSchema.index({ email: 1 });
 userSchema.index({ 'seasonStats.currentSeason': 1 });
 userSchema.index({ 'seasonStats.seasonWins': -1 });
 
