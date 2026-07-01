@@ -737,7 +737,6 @@ const AdminPanel = () => {
                     value={charForm.name} 
                     onChange={handleCharChange} 
                     required 
-                    placeholder="e.g., Luffy"
                   />
                 </div>
                 <div className="form-group">
@@ -749,7 +748,6 @@ const AdminPanel = () => {
                     value={charForm.anime} 
                     onChange={handleCharChange} 
                     required 
-                    placeholder="e.g., One Piece"
                   />
                 </div>
               </div>
@@ -761,7 +759,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.image} 
                   onChange={handleCharChange} 
-                  placeholder="https://example.com/image.jpg"
                 />
                 {charForm.image && !validateImageUrl(charForm.image) && (
                   <small className="validation-error">⚠️ Must be a valid image URL (ends with .jpg, .png, etc.)</small>
@@ -776,7 +773,6 @@ const AdminPanel = () => {
                   value={charForm.crucialHint || ''} 
                   onChange={handleCharChange} 
                   required
-                  placeholder="e.g., This character ate a Devil Fruit"
                 />
                 <small className="form-hint">This hint is shown when a player uses the hint feature (costs 50 shards)</small>
               </div>
@@ -789,7 +785,6 @@ const AdminPanel = () => {
                   value={charForm.description} 
                   onChange={handleCharChange} 
                   required 
-                  placeholder="Brief description of the character (150-300 characters recommended)"
                 />
                 <small className="form-hint">
                   {charForm.description.length}/300+ characters
@@ -815,7 +810,6 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={charForm.traits.species} 
                     onChange={handleCharChange} 
-                    placeholder="e.g., Human, Saiyan, Demon"
                   />
                 </div>
               </div>
@@ -828,7 +822,6 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={charForm.traits.age} 
                     onChange={handleCharChange} 
-                    placeholder="e.g., 19"
                   />
                 </div>
                 <div className="form-group">
@@ -839,7 +832,6 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={charForm.traits.occupation} 
                     onChange={handleCharChange} 
-                    placeholder="e.g., Pirate, Ninja"
                   />
                 </div>
               </div>
@@ -850,7 +842,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.powers.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'powers')} 
-                  placeholder="e.g., Gum-Gum Fruit, Haki"
                 />
               </div>
               <div className="form-group">
@@ -860,7 +851,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.personality.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'personality')} 
-                  placeholder="e.g., Carefree, Determined, Loyal"
                 />
               </div>
               <div className="form-group">
@@ -870,7 +860,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.affiliations.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'affiliations')} 
-                  placeholder="e.g., Straw Hat Pirates"
                 />
               </div>
               <div className="form-group">
@@ -880,7 +869,6 @@ const AdminPanel = () => {
                   className="form-control"
                   value={charForm.traits.relationships.join(', ')}
                   onChange={(e) => handleCharArray(e, 'relationships')}
-                  placeholder="e.g., Brother of Ace, Student of Mihawk"
                 />
               </div>
               <div className="form-group">
@@ -890,7 +878,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={charForm.traits.keyEvents.join(', ')} 
                   onChange={(e) => handleCharArray(e, 'keyEvents')} 
-                  placeholder="e.g., Ate the Gum-Gum Fruit, Defeated Kaido"
                 />
               </div>
               <div className="form-row checkboxes">
@@ -954,7 +941,6 @@ const AdminPanel = () => {
                     value={bannerForm.name} 
                     onChange={handleBannerChange} 
                     required 
-                    placeholder="e.g., Legendary Pirate"
                   />
                 </div>
                 <div className="form-group">
@@ -965,7 +951,6 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={bannerForm.gifUrl} 
                     onChange={handleBannerChange} 
-                    placeholder="https://example.com/banner.gif" 
                     required 
                   />
                   {bannerForm.gifUrl && !validateGifUrl(bannerForm.gifUrl) && (
@@ -982,7 +967,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={bannerForm.description} 
                   onChange={handleBannerChange} 
-                  placeholder="Brief description of this banner"
                 />
               </div>
               <div className="form-row">
@@ -1027,7 +1011,6 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={bannerForm.unlockCondition.totalGuesses || ''} 
                       onChange={handleBannerChange} 
-                      placeholder="e.g., 100"
                       min="1"
                     />
                   )}
@@ -1039,7 +1022,6 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={bannerForm.unlockCondition.anime || ''} 
                         onChange={handleBannerChange} 
-                        placeholder="e.g., One Piece"
                       />
                       <input 
                         type="number" 
@@ -1047,7 +1029,6 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={bannerForm.unlockCondition.count || ''} 
                         onChange={handleBannerChange} 
-                        placeholder="e.g., 50"
                         min="1"
                         style={{ marginTop: 6 }}
                       />
@@ -1060,7 +1041,6 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={bannerForm.unlockCondition.seasonRank || ''} 
                       onChange={handleBannerChange} 
-                      placeholder="e.g., 1"
                       min="1"
                     />
                   )}
@@ -1121,7 +1101,6 @@ const AdminPanel = () => {
                     value={titleForm.name} 
                     onChange={handleTitleChange} 
                     required 
-                    placeholder="e.g., the_rookie"
                   />
                   <small className="form-hint">Used internally, must be unique</small>
                 </div>
@@ -1133,7 +1112,6 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={titleForm.displayName} 
                     onChange={handleTitleChange} 
-                    placeholder="e.g., The Rookie" 
                     required 
                   />
                 </div>
@@ -1146,7 +1124,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={titleForm.description} 
                   onChange={handleTitleChange} 
-                  placeholder="Brief description of this title"
                 />
               </div>
               <div className="form-row">
@@ -1187,7 +1164,6 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={titleForm.unlockCondition.totalGuesses || ''} 
                       onChange={handleTitleChange} 
-                      placeholder="e.g., 100"
                       min="1"
                     />
                   )}
@@ -1199,7 +1175,6 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={titleForm.unlockCondition.anime || ''} 
                         onChange={handleTitleChange} 
-                        placeholder="e.g., One Piece"
                       />
                       <input 
                         type="number" 
@@ -1207,7 +1182,6 @@ const AdminPanel = () => {
                         className="form-control" 
                         value={titleForm.unlockCondition.count || ''} 
                         onChange={handleTitleChange} 
-                        placeholder="e.g., 50"
                         min="1"
                         style={{ marginTop: 6 }}
                       />
@@ -1220,7 +1194,6 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={titleForm.unlockCondition.seasonRank || ''} 
                       onChange={handleTitleChange} 
-                      placeholder="e.g., 1"
                       min="1"
                     />
                   )}
@@ -1231,7 +1204,6 @@ const AdminPanel = () => {
                       className="form-control" 
                       value={titleForm.unlockCondition.streak || ''} 
                       onChange={handleTitleChange} 
-                      placeholder="e.g., 10"
                       min="1"
                     />
                   )}
@@ -1290,7 +1262,6 @@ const AdminPanel = () => {
                     value={photoForm.name} 
                     onChange={handlePhotoChange} 
                     required 
-                    placeholder="e.g., Shinobu Portrait"
                   />
                 </div>
                 <div className="form-group">
@@ -1302,7 +1273,6 @@ const AdminPanel = () => {
                     value={photoForm.characterName} 
                     onChange={handlePhotoChange} 
                     required 
-                    placeholder="e.g., Shinobu"
                   />
                   <small className="form-hint">This must be unique. If "Shinobu" already exists, choose a different name.</small>
                 </div>
@@ -1316,7 +1286,6 @@ const AdminPanel = () => {
                     className="form-control" 
                     value={photoForm.imageUrl} 
                     onChange={handlePhotoChange} 
-                    placeholder="https://i.pinimg.com/originals/42/35/75/3423575b5ab5addb8.jpg" 
                     required 
                   />
                   {photoForm.imageUrl && !validateImageUrl(photoForm.imageUrl) && (
@@ -1335,7 +1304,6 @@ const AdminPanel = () => {
                     value={photoForm.anime} 
                     onChange={handlePhotoChange} 
                     required 
-                    placeholder="e.g., One Piece"
                   />
                 </div>
               </div>
@@ -1347,7 +1315,6 @@ const AdminPanel = () => {
                   className="form-control" 
                   value={photoForm.description} 
                   onChange={handlePhotoChange} 
-                  placeholder="Brief description of the character"
                 />
               </div>
               <div className="form-row">
