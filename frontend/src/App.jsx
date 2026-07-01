@@ -3,13 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';          // ✅ Home.jsx is directly in pages
-import Game from './pages/Game';          // ✅ Game.jsx is directly in pages
+import Home from './pages/Home';
+import Game from './pages/Game';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Profile from './pages/Profile';    // ✅ Profile.jsx is directly in pages
-import Leaderboard from './pages/Leaderboard'; // ✅ Leaderboard.jsx is directly in pages
-import SeasonWinners from './pages/SeasonWinners'; // ✅ SeasonWinners.jsx is directly in pages
+import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile'; // ← ADD THIS IMPORT
+import Leaderboard from './pages/Leaderboard';
+import SeasonWinners from './pages/SeasonWinners';
 import AdminPanel from './pages/AdminPanel';
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
@@ -70,14 +71,17 @@ function App() {
                   <Game />
                 </PrivateRouteWrapper>
               } />
+              
+              {/* ===== PROFILE ROUTES - ORDER MATTERS! ===== */}
               <Route path="/profile" element={
                 <PrivateRouteWrapper>
                   <Profile />
                 </PrivateRouteWrapper>
               } />
+              
               <Route path="/profile/:username" element={
                 <PrivateRouteWrapper>
-                  <Profile />
+                  <PublicProfile />
                 </PrivateRouteWrapper>
               } />
               

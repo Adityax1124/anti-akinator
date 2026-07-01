@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
   
   const fetchUserRef = useRef(false);
   const sessionTimerRef = useRef(null);
+  const initialFetchDone = useRef(false); // ← ADD THIS
 
   // ===== SET AUTH HEADER =====
   const setAuthHeader = useCallback((token) => {
@@ -90,8 +91,9 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user, resetSessionTimer]);
 
-  // ===== FETCH USER =====
+  // ===== FETCH USER (ONLY ONCE) =====
   const fetchUser = useCallback(async () => {
+    // ===== PREVENT MULTIPLE FETCHES =====
     if (fetchUserRef.current) return;
     fetchUserRef.current = true;
 
@@ -112,7 +114,7 @@ export const AuthProvider = ({ children }) => {
       return null;
     } finally {
       setLoading(false);
-      fetchUserRef.current = false;
+      // Don't reset fetchUserRef here - we only want to fetch ONCE
     }
   }, [logout, resetSessionTimer]);
 
@@ -123,14 +125,20 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
     
+    // Allow refresh even if already fetched
+    fetchUserRef.current = false; // ← RESET for refresh
     setLoading(true);
     const userData = await fetchUser();
     setLoading(false);
     return userData;
   }, [token, fetchUser]);
 
-  // ===== INITIALIZE AUTH =====
+  // ===== INITIALIZE AUTH (ONLY ONCE) =====
   useEffect(() => {
+    // ===== ONLY RUN ONCE =====
+    if (initialFetchDone.current) return;
+    initialFetchDone.current = true;
+    
     if (token) {
       setAuthHeader(token);
       fetchUser();
@@ -180,6 +188,9 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setAuthError(null);
       resetSessionTimer();
+      
+      // Reset fetch ref so refresh works after login
+      fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} logged in successfully`);
       
@@ -298,6 +309,9 @@ export const AuthProvider = ({ children }) => {
       setAuthHeader(token);
       setUser(user);
       setAuthError(null);
+      
+      // Reset fetch ref
+      fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} registered successfully`);
       

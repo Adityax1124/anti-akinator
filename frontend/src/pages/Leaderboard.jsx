@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import './Leaderboard.css';
@@ -11,35 +11,56 @@ const Leaderboard = () => {
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState('');
   const navigate = useNavigate();
+  
+  // ===== PREVENT INFINITE LOOPS =====
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    fetchLeaderboard();
+    // Only fetch once
+    if (!fetchedRef.current) {
+      fetchedRef.current = true;
+      fetchLeaderboard();
+    }
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 60000);
     return () => clearInterval(timer);
-  }, []);
+  }, []); // ← Empty dependency array prevents re-runs
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await api.get('/season/leaderboard?_t=' + Date.now());
+      setLoading(true);
+      const response = await api.get('/season/leaderboard');
       
-      const data = response.data;
+      console.log('📊 Leaderboard API Response:', response.data);
       
-      setLeaderboard(data.leaderboard || []);
-      setSeason(data.season || 1);
+      let data = response.data;
+      let leaderboardData = data.leaderboard || [];
+      let seasonNumber = data.season || 1;
+      
+      if (Array.isArray(leaderboardData) && leaderboardData.length > 0) {
+        setLeaderboard(leaderboardData);
+        console.log('✅ Leaderboard loaded:', leaderboardData.length, 'players');
+      } else {
+        console.warn('⚠️ No data in leaderboard');
+        setLeaderboard([]);
+      }
+      
+      setSeason(seasonNumber);
       
       if (data.seasonDisplayName) {
         setSeasonDisplayName(data.seasonDisplayName);
       } else {
-        setSeasonDisplayName(`Season ${data.season || 1}`);
+        setSeasonDisplayName(`Season ${seasonNumber}`);
       }
       
       setLoading(false);
     } catch (error) {
-      console.error('Leaderboard fetch error:', error);
+      console.error('❌ Leaderboard fetch error:', error);
       
       if (error.response?.status === 404) {
         setError('Leaderboard feature coming soon! 🚀');
+      } else if (error.response?.status === 429) {
+        setError('Too many requests. Please wait a moment.');
       } else {
         setError('Failed to load leaderboard. Please try again.');
       }
@@ -102,7 +123,8 @@ const Leaderboard = () => {
         
         {!error && leaderboard.length === 0 ? (
           <div className="leaderboard-empty">
-            <p>No players yet. Be the first to play!</p>
+            <p>No players yet. Be the first to play! 🎯</p>
+            <p className="empty-subtext">Win games to appear on the leaderboard</p>
           </div>
         ) : !error && (
           <div className="leaderboard-list">
@@ -114,41 +136,47 @@ const Leaderboard = () => {
               <span className="streak">🔥 Streak</span>
             </div>
             
-            {leaderboard.map((player, index) => (
-              <div 
-                key={player.username || index} 
-                className={`leaderboard-item ${index < 3 ? 'top' : ''}`}
-                onClick={() => handlePlayerClick(player.username)}
-                style={{ cursor: player.username ? 'pointer' : 'default' }}
-              >
-                <span className="rank">
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                </span>
-                <span className="avatar-col">
-                  {player.profilePhoto ? (
-                    <img 
-                      src={player.profilePhoto} 
-                      alt={player.username}
-                      className="leaderboard-avatar-img"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        const placeholder = document.createElement('span');
-                        placeholder.className = 'leaderboard-avatar-placeholder';
-                        placeholder.textContent = player.username?.charAt(0).toUpperCase() || '?';
-                        e.target.parentElement.appendChild(placeholder);
-                      }}
-                    />
-                  ) : (
-                    <span className="leaderboard-avatar-placeholder">
-                      {player.username?.charAt(0).toUpperCase() || '?'}
-                    </span>
-                  )}
-                </span>
-                <span className="player">{player.username || 'Unknown'}</span>
-                <span className="games">{player.wins || 0}</span>
-                <span className="streak">{player.streak || 0}</span>
-              </div>
-            ))}
+            {leaderboard.map((player, index) => {
+              const rank = player.rank || index + 1;
+              const username = player.username || 'Unknown';
+              
+              return (
+                <div 
+                  key={username + index} 
+                  className={`leaderboard-item ${index < 3 ? 'top' : ''}`}
+                  onClick={() => handlePlayerClick(username)}
+                  style={{ cursor: username !== 'Unknown' ? 'pointer' : 'default' }}
+                >
+                  <span className="rank">
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${rank}`}
+                  </span>
+                  <span className="avatar-col">
+                    {player.profilePhoto ? (
+                      <img 
+                        src={player.profilePhoto} 
+                        alt={username}
+                        className="leaderboard-avatar-img"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          const parent = e.target.parentElement;
+                          const placeholder = document.createElement('span');
+                          placeholder.className = 'leaderboard-avatar-placeholder';
+                          placeholder.textContent = username.charAt(0).toUpperCase() || '?';
+                          parent.appendChild(placeholder);
+                        }}
+                      />
+                    ) : (
+                      <span className="leaderboard-avatar-placeholder">
+                        {username.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    )}
+                  </span>
+                  <span className="player">{username}</span>
+                  <span className="games">{player.wins || 0}</span>
+                  <span className="streak">{player.streak || 0}</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

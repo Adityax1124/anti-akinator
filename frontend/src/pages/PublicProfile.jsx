@@ -19,7 +19,9 @@ const PublicProfile = () => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/profile/public/${username}`);
+      const response = await api.get(`/profile/public/${username}`, {
+        params: { _t: Date.now() } // Cache busting
+      });
       setProfile(response.data.user);
       setError('');
     } catch (error) {
@@ -52,6 +54,7 @@ const PublicProfile = () => {
     }
   };
 
+  // ===== CHECK IF OWN PROFILE =====
   const isOwnProfile = currentUser?.username === username;
 
   if (loading) {
@@ -79,18 +82,20 @@ const PublicProfile = () => {
     );
   }
 
-  // If it's the current user's own profile, redirect
+  // If it's the current user's own profile, redirect to profile
   if (isOwnProfile) {
     navigate('/profile');
     return null;
   }
 
-  // Get unlocked photos (up to 10)
+  // ===== FIX: Get unlocked photos correctly =====
+  // Check if profile has achievements and profilePhotos
   const unlockedPhotos = profile.achievements?.profilePhotos || [];
-  const displayPhotos = [...unlockedPhotos];
-  // Pad to 10 with nulls
-  while (displayPhotos.length < 10) {
-    displayPhotos.push(null);
+  
+  // Display up to 10 photos
+  const displayPhotos = [];
+  for (let i = 0; i < 10; i++) {
+    displayPhotos.push(unlockedPhotos[i] || null);
   }
 
   return (
@@ -108,7 +113,9 @@ const PublicProfile = () => {
           <div 
             className="public-profile-photo"
             style={profile.equipped?.profilePhoto?.imageUrl ? { 
-              backgroundImage: `url(${profile.equipped.profilePhoto.imageUrl})` 
+              backgroundImage: `url(${profile.equipped.profilePhoto.imageUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
             } : {}}
           >
             {!profile.equipped?.profilePhoto?.imageUrl && (
@@ -122,11 +129,12 @@ const PublicProfile = () => {
           <div className="public-banner-user-info">
             <h1 className="public-banner-username">{profile.username}</h1>
             
+            {/* ===== FIX: Title with rarity color ===== */}
             {profile.equipped?.title && (
               <div className="public-banner-title" style={{ color: getRarityColor(profile.equipped.title.rarity) }}>
                 {profile.equipped.title.displayName}
                 <span className="public-title-rarity">
-                  {' '}{profile.equipped.title.rarity}
+                  {' '}{getRarityEmoji(profile.equipped.title.rarity)} {profile.equipped.title.rarity}
                 </span>
               </div>
             )}
@@ -185,13 +193,17 @@ const PublicProfile = () => {
               <div 
                 key={index}
                 className={`public-top-photo-item ${isUnlocked ? 'unlocked' : 'locked'}`}
-                title={isUnlocked ? photo.name : 'Locked'}
+                title={isUnlocked ? photo.name || 'Unknown' : 'Locked'}
               >
                 {isUnlocked ? (
                   <>
                     <div 
                       className="public-top-photo-preview" 
-                      style={photo?.imageUrl ? { backgroundImage: `url(${photo.imageUrl})` } : {}}
+                      style={photo?.imageUrl ? { 
+                        backgroundImage: `url(${photo.imageUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      } : {}}
                     >
                       {photo?.rarity && (
                         <div className="public-photo-rarity-badge" style={{ color: getRarityColor(photo.rarity) }}>
@@ -199,7 +211,10 @@ const PublicProfile = () => {
                         </div>
                       )}
                     </div>
-                    <div className="public-top-photo-name">{photo?.name || 'Unknown'}</div>
+                    <div className="public-top-photo-name">
+                      {photo?.name || 'Unknown'}
+                      {photo?.rarity && ` (${photo.rarity})`}
+                    </div>
                   </>
                 ) : (
                   <>
