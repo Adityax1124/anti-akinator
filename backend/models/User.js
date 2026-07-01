@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
+    unique: true,
     lowercase: true,
     trim: true,
     match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address'],
@@ -35,7 +36,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['player', 'admin'],
     default: 'player',
-    set: (v) => v === 'admin' ? 'admin' : 'player' // Prevent self-assigning admin
+    set: (v) => v === 'admin' ? 'admin' : 'player'
   },
   // ===== LIFETIME STATS =====
   stats: {
@@ -59,7 +60,7 @@ const userSchema = new mongoose.Schema({
     rank: { type: Number, default: null, min: 1 },
     isWinner: { type: Boolean, default: false }
   }],
-  // ===== SHARDS (Game Currency) =====
+  // ===== SHARDS =====
   shards: {
     type: Number,
     default: 0,
@@ -75,7 +76,6 @@ const userSchema = new mongoose.Schema({
     type: Map, 
     of: Number, 
     default: {},
-    // Ensure keys are sanitized
     set: (v) => {
       const sanitized = new Map();
       if (v instanceof Map) {
@@ -151,7 +151,7 @@ const userSchema = new mongoose.Schema({
       default: null 
     }
   },
-  // ===== SECURITY FIELDS =====
+  // ===== SECURITY =====
   lastLogin: {
     type: Date,
     default: null
@@ -160,7 +160,7 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0,
-    max: 10 // Lock after 10 failed attempts
+    max: 10
   },
   lockedUntil: {
     type: Date,
@@ -174,12 +174,16 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // ===== CACHE BUSTING =====
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 }, {
-  // ===== OPTIONS =====
   toJSON: {
     transform: (doc, ret) => {
       delete ret.password;
@@ -204,6 +208,7 @@ const userSchema = new mongoose.Schema({
 
 // ===== INDEXES =====
 userSchema.index({ username: 1 });
+userSchema.index({ email: 1 });
 userSchema.index({ 'seasonStats.currentSeason': 1 });
 userSchema.index({ 'seasonStats.seasonWins': -1 });
 
@@ -212,7 +217,7 @@ userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
-    const salt = await bcrypt.genSalt(12); // Increased from 10 to 12 for better security
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
     this.passwordChangedAt = new Date();
     next();
@@ -229,32 +234,29 @@ userSchema.pre('save', function(next) {
   if (this.email) {
     this.email = this.email.toLowerCase().trim();
   }
+  // ===== UPDATE UPDATEDAT =====
+  this.updatedAt = new Date();
   next();
 });
 
 // ===== METHODS =====
-// Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Check if account is locked
 userSchema.methods.isLocked = function() {
   if (!this.lockedUntil) return false;
   return new Date() < this.lockedUntil;
 };
 
-// Increment failed login attempts
 userSchema.methods.incrementFailedAttempts = async function() {
   this.failedLoginAttempts += 1;
   if (this.failedLoginAttempts >= 10) {
-    // Lock for 30 minutes
     this.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
   }
   await this.save();
 };
 
-// Reset failed login attempts
 userSchema.methods.resetFailedAttempts = async function() {
   this.failedLoginAttempts = 0;
   this.lockedUntil = null;
@@ -263,7 +265,6 @@ userSchema.methods.resetFailedAttempts = async function() {
 };
 
 // ===== STATICS =====
-// Find by username or email (case-insensitive)
 userSchema.statics.findByUsernameOrEmail = function(identifier) {
   const sanitized = sanitizeInput(identifier);
   return this.findOne({
@@ -274,5 +275,4 @@ userSchema.statics.findByUsernameOrEmail = function(identifier) {
   });
 };
 
-// ===== EXPORT =====
 module.exports = mongoose.model('User', userSchema);

@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ===== LOGOUT (DEFINED FIRST) =====
+  // ===== LOGOUT =====
   const logout = useCallback(async () => {
     try {
       await api.post('/auth/logout').catch(() => {});
@@ -158,7 +158,6 @@ export const AuthProvider = ({ children }) => {
       
       const data = response.data;
 
-      // ===== CHECK IF 2FA IS REQUIRED =====
       if (data.requires2FA) {
         return {
           success: true,

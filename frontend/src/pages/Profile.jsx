@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api/axios';
 import './Profile.css';
 
 const Profile = () => {
@@ -37,10 +37,11 @@ const Profile = () => {
     setSuccessMessage('');
     
     try {
-      // Force fresh data with cache busting
+      const timestamp = Date.now();
+      
       const [profileRes, historyRes] = await Promise.all([
-        api.get('/profile/me', { params: { _t: Date.now() } }),
-        api.get('/game/history', { params: { _t: Date.now() } })
+        api.get('/profile/me', { params: { _t: timestamp } }),
+        api.get('/game/history', { params: { _t: timestamp } })
       ]);
 
       const userData = profileRes.data.user;
@@ -108,16 +109,21 @@ const Profile = () => {
   const equipBanner = async (bannerId) => {
     try {
       setLoading(true);
+      setError('');
       const response = await api.post('/profile/equip-banner', { bannerId });
       
       if (response.data.success) {
         setShowBannerModal(false);
-        setSuccessMessage('Banner equipped successfully! ✅');
+        setSuccessMessage('✅ Banner equipped successfully!');
         // Refresh all data
         await fetchProfileData();
         await refreshUser();
         // Reload banners to update equipped status
         await loadBanners();
+        // Force a page refresh to clear cache
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       }
     } catch (error) {
       setError('Failed to equip banner');
@@ -131,14 +137,18 @@ const Profile = () => {
   const equipTitle = async (titleId) => {
     try {
       setLoading(true);
+      setError('');
       const response = await api.post('/profile/equip-title', { titleId });
       
       if (response.data.success) {
         setShowTitleModal(false);
-        setSuccessMessage('Title equipped successfully! ✅');
+        setSuccessMessage('✅ Title equipped successfully!');
         await fetchProfileData();
         await refreshUser();
         await loadTitles();
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       }
     } catch (error) {
       setError('Failed to equip title');
@@ -152,14 +162,18 @@ const Profile = () => {
   const equipPhoto = async (photoId) => {
     try {
       setLoading(true);
+      setError('');
       const response = await api.post('/profile/equip-photo', { photoId });
       
       if (response.data.success) {
         setShowPhotoModal(false);
-        setSuccessMessage('Profile photo equipped successfully! ✅');
+        setSuccessMessage('✅ Profile photo equipped successfully!');
         await fetchProfileData();
         await refreshUser();
         await loadPhotos();
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       }
     } catch (error) {
       setError('Failed to equip photo');
@@ -269,8 +283,29 @@ const Profile = () => {
     <div className="profile-container fade-in">
       {/* ===== SUCCESS MESSAGE ===== */}
       {successMessage && (
-        <div className="profile-success-message">
+        <div className="profile-success-message" style={{
+          background: '#4caf50',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          textAlign: 'center'
+        }}>
           {successMessage}
+        </div>
+      )}
+
+      {/* ===== ERROR MESSAGE ===== */}
+      {error && (
+        <div className="profile-error-message" style={{
+          background: '#f44336',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          textAlign: 'center'
+        }}>
+          {error}
         </div>
       )}
 
@@ -312,7 +347,16 @@ const Profile = () => {
               <h1 className="banner-username">
                 {username}
                 {equippedTitle?.displayName && (
-                  <span className="profile-title-badge">
+                  <span className="profile-title-badge" style={{
+                    display: 'inline-block',
+                    background: 'linear-gradient(135deg, #f7971e, #ffd200)',
+                    color: '#333',
+                    padding: '2px 12px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    marginLeft: '10px',
+                    fontWeight: 600
+                  }}>
                     [{equippedTitle.displayName}]
                   </span>
                 )}

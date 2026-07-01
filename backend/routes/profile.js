@@ -40,14 +40,14 @@ const validateSearch = [
     .withMessage('Search contains invalid characters')
 ];
 
-// ===================== GET MY PROFILE (with populated equipped items) =====================
+// ===================== GET MY PROFILE (WITH CACHE BUSTING) =====================
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
       .select('-password -__v')
-      .populate('equipped.banner', 'gifUrl name')  // ✅ Populate banner
-      .populate('equipped.title', 'displayName name rarity')  // ✅ Populate title
-      .populate('equipped.profilePhoto', 'imageUrl name');  // ✅ Populate profile photo
+      .populate('equipped.banner', 'gifUrl name')
+      .populate('equipped.title', 'displayName name rarity')
+      .populate('equipped.profilePhoto', 'imageUrl name');
 
     if (!user) {
       return res.status(404).json({
@@ -56,7 +56,14 @@ router.get('/me', authMiddleware, async (req, res) => {
       });
     }
 
-    // Format equipped items for frontend
+    // ===== CACHE BUSTING HEADERS =====
+    const etag = `"${user.updatedAt?.getTime() || Date.now()}"`;
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('ETag', etag);
+
+    // Format equipped items
     const formattedUser = {
       _id: user._id,
       username: user.username,
@@ -72,6 +79,7 @@ router.get('/me', authMiddleware, async (req, res) => {
         profilePhoto: user.equipped?.profilePhoto || null
       },
       achievements: user.achievements,
+      updatedAt: user.updatedAt,
       createdAt: user.createdAt
     };
 
@@ -93,6 +101,11 @@ router.get('/banners', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const allBanners = await Banner.find({ isActive: true });
+    
+    // Cache busting
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     
     const bannersWithStatus = allBanners.map(banner => {
       const isUnlocked = user.achievements.banners.some(
@@ -125,6 +138,10 @@ router.get('/titles', authMiddleware, async (req, res) => {
     const user = await User.findById(req.user._id);
     const allTitles = await Title.find({ isActive: true });
     
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     const titlesWithStatus = allTitles.map(title => {
       const isUnlocked = user.achievements.titles.some(
         t => t.titleId.toString() === title._id.toString()
@@ -155,6 +172,10 @@ router.get('/photos', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const allPhotos = await ProfilePhoto.find({ isActive: true });
+    
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     
     const photosWithStatus = allPhotos.map(photo => {
       const isUnlocked = user.achievements.profilePhotos.some(
@@ -188,6 +209,10 @@ router.get('/equipped', authMiddleware, async (req, res) => {
       .populate('equipped.banner', 'gifUrl name')
       .populate('equipped.title', 'displayName name')
       .populate('equipped.profilePhoto', 'imageUrl name');
+
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     res.json({
       success: true,
@@ -247,6 +272,7 @@ router.post('/equip-banner', authMiddleware, validateEquip, async (req, res) => 
     }
     
     user.equipped.banner = bannerId;
+    user.updatedAt = new Date();
     await user.save();
 
     console.log(`🖼️ ${user.username} equipped banner: ${bannerExists.name}`);
@@ -254,7 +280,8 @@ router.post('/equip-banner', authMiddleware, validateEquip, async (req, res) => 
     res.json({ 
       success: true, 
       message: 'Banner equipped successfully!',
-      banner: bannerExists
+      banner: bannerExists,
+      updatedAt: user.updatedAt
     });
   } catch (error) {
     console.error('Equip banner error:', error.message);
@@ -308,6 +335,7 @@ router.post('/equip-title', authMiddleware, validateEquip, async (req, res) => {
     }
     
     user.equipped.title = titleId;
+    user.updatedAt = new Date();
     await user.save();
 
     console.log(`🏷️ ${user.username} equipped title: ${titleExists.name}`);
@@ -315,7 +343,8 @@ router.post('/equip-title', authMiddleware, validateEquip, async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Title equipped successfully!',
-      title: titleExists
+      title: titleExists,
+      updatedAt: user.updatedAt
     });
   } catch (error) {
     console.error('Equip title error:', error.message);
@@ -369,6 +398,7 @@ router.post('/equip-photo', authMiddleware, validateEquip, async (req, res) => {
     }
     
     user.equipped.profilePhoto = photoId;
+    user.updatedAt = new Date();
     await user.save();
 
     console.log(`📸 ${user.username} equipped profile photo: ${photoExists.name}`);
@@ -376,7 +406,8 @@ router.post('/equip-photo', authMiddleware, validateEquip, async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Profile photo equipped successfully!',
-      photo: photoExists
+      photo: photoExists,
+      updatedAt: user.updatedAt
     });
   } catch (error) {
     console.error('Equip photo error:', error.message);
@@ -414,6 +445,10 @@ router.get('/public/:username', authMiddleware, validateUsername, async (req, re
         message: 'User not found'
       });
     }
+
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     const publicProfile = {
       username: user.username,
@@ -471,6 +506,10 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
     .select('username stats equipped.profilePhoto')
     .populate('equipped.profilePhoto', 'imageUrl')
     .limit(10);
+
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     const sanitizedUsers = users.map(user => ({
       username: user.username,
