@@ -14,7 +14,45 @@ function sanitizeInput(str) {
   return str.replace(/[<>]/g, '').trim();
 }
 
-// ===== CHARACTER CRUD =====
+// ============================================================
+// SEASON RESET (ADMIN ONLY)
+// ============================================================
+router.post('/reset-season', adminMiddleware, async (req, res) => {
+  try {
+    const { checkAndResetSeason, getCurrentSeason } = require('../utils/seasonUtils');
+    
+    const currentSeason = getCurrentSeason();
+    console.log(`🔧 Admin ${req.user.username} triggered manual season reset...`);
+    
+    const resetTriggered = await checkAndResetSeason();
+    
+    if (resetTriggered) {
+      res.json({
+        success: true,
+        message: `✅ Season reset completed successfully! Current season: ${currentSeason}`,
+        season: currentSeason,
+        reset: true
+      });
+    } else {
+      res.json({
+        success: true,
+        message: `ℹ️ No reset needed. Current season: ${currentSeason} is already active.`,
+        season: currentSeason,
+        reset: false
+      });
+    }
+  } catch (error) {
+    console.error('Admin manual reset error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error resetting season: ' + error.message
+    });
+  }
+});
+
+// ============================================================
+// CHARACTER CRUD
+// ============================================================
 router.get('/characters', adminMiddleware, async (req, res) => {
   try {
     const characters = await Character.find()
@@ -37,7 +75,6 @@ router.get('/characters', adminMiddleware, async (req, res) => {
 
 router.post('/characters', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any data
     const characterData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
@@ -67,7 +104,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
 
 router.put('/characters/:id', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any data
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.anime) updateData.anime = sanitizeInput(updateData.anime);
@@ -128,7 +164,9 @@ router.delete('/characters/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// ===== BANNER CRUD =====
+// ============================================================
+// BANNER CRUD
+// ============================================================
 router.get('/banners', adminMiddleware, async (req, res) => {
   try {
     const banners = await Banner.find().sort({ createdAt: -1 });
@@ -141,7 +179,6 @@ router.get('/banners', adminMiddleware, async (req, res) => {
 
 router.post('/banners', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any URL
     const bannerData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
@@ -166,7 +203,6 @@ router.post('/banners', adminMiddleware, async (req, res) => {
 
 router.put('/banners/:id', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any URL
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.gifUrl) updateData.gifUrl = updateData.gifUrl.trim();
@@ -220,7 +256,9 @@ router.delete('/banners/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// ===== TITLE CRUD =====
+// ============================================================
+// TITLE CRUD
+// ============================================================
 router.get('/titles', adminMiddleware, async (req, res) => {
   try {
     const titles = await Title.find().sort({ createdAt: -1 });
@@ -233,7 +271,6 @@ router.get('/titles', adminMiddleware, async (req, res) => {
 
 router.post('/titles', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any data
     const titleData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
@@ -258,7 +295,6 @@ router.post('/titles', adminMiddleware, async (req, res) => {
 
 router.put('/titles/:id', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any data
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.displayName) updateData.displayName = sanitizeInput(updateData.displayName);
@@ -312,7 +348,9 @@ router.delete('/titles/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// ===== PROFILE PHOTO CRUD =====
+// ============================================================
+// PROFILE PHOTO CRUD
+// ============================================================
 router.get('/profile-photos', adminMiddleware, async (req, res) => {
   try {
     const photos = await ProfilePhoto.find().sort({ createdAt: -1 });
@@ -325,7 +363,6 @@ router.get('/profile-photos', adminMiddleware, async (req, res) => {
 
 router.post('/profile-photos', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any URL
     const photoData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
@@ -350,7 +387,6 @@ router.post('/profile-photos', adminMiddleware, async (req, res) => {
 
 router.put('/profile-photos/:id', adminMiddleware, async (req, res) => {
   try {
-    // ✅ NO VALIDATION - accepts any URL
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.imageUrl) updateData.imageUrl = updateData.imageUrl.trim();
@@ -404,7 +440,9 @@ router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// ===== USERS & STATS =====
+// ============================================================
+// USERS & STATS
+// ============================================================
 router.get('/users', adminMiddleware, async (req, res) => {
   try {
     const users = await User.find()

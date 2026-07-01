@@ -10,6 +10,11 @@ const AdminPanel = () => {
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('characters');
 
+  // Season Reset State
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(null);
+
   // Character state
   const [characters, setCharacters] = useState([]);
   const [charForm, setCharForm] = useState({
@@ -118,6 +123,36 @@ const AdminPanel = () => {
       setError('Failed to load admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ===== SEASON RESET HANDLER =====
+  const handleResetSeason = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to reset the season?\n\nThis will:\n- Save current season winner\n- Reset all players\' season stats to 0\n- Start a new season\n\nThis action CANNOT be undone!')) {
+      return;
+    }
+
+    setResetting(true);
+    setResetMessage('');
+    setResetSuccess(null);
+
+    try {
+      const response = await api.post('/admin/reset-season');
+      
+      if (response.data.success) {
+        setResetSuccess(true);
+        setResetMessage(response.data.message);
+        // Refresh data after reset
+        await fetchAllData();
+      } else {
+        setResetSuccess(false);
+        setResetMessage(response.data.message || 'Reset failed');
+      }
+    } catch (err) {
+      setResetSuccess(false);
+      setResetMessage(err.response?.data?.message || 'Error resetting season');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -582,6 +617,23 @@ const AdminPanel = () => {
 
       {error && <div className="admin-alert error">{error}</div>}
       {success && <div className="admin-alert success">{success}</div>}
+
+      {/* ===== SEASON RESET BUTTON (COMPACT) ===== */}
+<div className="season-reset-wrapper">
+    <button
+        onClick={handleResetSeason}
+        disabled={resetting}
+        className="season-reset-btn"
+        title="Reset Season (Admin Only)"
+    >
+        {resetting ? '⏳' : '🔒 Reset'}
+    </button>
+    {resetMessage && (
+        <div className={`reset-toast ${resetSuccess ? 'success' : 'error'}`}>
+            {resetMessage}
+        </div>
+    )}
+</div>
 
       {/* ==================== CHARACTER TAB ==================== */}
       {activeTab === 'characters' && (

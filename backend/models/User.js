@@ -15,6 +15,10 @@ function sanitizeInput(str) {
   return str.replace(/[<>]/g, '').trim();
 }
 
+// ===== ✅ FIX: Use static default season =====
+// This ensures all users start with the same season
+const DEFAULT_SEASON = getCurrentSeason();
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -54,23 +58,26 @@ const userSchema = new mongoose.Schema({
     winStreak: { type: Number, default: 0, min: 0 }
   },
   // ===== SEASON STATS (FIXED) =====
+  // ✅ Use static default instead of dynamic function
   seasonStats: {
     currentSeason: { 
       type: Number, 
-      default: getCurrentSeason,  // ✅ DYNAMIC! 
+      default: DEFAULT_SEASON,  // ✅ STATIC default
       min: 1 
     },
     seasonWins: { type: Number, default: 0, min: 0 },
     seasonPlayed: { type: Number, default: 0, min: 0 },
     seasonStreak: { type: Number, default: 0, min: 0 }
   },
-  // ===== SEASON HISTORY =====
+  // ===== SEASON HISTORY (FIXED - more detailed) =====
   seasonHistory: [{
     season: { type: Number, required: true, min: 1 },
     wins: { type: Number, default: 0, min: 0 },
     streak: { type: Number, default: 0, min: 0 },
+    played: { type: Number, default: 0, min: 0 },  // ✅ NEW: Track games played that season
     rank: { type: Number, default: null, min: 1 },
-    isWinner: { type: Boolean, default: false }
+    isWinner: { type: Boolean, default: false },
+    endedAt: { type: Date, default: Date.now }  // ✅ NEW: When season ended
   }],
   // ===== SHARDS =====
   shards: {
@@ -223,6 +230,9 @@ userSchema.index({ username: 1 });
 userSchema.index({ email: 1 });
 userSchema.index({ 'seasonStats.currentSeason': 1 });
 userSchema.index({ 'seasonStats.seasonWins': -1 });
+userSchema.index({ 'seasonStats.seasonStreak': -1 });
+userSchema.index({ 'seasonStats.seasonPlayed': -1 });
+userSchema.index({ 'seasonHistory.season': -1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -238,7 +248,7 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// ===== PRE-SAVE: SANITIZE USERNAME =====
+// ===== PRE-SAVE: SANITIZE USERNAME & SET SEASON =====
 userSchema.pre('save', function(next) {
   if (this.username) {
     this.username = sanitizeInput(this.username);
@@ -246,6 +256,19 @@ userSchema.pre('save', function(next) {
   if (this.email) {
     this.email = this.email.toLowerCase().trim();
   }
+  
+  // ===== ✅ FIX: Ensure seasonStats.currentSeason is set =====
+  if (!this.seasonStats) {
+    this.seasonStats = {
+      currentSeason: DEFAULT_SEASON,
+      seasonWins: 0,
+      seasonPlayed: 0,
+      seasonStreak: 0
+    };
+  } else if (!this.seasonStats.currentSeason) {
+    this.seasonStats.currentSeason = DEFAULT_SEASON;
+  }
+  
   // ===== UPDATE UPDATEDAT =====
   this.updatedAt = new Date();
   next();
@@ -285,6 +308,24 @@ userSchema.statics.findByUsernameOrEmail = function(identifier) {
       { email: sanitized.toLowerCase() }
     ]
   });
+};
+
+// ===== ✅ NEW: Get users by season =====
+userSchema.statics.findBySeason = function(season) {
+  return this.find({ 'seasonStats.currentSeason': season });
+};
+
+// ===== ✅ NEW: Get season leaderboard =====
+userSchema.statics.getSeasonLeaderboard = function(season, limit = 50) {
+  return this.find({ 'seasonStats.currentSeason': season })
+    .select('username seasonStats shards equipped.profilePhoto')
+    .populate('equipped.profilePhoto', 'imageUrl')
+    .sort({ 
+      'seasonStats.seasonStreak': -1,
+      'seasonStats.seasonWins': -1,
+      'seasonStats.seasonPlayed': -1
+    })
+    .limit(limit);
 };
 
 module.exports = mongoose.model('User', userSchema);

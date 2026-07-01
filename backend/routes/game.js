@@ -5,7 +5,7 @@ const GameSession = require('../models/GameSession');
 const User = require('../models/User');
 const ProfilePhoto = require('../models/ProfilePhoto');
 const { checkAndUnlockAchievements, unlockProfilePhoto } = require('../utils/achievementUtils');
-const { checkAndResetSeason } = require('../utils/seasonUtils');
+const { getCurrentSeason } = require('../utils/seasonUtils'); // ✅ Only import what we need
 const { askAI } = require('../utils/aiRouter');
 const router = express.Router();
 
@@ -465,22 +465,20 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       user.stats.winStreak += 1;
       user.totalGuesses += 1;
 
-      // Update season stats
-      try {
-        await checkAndResetSeason();
-      } catch (seasonError) {
-        console.error('Season error:', seasonError);
-      }
+      // ===== ✅ FIX: Update season stats DIRECTLY (no reset call) =====
+      const currentSeason = getCurrentSeason();
       
       if (!user.seasonStats) {
         user.seasonStats = {
-          currentSeason: new Date().getFullYear() * 100 + (new Date().getMonth() + 1),
+          currentSeason: currentSeason,
           seasonWins: 0,
           seasonPlayed: 0,
           seasonStreak: 0
         };
       }
       
+      // Ensure currentSeason is set correctly
+      user.seasonStats.currentSeason = currentSeason;
       user.seasonStats.seasonWins += 1;
       user.seasonStats.seasonPlayed += 1;
       user.seasonStats.seasonStreak += 1;
@@ -507,7 +505,8 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       console.log(`🏆 ${user.username} won! Season stats:`, {
         wins: user.seasonStats.seasonWins,
         streak: user.seasonStats.seasonStreak,
-        played: user.seasonStats.seasonPlayed
+        played: user.seasonStats.seasonPlayed,
+        season: user.seasonStats.currentSeason
       });
 
       return res.json({
@@ -532,6 +531,8 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         game.totalQuestions = game.questions.length;
         await game.save();
 
+        const currentSeason = getCurrentSeason();
+        
         await User.findByIdAndUpdate(req.user._id, {
           $inc: { 
             'stats.gamesPlayed': 1,
@@ -539,7 +540,8 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
           },
           $set: { 
             'stats.winStreak': 0,
-            'seasonStats.seasonStreak': 0
+            'seasonStats.seasonStreak': 0,
+            'seasonStats.currentSeason': currentSeason
           }
         });
 
@@ -626,6 +628,8 @@ router.post('/giveup', validateGameId, async (req, res) => {
     game.totalQuestions = game.questions.length;
     await game.save();
 
+    const currentSeason = getCurrentSeason();
+
     await User.findByIdAndUpdate(req.user._id, {
       $inc: { 
         'stats.gamesPlayed': 1,
@@ -633,7 +637,8 @@ router.post('/giveup', validateGameId, async (req, res) => {
       },
       $set: { 
         'stats.winStreak': 0,
-        'seasonStats.seasonStreak': 0
+        'seasonStats.seasonStreak': 0,
+        'seasonStats.currentSeason': currentSeason
       }
     });
 
