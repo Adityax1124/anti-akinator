@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import './Leaderboard.css';
@@ -12,11 +12,10 @@ const Leaderboard = () => {
   const [timeLeft, setTimeLeft] = useState('');
   const navigate = useNavigate();
   
-  // ===== PREVENT INFINITE LOOPS =====
+  // ===== PREVENT MULTIPLE FETCHES =====
   const fetchedRef = useRef(false);
 
   useEffect(() => {
-    // Only fetch once
     if (!fetchedRef.current) {
       fetchedRef.current = true;
       fetchLeaderboard();
@@ -24,7 +23,7 @@ const Leaderboard = () => {
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 60000);
     return () => clearInterval(timer);
-  }, []); // ← Empty dependency array prevents re-runs
+  }, []);
 
   const fetchLeaderboard = async () => {
     try {
@@ -37,6 +36,7 @@ const Leaderboard = () => {
       let leaderboardData = data.leaderboard || [];
       let seasonNumber = data.season || 1;
       
+      // ✅ Check if leaderboardData has items
       if (Array.isArray(leaderboardData) && leaderboardData.length > 0) {
         setLeaderboard(leaderboardData);
         console.log('✅ Leaderboard loaded:', leaderboardData.length, 'players');
@@ -128,6 +128,7 @@ const Leaderboard = () => {
           </div>
         ) : !error && (
           <div className="leaderboard-list">
+            {/* ===== HEADER ROW ===== */}
             <div className="leaderboard-item header">
               <span className="rank">#</span>
               <span className="avatar-col">Avatar</span>
@@ -136,13 +137,16 @@ const Leaderboard = () => {
               <span className="streak">🔥 Streak</span>
             </div>
             
+            {/* ===== DATA ROWS ===== */}
             {leaderboard.map((player, index) => {
               const rank = player.rank || index + 1;
               const username = player.username || 'Unknown';
+              const wins = player.wins || 0;
+              const streak = player.streak || 0;
               
               return (
                 <div 
-                  key={username + index} 
+                  key={username + index + player._id || index} 
                   className={`leaderboard-item ${index < 3 ? 'top' : ''}`}
                   onClick={() => handlePlayerClick(username)}
                   style={{ cursor: username !== 'Unknown' ? 'pointer' : 'default' }}
@@ -155,7 +159,7 @@ const Leaderboard = () => {
                       <img 
                         src={player.profilePhoto} 
                         alt={username}
-                        className="leaderboard-avatar-img"
+                        className="leaderboard-avatar"
                         onError={(e) => {
                           e.target.style.display = 'none';
                           const parent = e.target.parentElement;
@@ -172,8 +176,8 @@ const Leaderboard = () => {
                     )}
                   </span>
                   <span className="player">{username}</span>
-                  <span className="games">{player.wins || 0}</span>
-                  <span className="streak">{player.streak || 0}</span>
+                  <span className="games">{wins}</span>
+                  <span className="streak">{streak}</span>
                 </div>
               );
             })}
