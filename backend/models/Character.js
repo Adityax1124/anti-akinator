@@ -18,7 +18,6 @@ const characterSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: false,
     maxlength: 6000
   },
     crucialHint: {                    
