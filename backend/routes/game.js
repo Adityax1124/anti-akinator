@@ -175,7 +175,7 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
     // ===== PREPARE CONTEXT FOR AI (Sanitized) =====
     const context = `
 Anime: ${character.anime}
-Description: ${character.description.substring(0, 150)}...
+Description: ${character.description.substring(0, 500)}...
 Gender: ${character.traits?.gender || 'Unknown'}
 Species: ${character.traits?.species || 'Unknown'}
 Age: ${character.traits?.age || 'Unknown'}
