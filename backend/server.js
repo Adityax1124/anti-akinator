@@ -10,18 +10,28 @@ const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
 const profileRoutes = require('./routes/profile');
 const seasonRoutes = require('./routes/season');
-const twoFactorRoutes = require('./routes/twofactor'); // ← ADD THIS
+const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
-app.set('trust proxy', true);
-// ===== SECURITY: HELMET =====
+
+// ============================================================
+// TRUST PROXY (Secure for Railway/Vercel)
+// ============================================================
+// Trust only the first proxy (Railway's proxy) - prevents IP spoofing
+app.set('trust proxy', 1);
+
+// ============================================================
+// SECURITY: HELMET (Security Headers)
+// ============================================================
 app.use(helmet({
+  // ===== HSTS - Force HTTPS =====
   hsts: {
-    maxAge: 31536000,
+    maxAge: 31536000, // 1 year
     includeSubDomains: true,
     preload: true
   },
+  // ===== CSP - Content Security Policy =====
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -53,7 +63,9 @@ app.use(helmet({
   permittedCrossDomainPolicies: { permittedPolicies: 'none' }
 }));
 
-// ===== CSP REPORTING ENDPOINT =====
+// ============================================================
+// CSP REPORTING ENDPOINT
+// ============================================================
 app.post('/api/csp-report', express.json({ type: ['json', 'csp-report'] }), (req, res) => {
   if (req.body && req.body['csp-report']) {
     const report = req.body['csp-report'];
@@ -66,7 +78,9 @@ app.post('/api/csp-report', express.json({ type: ['json', 'csp-report'] }), (req
   res.status(204).end();
 });
 
-// ===== SECURITY: CORS =====
+// ============================================================
+// SECURITY: CORS (Hardened)
+// ============================================================
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
   'https://anti-akinator-silk.vercel.app',
@@ -86,53 +100,138 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'X-CSRF-Token',
+    'x-content-type-options',
+    'X-Content-Type-Options'
+  ],
   exposedHeaders: ['X-CSRF-Token'],
   maxAge: 600
 }));
 
-// ===== RATE LIMITING =====
+// ============================================================
+// RATE LIMITING (With Validation Disabled)
+// ============================================================
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// General API limiter
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
+  windowMs: 60 * 1000, // 1 minute
+  max: isDevelopment ? 1000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many requests. Please slow down.' },
-  skip: (req) => req.path === '/api/health' || req.path === '/api/csp-report'
+  message: {
+    success: false,
+    message: 'Too many requests. Please slow down.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return req.path === '/api/health' || req.path === '/api/csp-report';
+  },
+  // Disable validation warnings
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
 });
 
+// Auth limiter
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDevelopment ? 100 : 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many login attempts. Please try again after 15 minutes.' }
+  message: {
+    success: false,
+    message: 'Too many login attempts. Please try again after 15 minutes.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return false;
+  },
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
 });
 
+// Game limiter
 const gameLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
+  windowMs: 60 * 1000, // 1 minute
+  max: isDevelopment ? 500 : 60,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many game requests. Please slow down.' }
+  message: {
+    success: false,
+    message: 'Too many game requests. Please slow down.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return false;
+  },
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
 });
 
+// Profile limiter
 const profileLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
+  windowMs: 60 * 1000, // 1 minute
+  max: isDevelopment ? 300 : 30,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many profile requests. Please slow down.' }
+  message: {
+    success: false,
+    message: 'Too many profile requests. Please slow down.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return false;
+  },
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
 });
 
+// Admin limiter
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: isDevelopment ? 200 : 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many admin requests. Please slow down.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return false;
+  },
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
+});
+
+// Apply rate limiters
 app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/game', gameLimiter);
 app.use('/api/profile', profileLimiter);
-app.use('/api/season', profileLimiter);8
+app.use('/api/season', profileLimiter);
+app.use('/api/admin', adminLimiter);
 
-// ===== REQUEST SIZE LIMIT =====
+// ============================================================
+// REQUEST SIZE LIMIT
+// ============================================================
 app.use(express.json({ 
   limit: '10mb',
   verify: (req, res, buf) => {
@@ -141,7 +240,9 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ===== HTTPS REDIRECT =====
+// ============================================================
+// HTTPS REDIRECT
+// ============================================================
 app.use((req, res, next) => {
   const forwardedProto = req.headers['x-forwarded-proto'];
   const isSecure = forwardedProto === 'https' || req.secure || req.protocol === 'https';
@@ -151,7 +252,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== SECURITY HEADERS =====
+// ============================================================
+// ADDITIONAL SECURITY HEADERS
+// ============================================================
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -161,7 +264,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== LOGGING =====
+// ============================================================
+// LOGGING (Sanitized)
+// ============================================================
 app.use((req, res, next) => {
   const startTime = Date.now();
   const sanitizedPath = req.path.replace(/\/[0-9a-f]{24}\b/g, '/:id');
@@ -181,19 +286,24 @@ app.use('/api/game', authMiddleware, gameRoutes);
 app.use('/api/admin', authMiddleware, adminRoutes);
 app.use('/api/profile', authMiddleware, profileRoutes);
 app.use('/api/season', seasonRoutes);
-app.use('/api/2fa', twoFactorRoutes); // ← ADD THIS LINE
+app.use('/api/2fa', twoFactorRoutes);
 
-// ===== HEALTH CHECK =====
+// ============================================================
+// HEALTH CHECK
+// ============================================================
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Anti-Akinator API is running',
     environment: process.env.NODE_ENV || 'development',
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production',
+    timestamp: new Date().toISOString()
   });
 });
 
-// ===== ERROR HANDLER =====
+// ============================================================
+// ERROR HANDLER (Sanitized)
+// ============================================================
 app.use((err, req, res, next) => {
   console.error('❌ Error:', {
     message: err.message,
@@ -215,7 +325,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ===== MONGODB CONNECTION =====
+// ============================================================
+// MONGODB CONNECTION
+// ============================================================
 const isProduction = process.env.NODE_ENV === 'production';
 console.log(`🔐 MongoDB SSL: ${isProduction ? 'Enabled' : 'Disabled (development)'}`);
 
@@ -236,7 +348,17 @@ mongoose.connect(process.env.MONGODB_URI, {
     if (isProduction) process.exit(1);
   });
 
-// ===== GRACEFUL SHUTDOWN =====
+mongoose.connection.on('connected', () => {
+  console.log('✅ MongoDB connection established');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err);
+});
+
+// ============================================================
+// GRACEFUL SHUTDOWN
+// ============================================================
 process.on('SIGTERM', () => {
   console.log('🔄 SIGTERM received, closing server...');
   mongoose.connection.close(() => {
@@ -253,10 +375,14 @@ process.on('SIGINT', () => {
   });
 });
 
+// ============================================================
+// START SERVER
+// ============================================================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔐 HTTPS: ${isProduction ? 'Enabled' : 'Disabled (development)'}`);
+  console.log(`🔐 HTTPS: ${isProduction ? 'Enabled' : 'Disabled'}`);
   console.log(`📡 API URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  console.log(`🔗 Healthcheck: /api/health`);
 });
