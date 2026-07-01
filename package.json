@@ -2,7 +2,18 @@
   "name": "anti-akinator",
   "version": "1.0.0",
   "scripts": {
+    "install": "cd backend && npm install",
+    "build": "cd backend && npm install",
     "start": "cd backend && npm start",
-    "build": "cd backend && npm install"
+    "dev": "cd backend && npm run dev"
+  },
+  "dependencies": {
+    "express-validator": "^7.3.2",
+    "helmet": "^8.2.0"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-runtime": "^8.0.1",
+    "@rollup/plugin-terser": "^1.0.0",
+    "rollup-plugin-visualizer": "^7.0.1"
   }
 }

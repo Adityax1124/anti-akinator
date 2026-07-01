@@ -1030,3 +1030,176 @@
     font-size: 10px;
   }
 }
+
+/* ============================================================
+   SHOWCASE FEATURE - ADDITIONS (No UI Changes)
+   ============================================================ */
+
+/* Showcase Hint Text */
+.showcase-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Empty Slot - Add Photo */
+.top-photo-item.empty .top-photo-preview {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-photo-item.empty .add-icon {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.top-photo-item.empty:hover .add-icon {
+  color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.top-photo-item.empty .top-photo-name {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* Photo Remove Hint (hover to show) */
+.top-photo-item .photo-remove-hint {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: rgba(231, 76, 60, 0.85);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.top-photo-item.unlocked:hover .photo-remove-hint {
+  opacity: 1;
+}
+
+/* Photo Select Hint (for modal) */
+.photo-select-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  color: #00d4ff;
+  opacity: 0;
+  transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.photo-item.unlocked:hover .photo-select-hint {
+  opacity: 1;
+}
+
+/* Modal Hint Text */
+.modal-hint {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+/* Photo Search Empty State */
+.photo-search-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+}
+
+/* Unlocked Photo in Modal - Hover Effect */
+.photo-item.unlocked {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.photo-item.unlocked:hover {
+  transform: translateY(-4px);
+}
+
+.photo-item.unlocked:hover .photo-preview {
+  border-color: #00d4ff;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.1);
+}
+
+/* ============================================================
+   SHOWCASE RESPONSIVE ADDITIONS
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .showcase-hint {
+    font-size: 0.7rem;
+    padding: 6px 12px;
+  }
+  
+  .top-photo-item .photo-remove-hint {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+  
+  .photo-select-hint {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+  
+  .top-photo-item.empty .add-icon {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .showcase-hint {
+    font-size: 0.6rem;
+    padding: 4px 8px;
+  }
+  
+  .top-photo-item .photo-remove-hint {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+    top: -2px;
+    right: -2px;
+  }
+  
+  .photo-select-hint {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  
+  .top-photo-item.empty .add-icon {
+    font-size: 14px;
+  }
+}

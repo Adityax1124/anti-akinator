@@ -1,54 +1,105 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
-import Stars from './components/Stars';
+import Footer from './components/Footer';
+import Home from './pages/Home';          // ✅ Home.jsx is directly in pages
+import Game from './pages/Game';          // ✅ Game.jsx is directly in pages
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Home from './pages/Home';
-import Game from './pages/Game';
-import Leaderboard from './pages/Leaderboard';
-import Profile from './pages/Profile';
-import PublicProfile from './pages/PublicProfile';
+import Profile from './pages/Profile';    // ✅ Profile.jsx is directly in pages
+import Leaderboard from './pages/Leaderboard'; // ✅ Leaderboard.jsx is directly in pages
+import SeasonWinners from './pages/SeasonWinners'; // ✅ SeasonWinners.jsx is directly in pages
 import AdminPanel from './pages/AdminPanel';
-import SeasonWinners from './pages/SeasonWinners';
+import TwoFactorSetup from './pages/TwoFactorSetup';
+import TwoFactorVerify from './pages/TwoFactorVerify';
+import PrivateRoute from './components/PrivateRoute';
 import './App.css';
-import Terms from './pages/Terms';
-import Privacy from './pages/Privacy';
-import Refund from './pages/Refund';
-import Footer from './components/Footer';
-import BuyShards from './pages/BuyShards';
+
+// ===== PRIVATE ROUTE WRAPPER =====
+const PrivateRouteWrapper = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="loading-container">Loading...</div>;
+  }
+  
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+// ===== ADMIN ROUTE WRAPPER =====
+const AdminRouteWrapper = ({ children }) => {
+  const { isAuthenticated, user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="loading-container">Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (user?.role !== 'admin') {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
+};
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <BrowserRouter>
+      <AuthProvider>
         <div className="app">
-          <Stars />
           <Navbar />
           <main className="main-content">
             <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-              <Route path="/game" element={<PrivateRoute><Game /></PrivateRoute>} />
-              <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
-              <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-              <Route path="/profile/:username" element={<PrivateRoute><PublicProfile /></PrivateRoute>} />
-              <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
-              <Route path="/season-winners" element={<PrivateRoute><SeasonWinners /></PrivateRoute>} />
-              <Route path="*" element={<Navigate to="/" />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/refund" element={<Refund />} />
-              <Route path="/buy-shards" element={<PrivateRoute><BuyShards /></PrivateRoute>} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/season-winners" element={<SeasonWinners />} />
+              
+              {/* 2FA Routes */}
+              <Route path="/2fa-verify" element={<TwoFactorVerify />} />
+              
+              {/* Protected Routes */}
+              <Route path="/game" element={
+                <PrivateRouteWrapper>
+                  <Game />
+                </PrivateRouteWrapper>
+              } />
+              <Route path="/profile" element={
+                <PrivateRouteWrapper>
+                  <Profile />
+                </PrivateRouteWrapper>
+              } />
+              <Route path="/profile/:username" element={
+                <PrivateRouteWrapper>
+                  <Profile />
+                </PrivateRouteWrapper>
+              } />
+              
+              {/* 2FA Setup (Protected) */}
+              <Route path="/2fa-setup" element={
+                <PrivateRouteWrapper>
+                  <TwoFactorSetup />
+                </PrivateRouteWrapper>
+              } />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <AdminRouteWrapper>
+                  <AdminPanel />
+                </AdminRouteWrapper>
+              } />
             </Routes>
-            <Footer />
           </main>
+          <Footer />
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
