@@ -18,14 +18,8 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       sourcemap: isProduction ? false : true,
       minify: isProduction ? 'terser' : false,
-      rollupOptions: {
-        output: {
-          // ===== SIMPLE manualChunks =====
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom', 'axios']
-          }
-        }
-      },
+      // ===== REMOVE manualChunks COMPLETELY =====
+      // Vercel/Rollup v4 handles this automatically
       chunkSizeWarningLimit: 1000,
       emptyOutDir: true
     },
