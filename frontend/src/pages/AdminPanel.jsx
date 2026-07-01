@@ -952,6 +952,7 @@ const AdminPanel = () => {
                     value={bannerForm.gifUrl} 
                     onChange={handleBannerChange} 
                     required 
+                    maxLength="500"
                   />
                   {bannerForm.gifUrl && !validateGifUrl(bannerForm.gifUrl) && (
                     <small className="validation-error">⚠️ Must be a valid GIF or WebP URL</small>
