@@ -5,7 +5,7 @@ const GameSession = require('../models/GameSession');
 const User = require('../models/User');
 const ProfilePhoto = require('../models/ProfilePhoto');
 const { checkAndUnlockAchievements, unlockProfilePhoto } = require('../utils/achievementUtils');
-const { getCurrentSeason } = require('../utils/seasonUtils'); // ✅ Only import what we need
+const { getCurrentSeason } = require('../utils/seasonUtils');
 const { askAI } = require('../utils/aiRouter');
 const router = express.Router();
 
@@ -249,8 +249,7 @@ REMEMBER: You are BLIND to the character's name. You NEVER reveal it.
       const result = await askAI(messages);
       answer = result.answer || 'Maybe';
       usedProvider = result.provider || 'none';
-      // Log only provider (not the question)
-      console.log(`✅ Answer from ${usedProvider}`);
+      console.log(`✅ Answer from ${usedProvider}: "${answer}"`);
     } catch (error) {
       console.error('AI provider error:', error.message);
       return res.status(503).json({
@@ -259,12 +258,26 @@ REMEMBER: You are BLIND to the character's name. You NEVER reveal it.
       });
     }
 
-    // Clean up answer (sanitize)
+    // ===== CLEAN UP ANSWER (SUPPORTS ANIME NAMES) =====
     const validAnswers = ['Yes', 'No', 'Maybe', 'Very likely', 'Unlikely'];
-    const matchedAnswer = validAnswers.find(a => 
+
+    // Check if answer is an anime name (not Yes/No/Maybe)
+    const isAnimeName = !validAnswers.some(a => 
       answer.toLowerCase().includes(a.toLowerCase())
     );
-    const finalAnswer = matchedAnswer || 'Maybe';
+
+    let finalAnswer;
+    if (isAnimeName) {
+      // If it's not Yes/No/Maybe, treat it as an anime name
+      finalAnswer = answer.trim();
+    } else {
+      const matchedAnswer = validAnswers.find(a => 
+        answer.toLowerCase().includes(a.toLowerCase())
+      );
+      finalAnswer = matchedAnswer || 'Maybe';
+    }
+
+    console.log(`📝 Final answer: "${finalAnswer}"`);
 
     // Save question (sanitized)
     game.questions.push({ 
@@ -481,7 +494,7 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       user.stats.winStreak += 1;
       user.totalGuesses += 1;
 
-      // ===== ✅ FIX: Update season stats DIRECTLY (no reset call) =====
+      // ===== UPDATE SEASON STATS DIRECTLY (no reset call) =====
       const currentSeason = getCurrentSeason();
       
       if (!user.seasonStats) {
@@ -493,7 +506,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         };
       }
       
-      // Ensure currentSeason is set correctly
       user.seasonStats.currentSeason = currentSeason;
       user.seasonStats.seasonWins += 1;
       user.seasonStats.seasonPlayed += 1;
@@ -517,7 +529,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
 
       await user.save();
 
-      // Log (sanitized - only username, not character)
       console.log(`🏆 ${user.username} won! Season stats:`, {
         wins: user.seasonStats.seasonWins,
         streak: user.seasonStats.seasonStreak,
