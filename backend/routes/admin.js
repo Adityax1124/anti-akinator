@@ -1,5 +1,4 @@
 const express = require('express');
-const { body, param, validationResult } = require('express-validator');
 const router = express.Router();
 const { adminMiddleware } = require('../middleware/auth');
 const Character = require('../models/Character');
@@ -14,32 +13,6 @@ function sanitizeInput(str) {
   if (!str) return '';
   return str.replace(/[<>]/g, '').trim();
 }
-
-// ===== VALIDATION RULES =====
-const validateCharacter = [
-  body('name').trim().escape().isLength({ min: 1, max: 100 }).withMessage('Character name required'),
-  body('anime').trim().escape().isLength({ min: 1, max: 100 }).withMessage('Anime name required'),
-  body('description').trim().escape().isLength({ min: 1, max: 2000 }).withMessage('Description required')
-];
-
-const validateBanner = [
-  body('name').trim().escape().isLength({ min: 1, max: 100 }).withMessage('Banner name required'),
-  body('gifUrl').trim().escape().isURL().withMessage('Valid GIF URL required')
-];
-
-const validateTitle = [
-  body('name').trim().escape().isLength({ min: 1, max: 100 }).withMessage('Title name required'),
-  body('displayName').trim().escape().isLength({ min: 1, max: 50 }).withMessage('Display name required')
-];
-
-const validateProfilePhoto = [
-  body('name').trim().escape().isLength({ min: 1, max: 100 }).withMessage('Photo name required'),
-  body('imageUrl').trim().escape().isURL().withMessage('Valid image URL required')
-];
-
-const validateId = [
-  param('id').isMongoId().withMessage('Invalid ID format')
-];
 
 // ===== CHARACTER CRUD =====
 router.get('/characters', adminMiddleware, async (req, res) => {
@@ -62,18 +35,9 @@ router.get('/characters', adminMiddleware, async (req, res) => {
   }
 });
 
-router.post('/characters', adminMiddleware, validateCharacter, async (req, res) => {
+router.post('/characters', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
-    // Sanitize all character data
+    // ✅ NO VALIDATION - accepts any data
     const characterData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
@@ -101,18 +65,9 @@ router.post('/characters', adminMiddleware, validateCharacter, async (req, res) 
   }
 });
 
-router.put('/characters/:id', adminMiddleware, validateId, validateCharacter, async (req, res) => {
+router.put('/characters/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
-    // Sanitize update data
+    // ✅ NO VALIDATION - accepts any data
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.anime) updateData.anime = sanitizeInput(updateData.anime);
@@ -147,17 +102,8 @@ router.put('/characters/:id', adminMiddleware, validateId, validateCharacter, as
   }
 });
 
-router.delete('/characters/:id', adminMiddleware, validateId, async (req, res) => {
+router.delete('/characters/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
     const character = await Character.findByIdAndDelete(req.params.id);
     
     if (!character) {
@@ -193,21 +139,13 @@ router.get('/banners', adminMiddleware, async (req, res) => {
   }
 });
 
-router.post('/banners', adminMiddleware, validateBanner, async (req, res) => {
+router.post('/banners', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
+    // ✅ NO VALIDATION - accepts any URL
     const bannerData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
-      gifUrl: req.body.gifUrl.trim()
+      gifUrl: req.body.gifUrl ? req.body.gifUrl.trim() : ''
     };
 
     const banner = new Banner(bannerData);
@@ -226,17 +164,9 @@ router.post('/banners', adminMiddleware, validateBanner, async (req, res) => {
   }
 });
 
-router.put('/banners/:id', adminMiddleware, validateId, validateBanner, async (req, res) => {
+router.put('/banners/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
+    // ✅ NO VALIDATION - accepts any URL
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.gifUrl) updateData.gifUrl = updateData.gifUrl.trim();
@@ -267,17 +197,8 @@ router.put('/banners/:id', adminMiddleware, validateId, validateBanner, async (r
   }
 });
 
-router.delete('/banners/:id', adminMiddleware, validateId, async (req, res) => {
+router.delete('/banners/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
     const banner = await Banner.findByIdAndDelete(req.params.id);
     
     if (!banner) {
@@ -310,17 +231,9 @@ router.get('/titles', adminMiddleware, async (req, res) => {
   }
 });
 
-router.post('/titles', adminMiddleware, validateTitle, async (req, res) => {
+router.post('/titles', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
+    // ✅ NO VALIDATION - accepts any data
     const titleData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
@@ -343,17 +256,9 @@ router.post('/titles', adminMiddleware, validateTitle, async (req, res) => {
   }
 });
 
-router.put('/titles/:id', adminMiddleware, validateId, validateTitle, async (req, res) => {
+router.put('/titles/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
+    // ✅ NO VALIDATION - accepts any data
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.displayName) updateData.displayName = sanitizeInput(updateData.displayName);
@@ -384,17 +289,8 @@ router.put('/titles/:id', adminMiddleware, validateId, validateTitle, async (req
   }
 });
 
-router.delete('/titles/:id', adminMiddleware, validateId, async (req, res) => {
+router.delete('/titles/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
     const title = await Title.findByIdAndDelete(req.params.id);
     
     if (!title) {
@@ -427,21 +323,13 @@ router.get('/profile-photos', adminMiddleware, async (req, res) => {
   }
 });
 
-router.post('/profile-photos', adminMiddleware, validateProfilePhoto, async (req, res) => {
+router.post('/profile-photos', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
+    // ✅ NO VALIDATION - accepts any URL
     const photoData = {
       ...req.body,
       name: sanitizeInput(req.body.name),
-      imageUrl: req.body.imageUrl.trim()
+      imageUrl: req.body.imageUrl ? req.body.imageUrl.trim() : ''
     };
 
     const photo = new ProfilePhoto(photoData);
@@ -460,17 +348,9 @@ router.post('/profile-photos', adminMiddleware, validateProfilePhoto, async (req
   }
 });
 
-router.put('/profile-photos/:id', adminMiddleware, validateId, validateProfilePhoto, async (req, res) => {
+router.put('/profile-photos/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
+    // ✅ NO VALIDATION - accepts any URL
     const updateData = { ...req.body };
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.imageUrl) updateData.imageUrl = updateData.imageUrl.trim();
@@ -501,17 +381,8 @@ router.put('/profile-photos/:id', adminMiddleware, validateId, validateProfilePh
   }
 });
 
-router.delete('/profile-photos/:id', adminMiddleware, validateId, async (req, res) => {
+router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
     const photo = await ProfilePhoto.findByIdAndDelete(req.params.id);
     
     if (!photo) {
@@ -540,7 +411,6 @@ router.get('/users', adminMiddleware, async (req, res) => {
       .select('-password -__v')
       .sort({ createdAt: -1 });
 
-    // Sanitize user data (remove sensitive fields)
     const sanitizedUsers = users.map(user => ({
       _id: user._id,
       username: user.username,
@@ -577,7 +447,6 @@ router.get('/stats', adminMiddleware, async (req, res) => {
 
     const winRate = totalGames > 0 ? ((wonGames / totalGames) * 100).toFixed(1) : 0;
 
-    // Top players by win streak
     const topPlayers = await User.find()
       .select('username stats equipped.profilePhoto')
       .populate('equipped.profilePhoto', 'imageUrl')
