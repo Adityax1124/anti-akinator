@@ -184,8 +184,8 @@ router.get('/leaderboard', validateLeaderboard, async (req, res) => {
       select: 'imageUrl'
     })
     .sort({ 
-      'seasonStats.seasonWins': -1,
-      'seasonStats.seasonStreak': -1,
+      'seasonStats.seasonStreak': -1,  
+      'seasonStats.seasonWins': 1,     
       'seasonStats.seasonPlayed': -1
     })
     .limit(sanitizedLimit);
