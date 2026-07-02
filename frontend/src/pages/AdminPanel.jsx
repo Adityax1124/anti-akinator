@@ -86,6 +86,24 @@ const AdminPanel = () => {
   });
   const [editingPhotoId, setEditingPhotoId] = useState(null);
 
+  // ===== SHOP STATE =====
+  const [shopItems, setShopItems] = useState([]);
+  const [shopForm, setShopForm] = useState({
+    itemType: 'banner',
+    itemId: '',
+    price: '',
+    isActive: true,
+    isLimited: false,
+    startDate: '',
+    endDate: '',
+    // ===== NEW FIELDS FOR CREATING ITEMS =====
+    newBannerName: '',
+    newBannerGifUrl: '',
+    newPhotoName: '',
+    newPhotoImageUrl: ''
+  });
+  const [editingShopId, setEditingShopId] = useState(null);
+
   // Stats state
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -103,12 +121,13 @@ const AdminPanel = () => {
     setLoading(true);
     try {
       const [
-        charsRes, bannersRes, titlesRes, photosRes, statsRes, usersRes
+        charsRes, bannersRes, titlesRes, photosRes, shopRes, statsRes, usersRes
       ] = await Promise.all([
         api.get('/admin/characters'),
         api.get('/admin/banners'),
         api.get('/admin/titles'),
         api.get('/admin/profile-photos'),
+        api.get('/admin/shop-items'),
         api.get('/admin/stats'),
         api.get('/admin/users')
       ]);
@@ -116,6 +135,7 @@ const AdminPanel = () => {
       setBanners(bannersRes.data.banners);
       setTitles(titlesRes.data.titles);
       setPhotos(photosRes.data.photos);
+      setShopItems(shopRes.data.items || []);
       setStats(statsRes.data.stats);
       setUsers(usersRes.data.users);
       setError('');
@@ -142,7 +162,6 @@ const AdminPanel = () => {
       if (response.data.success) {
         setResetSuccess(true);
         setResetMessage(response.data.message);
-        // Refresh data after reset
         await fetchAllData();
       } else {
         setResetSuccess(false);
@@ -544,6 +563,135 @@ const AdminPanel = () => {
     }
   };
 
+  // ===================== SHOP CRUD =====================
+  const handleShopChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      setShopForm(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setShopForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const submitShopItem = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      let itemId = shopForm.itemId;
+
+// ===== IF CREATING NEW BANNER =====
+if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBannerGifUrl) {
+  const bannerData = {
+    name: shopForm.newBannerName.trim(),
+    gifUrl: shopForm.newBannerGifUrl.trim(),
+    description: `Shop item: ${shopForm.newBannerName}`,
+    unlockType: 'shop',              // ✅ 'shop' instead of 'total_guesses'
+    unlockCondition: { totalGuesses: 99999999 },  // ✅ Impossible to achieve
+    category: 'shop',
+    rarity: 'Rare',
+    isActive: true
+  };
+  
+  console.log('📤 Creating banner:', bannerData);
+  
+  const bannerRes = await api.post('/admin/banners', bannerData);
+  itemId = bannerRes.data.banner._id;
+  
+  console.log('✅ Banner created:', itemId);
+}
+
+      // ===== IF CREATING NEW PROFILE PHOTO =====
+      if (shopForm.itemType === 'profilePhoto' && shopForm.newPhotoName && shopForm.newPhotoImageUrl) {
+        const photoRes = await api.post('/admin/profile-photos', {
+          name: shopForm.newPhotoName,
+          characterName: shopForm.newPhotoName,
+          imageUrl: shopForm.newPhotoImageUrl,
+          anime: 'Shop Exclusive',
+          description: `Shop item: ${shopForm.newPhotoName}`,
+          rarity: 'Rare',
+          isActive: true
+        });
+        itemId = photoRes.data.photo._id;
+      }
+
+      if (!itemId) {
+        setError('Please select an existing item or fill in the new item details');
+        return;
+      }
+
+      const payload = {
+        itemType: shopForm.itemType,
+        itemId: itemId,
+        price: shopForm.price,
+        isActive: shopForm.isActive,
+        isLimited: shopForm.isLimited,
+        startDate: shopForm.startDate || null,
+        endDate: shopForm.endDate || null
+      };
+
+      if (editingShopId) {
+        await api.put(`/admin/shop-items/${editingShopId}`, payload);
+        setSuccess('✅ Shop item updated successfully!');
+      } else {
+        await api.post('/admin/shop-items', payload);
+        setSuccess('✅ Shop item added successfully!');
+      }
+      resetShopForm();
+      fetchAllData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save shop item');
+    }
+  };
+
+  const resetShopForm = () => {
+    setShopForm({
+      itemType: 'banner',
+      itemId: '',
+      price: '',
+      isActive: true,
+      isLimited: false,
+      startDate: '',
+      endDate: '',
+      newBannerName: '',
+      newBannerGifUrl: '',
+      newPhotoName: '',
+      newPhotoImageUrl: ''
+    });
+    setEditingShopId(null);
+  };
+
+  const editShopItem = (item) => {
+    setShopForm({
+      itemType: item.itemType,
+      itemId: item.itemId?._id || item.itemId,
+      price: item.price,
+      isActive: item.isActive,
+      isLimited: item.isLimited || false,
+      startDate: item.startDate ? new Date(item.startDate).toISOString().split('T')[0] : '',
+      endDate: item.endDate ? new Date(item.endDate).toISOString().split('T')[0] : '',
+      newBannerName: '',
+      newBannerGifUrl: '',
+      newPhotoName: '',
+      newPhotoImageUrl: ''
+    });
+    setEditingShopId(item._id);
+    setActiveTab('shop');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const deleteShopItem = async (id) => {
+    if (!window.confirm('Remove this item from shop?')) return;
+    try {
+      await api.delete(`/admin/shop-items/${id}`);
+      setSuccess('✅ Shop item removed');
+      fetchAllData();
+    } catch (err) {
+      setError('Failed to remove');
+    }
+  };
+
   // ===================== RENDER =====================
   if (user?.role !== 'admin') {
     return (
@@ -600,6 +748,14 @@ const AdminPanel = () => {
             <span className="tab-icon">📸</span> Photos
             <span className="tab-badge">{photos.length}</span>
           </button>
+          {/* ===== SHOP TAB ===== */}
+          <button 
+            className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
+            onClick={() => setActiveTab('shop')}
+          >
+            <span className="tab-icon">🛒</span> Shop
+            <span className="tab-badge">{shopItems.length}</span>
+          </button>
           <button 
             className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
@@ -618,22 +774,22 @@ const AdminPanel = () => {
       {error && <div className="admin-alert error">{error}</div>}
       {success && <div className="admin-alert success">{success}</div>}
 
-      {/* ===== SEASON RESET BUTTON (COMPACT) ===== */}
-<div className="season-reset-wrapper">
-    <button
-        onClick={handleResetSeason}
-        disabled={resetting}
-        className="season-reset-btn"
-        title="Reset Season (Admin Only)"
-    >
-        {resetting ? '⏳' : '🔒 Reset'}
-    </button>
-    {resetMessage && (
-        <div className={`reset-toast ${resetSuccess ? 'success' : 'error'}`}>
+      {/* ===== SEASON RESET BUTTON ===== */}
+      <div className="season-reset-wrapper">
+        <button
+          onClick={handleResetSeason}
+          disabled={resetting}
+          className="season-reset-btn"
+          title="Reset Season (Admin Only)"
+        >
+          {resetting ? '⏳' : '🔒 Reset'}
+        </button>
+        {resetMessage && (
+          <div className={`reset-toast ${resetSuccess ? 'success' : 'error'}`}>
             {resetMessage}
-        </div>
-    )}
-</div>
+          </div>
+        )}
+      </div>
 
       {/* ==================== CHARACTER TAB ==================== */}
       {activeTab === 'characters' && (
@@ -1291,6 +1447,214 @@ const AdminPanel = () => {
                       <div className="char-actions">
                         <button className="btn btn-secondary btn-sm" onClick={() => editPhoto(p)}>✏️</button>
                         <button className="btn btn-danger btn-sm" onClick={() => deletePhoto(p._id)}>🗑️</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== SHOP TAB ==================== */}
+      {activeTab === 'shop' && (
+        <div className="admin-section">
+          <div className="admin-form-card">
+            <h2>{editingShopId ? '✏️ Edit Shop Item' : '➕ Add Item to Shop'}</h2>
+            <form onSubmit={submitShopItem} className="admin-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Item Type *</label>
+                  <select name="itemType" className="form-control" value={shopForm.itemType} onChange={handleShopChange} required>
+                    <option value="banner">Banner</option>
+                    <option value="profilePhoto">Profile Photo</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Price (in Shards) *</label>
+                  <input 
+                    type="number" 
+                    name="price" 
+                    className="form-control" 
+                    value={shopForm.price} 
+                    onChange={handleShopChange} 
+                    placeholder="e.g., 500"
+                    min="10"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* ===== DYNAMIC FIELDS BASED ON ITEM TYPE ===== */}
+              {shopForm.itemType === 'banner' ? (
+                // ===== BANNER FIELDS =====
+                <>
+                  <div className="form-group">
+                    <label>Select Existing Banner (OR add new below)</label>
+                    <select name="itemId" className="form-control" value={shopForm.itemId} onChange={handleShopChange}>
+                      <option value="">Select an existing banner...</option>
+                      {banners.map(b => (
+                        <option key={b._id} value={b._id}>{b.name}</option>
+                      ))}
+                    </select>
+                    <small className="form-hint">Select an existing banner OR create a new one using the fields below</small>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>New Banner Name</label>
+                      <input 
+                        type="text" 
+                        name="newBannerName" 
+                        className="form-control" 
+                        value={shopForm.newBannerName || ''} 
+                        onChange={handleShopChange} 
+                        placeholder="e.g., Gear 5 Luffy"
+                      />
+                      <small className="form-hint">Leave empty if selecting existing banner</small>
+                    </div>
+                    <div className="form-group">
+                      <label>Banner GIF URL *</label>
+                      <input 
+                        type="text" 
+                        name="newBannerGifUrl" 
+                        className="form-control" 
+                        value={shopForm.newBannerGifUrl || ''} 
+                        onChange={handleShopChange} 
+                        placeholder="https://example.com/banner.gif"
+                      />
+                      <small className="form-hint">Must end with .gif or .webp</small>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                // ===== PROFILE PHOTO FIELDS =====
+                <>
+                  <div className="form-group">
+                    <label>Select Existing Profile Photo (OR add new below)</label>
+                    <select name="itemId" className="form-control" value={shopForm.itemId} onChange={handleShopChange}>
+                      <option value="">Select an existing photo...</option>
+                      {photos.map(p => (
+                        <option key={p._id} value={p._id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <small className="form-hint">Select an existing photo OR create a new one using the fields below</small>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>New Photo Name</label>
+                      <input 
+                        type="text" 
+                        name="newPhotoName" 
+                        className="form-control" 
+                        value={shopForm.newPhotoName || ''} 
+                        onChange={handleShopChange} 
+                        placeholder="e.g., Luffy Portrait"
+                      />
+                      <small className="form-hint">Leave empty if selecting existing photo</small>
+                    </div>
+                    <div className="form-group">
+                      <label>Photo Image URL *</label>
+                      <input 
+                        type="text" 
+                        name="newPhotoImageUrl" 
+                        className="form-control" 
+                        value={shopForm.newPhotoImageUrl || ''} 
+                        onChange={handleShopChange} 
+                        placeholder="https://example.com/image.jpg"
+                      />
+                      <small className="form-hint">Must be a valid image URL (.jpg, .png, .webp, etc.)</small>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select name="isActive" className="form-control" value={shopForm.isActive} onChange={handleShopChange}>
+                    <option value={true}>🟢 Active</option>
+                    <option value={false}>🔴 Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input type="checkbox" name="isLimited" checked={shopForm.isLimited} onChange={handleShopChange} /> Time-Limited Item
+                </label>
+              </div>
+
+              {shopForm.isLimited && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Start Date</label>
+                    <input 
+                      type="date" 
+                      name="startDate" 
+                      className="form-control" 
+                      value={shopForm.startDate} 
+                      onChange={handleShopChange} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>End Date</label>
+                    <input 
+                      type="date" 
+                      name="endDate" 
+                      className="form-control" 
+                      value={shopForm.endDate} 
+                      onChange={handleShopChange} 
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">
+                  {editingShopId ? 'Update' : 'Add'} to Shop
+                </button>
+                {editingShopId && (
+                  <button type="button" className="btn btn-secondary" onClick={resetShopForm}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+
+          <div className="admin-list-card">
+            <h2>🛒 Shop Items ({shopItems.length})</h2>
+            {shopItems.length === 0 ? (
+              <p className="empty-message">No items in shop.</p>
+            ) : (
+              <div className="shop-admin-grid">
+                {shopItems.map(item => (
+                  <div key={item._id} className="shop-admin-card">
+                    <div className="shop-admin-preview">
+                      {item.itemType === 'banner' && item.itemId?.gifUrl && (
+                        <div className="shop-admin-banner" style={{ backgroundImage: `url(${item.itemId.gifUrl})` }} />
+                      )}
+                      {item.itemType === 'profilePhoto' && item.itemId?.imageUrl && (
+                        <img src={item.itemId.imageUrl} alt={item.itemId.name} className="shop-admin-photo" />
+                      )}
+                      <div className="shop-admin-badges">
+                        {item.isActive ? '🟢 Active' : '🔴 Inactive'}
+                        {item.isLimited && ' ⏳ Limited'}
+                      </div>
+                    </div>
+                    <div className="shop-admin-info">
+                      <h4>{item.itemId?.name || 'Unknown'}</h4>
+                      <p>{item.itemType}</p>
+                      <p className="shop-admin-price">🎴 {item.price} Shards</p>
+                      {item.isLimited && item.endDate && (
+                        <p className="shop-admin-date">📅 Until: {new Date(item.endDate).toLocaleDateString()}</p>
+                      )}
+                      <div className="char-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => editShopItem(item)}>✏️</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteShopItem(item._id)}>🗑️</button>
                       </div>
                     </div>
                   </div>

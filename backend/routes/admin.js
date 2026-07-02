@@ -7,6 +7,7 @@ const GameSession = require('../models/GameSession');
 const Banner = require('../models/Banner');
 const Title = require('../models/Title');
 const ProfilePhoto = require('../models/ProfilePhoto');
+const ShopItem = require('../models/ShopItem'); // ✅ ADDED
 
 // ===== HELPER: Sanitize input =====
 function sanitizeInput(str) {
@@ -179,11 +180,43 @@ router.get('/banners', adminMiddleware, async (req, res) => {
 
 router.post('/banners', adminMiddleware, async (req, res) => {
   try {
+    console.log('📥 Creating banner with data:', JSON.stringify(req.body, null, 2));
+
+    // ===== CHECK FOR DUPLICATE NAME =====
+    const existingBanner = await Banner.findOne({ 
+      name: { $regex: new RegExp(`^${req.body.name}$`, 'i') } 
+    });
+    
+    if (existingBanner) {
+      console.log('❌ Banner already exists:', req.body.name);
+      return res.status(400).json({
+        success: false,
+        message: `Banner "${req.body.name}" already exists`
+      });
+    }
+
+    // ===== ENSURE UNLOCK CONDITION IS PROPER =====
+    let unlockCondition = req.body.unlockCondition || { totalGuesses: 1 };
+    
+    // If unlockType is total_guesses, ensure totalGuesses is a number
+    if (req.body.unlockType === 'total_guesses') {
+      unlockCondition = {
+        totalGuesses: Number(unlockCondition.totalGuesses) || 1
+      };
+    }
+
     const bannerData = {
-      ...req.body,
       name: sanitizeInput(req.body.name),
-      gifUrl: req.body.gifUrl ? req.body.gifUrl.trim() : ''
+      gifUrl: req.body.gifUrl ? req.body.gifUrl.trim() : '',
+      description: req.body.description || '',
+      unlockType: req.body.unlockType || 'total_guesses',
+      unlockCondition: unlockCondition,
+      category: req.body.category || 'shop',
+      rarity: req.body.rarity || 'Rare',
+      isActive: req.body.isActive !== undefined ? req.body.isActive : true
     };
+
+    console.log('📤 Banner data to save:', JSON.stringify(bannerData, null, 2));
 
     const banner = new Banner(bannerData);
     await banner.save();
@@ -196,66 +229,36 @@ router.post('/banners', adminMiddleware, async (req, res) => {
       message: 'Banner created successfully'
     });
   } catch (error) {
-    console.error('Admin create banner error:', error.message);
-    res.status(500).json({ success: false, message: 'Error creating banner' });
-  }
-});
-
-router.put('/banners/:id', adminMiddleware, async (req, res) => {
-  try {
-    const updateData = { ...req.body };
-    if (updateData.name) updateData.name = sanitizeInput(updateData.name);
-    if (updateData.gifUrl) updateData.gifUrl = updateData.gifUrl.trim();
-
-    const banner = await Banner.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!banner) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Banner not found' 
-      });
-    }
-
-    console.log(`📝 Admin ${req.user.username} updated banner: ${banner.name}`);
-
-    res.json({ 
-      success: true, 
-      banner,
-      message: 'Banner updated successfully'
-    });
-  } catch (error) {
-    console.error('Admin update banner error:', error.message);
-    res.status(500).json({ success: false, message: 'Error updating banner' });
-  }
-});
-
-router.delete('/banners/:id', adminMiddleware, async (req, res) => {
-  try {
-    const banner = await Banner.findByIdAndDelete(req.params.id);
+    console.error('❌ Admin create banner error:', error.message);
+    console.error('❌ Full error:', error);
     
-    if (!banner) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Banner not found' 
+    // ===== SEND DETAILED ERROR =====
+    if (error.name === 'ValidationError') {
+      const errors = {};
+      Object.keys(error.errors).forEach(key => {
+        errors[key] = error.errors[key].message;
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors
       });
     }
-
-    console.log(`🗑️ Admin ${req.user.username} deleted banner: ${banner.name}`);
-
-    res.json({ 
-      success: true, 
-      message: 'Banner deleted successfully' 
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: `Banner with this name already exists`
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error creating banner: ' + error.message,
+      error: error.message
     });
-  } catch (error) {
-    console.error('Admin delete banner error:', error.message);
-    res.status(500).json({ success: false, message: 'Error deleting banner' });
   }
 });
-
 // ============================================================
 // TITLE CRUD
 // ============================================================
@@ -437,6 +440,147 @@ router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Admin delete profile photo error:', error.message);
     res.status(500).json({ success: false, message: 'Error deleting profile photo' });
+  }
+});
+
+// ============================================================
+// SHOP ITEMS CRUD (ADMIN ONLY) - ✅ NEW
+// ============================================================
+
+// ===== GET ALL SHOP ITEMS =====
+router.get('/shop-items', adminMiddleware, async (req, res) => {
+  try {
+    const shopItems = await ShopItem.find()
+      .populate('itemId')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      items: shopItems
+    });
+  } catch (error) {
+    console.error('Get shop items error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching shop items'
+    });
+  }
+});
+
+// ===== ADD ITEM TO SHOP =====
+router.post('/shop-items', adminMiddleware, async (req, res) => {
+  try {
+    const { itemType, itemId, price, isActive, isLimited, startDate, endDate } = req.body;
+
+    // Validate
+    if (!itemType || !itemId || !price) {
+      return res.status(400).json({
+        success: false,
+        message: 'itemType, itemId, and price are required'
+      });
+    }
+
+    // Check if item already exists in shop
+    const existing = await ShopItem.findOne({ itemId });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'This item is already in the shop'
+      });
+    }
+
+    const shopItem = new ShopItem({
+      itemType,
+      itemId,
+      price: Number(price),
+      isActive: isActive !== undefined ? isActive : true,
+      isLimited: isLimited || false,
+      startDate: startDate || null,
+      endDate: endDate || null
+    });
+
+    await shopItem.save();
+
+    console.log(`🛒 Admin ${req.user.username} added ${itemType} to shop: ${shopItem._id}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Item added to shop successfully!',
+      item: shopItem
+    });
+  } catch (error) {
+    console.error('Add shop item error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error adding item to shop'
+    });
+  }
+});
+
+// ===== UPDATE SHOP ITEM =====
+router.put('/shop-items/:id', adminMiddleware, async (req, res) => {
+  try {
+    const { price, isActive, isLimited, startDate, endDate } = req.body;
+
+    const shopItem = await ShopItem.findByIdAndUpdate(
+      req.params.id,
+      {
+        price: Number(price),
+        isActive,
+        isLimited,
+        startDate: startDate || null,
+        endDate: endDate || null
+      },
+      { new: true }
+    );
+
+    if (!shopItem) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shop item not found'
+      });
+    }
+
+    console.log(`🛒 Admin ${req.user.username} updated shop item: ${shopItem._id}`);
+
+    res.json({
+      success: true,
+      message: 'Shop item updated successfully!',
+      item: shopItem
+    });
+  } catch (error) {
+    console.error('Update shop item error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating shop item'
+    });
+  }
+});
+
+// ===== DELETE SHOP ITEM =====
+router.delete('/shop-items/:id', adminMiddleware, async (req, res) => {
+  try {
+    const shopItem = await ShopItem.findByIdAndDelete(req.params.id);
+    
+    if (!shopItem) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shop item not found'
+      });
+    }
+
+    console.log(`🛒 Admin ${req.user.username} removed shop item: ${shopItem._id}`);
+
+    res.json({
+      success: true,
+      message: 'Shop item removed successfully!'
+    });
+  } catch (error) {
+    console.error('Delete shop item error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error removing shop item'
+    });
   }
 });
 

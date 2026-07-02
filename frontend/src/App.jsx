@@ -14,6 +14,7 @@ import Leaderboard from './pages/Leaderboard';
 import SeasonWinners from './pages/SeasonWinners';
 import AdminPanel from './pages/AdminPanel';
 import BuyShards from './pages/BuyShards';
+import Shop from './pages/Shop'; // ✅ NEW: Shop page import
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
@@ -72,6 +73,13 @@ function App() {
               <Route path="/game" element={
                 <PrivateRouteWrapper>
                   <Game />
+                </PrivateRouteWrapper>
+              } />
+              
+              {/* ===== SHOP ROUTE ===== */}
+              <Route path="/shop" element={
+                <PrivateRouteWrapper>
+                  <Shop />
                 </PrivateRouteWrapper>
               } />
               

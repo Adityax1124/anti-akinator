@@ -10,6 +10,7 @@ const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
 const profileRoutes = require('./routes/profile');
 const seasonRoutes = require('./routes/season');
+const shopRoutes = require('./routes/shop'); // ✅ ADDED
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 
@@ -228,6 +229,7 @@ app.use('/api/game', gameLimiter);
 app.use('/api/profile', profileLimiter);
 app.use('/api/season', profileLimiter);
 app.use('/api/admin', adminLimiter);
+app.use('/api/shop', profileLimiter); // ✅ ADDED: Shop rate limiter
 
 // ============================================================
 // REQUEST SIZE LIMIT
@@ -286,6 +288,7 @@ app.use('/api/game', authMiddleware, gameRoutes);
 app.use('/api/admin', authMiddleware, adminRoutes);
 app.use('/api/profile', authMiddleware, profileRoutes);
 app.use('/api/season', seasonRoutes);
+app.use('/api/shop', authMiddleware, shopRoutes); // ✅ ADDED: Shop routes
 app.use('/api/2fa', twoFactorRoutes);
 
 // ============================================================

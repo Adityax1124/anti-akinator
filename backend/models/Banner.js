@@ -18,17 +18,18 @@ const bannerSchema = new mongoose.Schema({
   },
   unlockType: { 
     type: String, 
-    enum: ['total_guesses', 'anime_guesses', 'season_rank', 'special'],
-    required: true 
+    enum: ['total_guesses', 'anime_guesses', 'season_rank', 'special', 'shop'],
+    default: 'shop',  // ✅ Default for shop items
+    required: false   // ✅ Not required (optional)
   },
   unlockCondition: { 
     type: mongoose.Schema.Types.Mixed, 
-    required: true
-    // ✅ No validation - accepts any format
+    default: { totalGuesses: 0 },  // ✅ Default for shop items
+    required: false                // ✅ Not required (optional)
   },
   category: { 
     type: String, 
-    enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'anime', 'season'],
+    enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'anime', 'season', 'shop'],
     default: 'bronze'
   },
   rarity: { 
@@ -51,5 +52,6 @@ const bannerSchema = new mongoose.Schema({
 // Add index for better performance
 bannerSchema.index({ name: 1 });
 bannerSchema.index({ isActive: 1, rarity: 1 });
+bannerSchema.index({ unlockType: 1 });
 
 module.exports = mongoose.model('Banner', bannerSchema);

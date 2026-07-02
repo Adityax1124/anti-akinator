@@ -85,6 +85,12 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  // ===== PURCHASED ITEMS (SHOP SYSTEM) =====
+  purchasedItems: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'ShopItem',
+    default: []
+  },
   // ===== ACHIEVEMENTS =====
   totalGuesses: { 
     type: Number, 
@@ -318,7 +324,7 @@ userSchema.statics.findBySeason = function(season) {
 // ===== ✅ NEW: Get season leaderboard =====
 userSchema.statics.getSeasonLeaderboard = function(season, limit = 50) {
   return this.find({ 'seasonStats.currentSeason': season })
-    .select('username seasonStats shards equipped.profilePhoto')
+    .select('username seasonStats shards equipped.profilePhoto purchasedItems')
     .populate('equipped.profilePhoto', 'imageUrl')
     .sort({ 
       'seasonStats.seasonStreak': -1,

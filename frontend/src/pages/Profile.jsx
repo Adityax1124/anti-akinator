@@ -493,7 +493,7 @@ const Profile = () => {
         </div>
         <div className="stat-card">
           <div className="stat-number">{userShards}</div>
-          <div className="stat-label">💎 Shards</div>
+          <div className="stat-label">🎴 Shards</div>
         </div>
       </div>
 
