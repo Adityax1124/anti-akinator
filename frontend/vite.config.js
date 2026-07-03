@@ -18,8 +18,6 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       sourcemap: isProduction ? false : true,
       minify: isProduction ? 'terser' : false,
-      // ===== REMOVE manualChunks COMPLETELY =====
-      // Vercel/Rollup v4 handles this automatically
       chunkSizeWarningLimit: 1000,
       emptyOutDir: true
     },
@@ -31,6 +29,12 @@ export default defineConfig(({ mode }) => {
         '@api': '/src/api',
         '@pages': '/src/pages'
       }
+    },
+    
+    // ✅ Add this to handle environment variables
+    define: {
+      'import.meta.env.VITE_SOCKET_URL': JSON.stringify(process.env.VITE_SOCKET_URL),
+      'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
     }
   };
 });
