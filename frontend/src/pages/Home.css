@@ -200,3 +200,69 @@
     font-size: 28px;
   }
 }
+
+/* ===== HERO BUTTONS ===== */
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.hero-btn {
+  padding: 14px 36px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero-btn.btn-primary {
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  color: #fff;
+}
+
+.hero-btn.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.4);
+}
+
+.hero-btn.btn-team {
+  background: linear-gradient(135deg, #00b894, #00a381);
+  color: #fff;
+}
+
+.hero-btn.btn-team:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 184, 148, 0.4);
+}
+
+.hero-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  
+  .hero-btn {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 400px) {
+  .hero-btn {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+}

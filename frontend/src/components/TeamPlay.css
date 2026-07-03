@@ -1,0 +1,630 @@
+/* ============================================================
+   TEAM PLAY - Premium Styles
+   ============================================================ */
+
+/* ===== MODAL OVERLAY ===== */
+.team-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+  padding: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===== MODAL ===== */
+.team-modal {
+  background: linear-gradient(145deg, rgba(20, 20, 50, 0.95), rgba(10, 10, 30, 0.98));
+  border-radius: 24px;
+  padding: 2rem 2rem 1.8rem;
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  animation: slideUp 0.4s ease;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+/* Hide scrollbar but keep functionality */
+.team-modal::-webkit-scrollbar {
+  width: 4px;
+}
+.team-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+.team-modal::-webkit-scrollbar-thumb {
+  background: rgba(108, 99, 255, 0.3);
+  border-radius: 10px;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===== CLOSE BUTTON ===== */
+.team-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-modal-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: rotate(90deg);
+}
+
+/* ===== HEADER ===== */
+.team-modal .modal-header {
+  text-align: center;
+  margin-bottom: 1.8rem;
+}
+
+.team-modal .modal-header .icon {
+  font-size: 42px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.team-modal .modal-header h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.team-modal .modal-header p {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+/* ===== OPTIONS GRID ===== */
+.team-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 1.2rem;
+}
+
+.team-option {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.team-option:hover {
+  border-color: rgba(108, 99, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.team-option .opt-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.team-option h3 {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.team-option p {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.team-option .btn {
+  width: 100%;
+  padding: 8px 0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.team-option .btn-primary {
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  color: #fff;
+}
+
+.team-option .btn-primary:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
+}
+
+.team-option .btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== JOIN INPUT ===== */
+.join-room-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.join-room-input input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  min-width: 0;
+}
+
+.join-room-input input:focus {
+  border-color: #6c63ff;
+  outline: none;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.join-room-input input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+}
+
+.join-room-input input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.join-room-input .btn-secondary {
+  padding: 8px 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.join-room-input .btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.join-room-input .btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== ERROR ===== */
+.team-modal .auth-error {
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ff6b6b;
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* ===== INFO BOX ===== */
+.team-info {
+  background: rgba(108, 99, 255, 0.05);
+  border: 1px solid rgba(108, 99, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 4px;
+}
+
+.team-info p {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-info p strong {
+  color: #ffd700;
+}
+
+/* ============================================================
+   TEAM LOBBY
+   ============================================================ */
+.team-lobby {
+  padding: 0;
+}
+
+.team-lobby .lobby-header {
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.team-lobby .lobby-header h2 {
+  font-size: 22px;
+  color: #fff;
+  margin: 0;
+}
+
+.team-lobby .lobby-header p {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+
+/* ===== ROOM CODE ===== */
+.room-code-section {
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.room-code-section .label {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+.room-code-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 215, 0, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 12px;
+  padding: 10px 20px;
+  margin-top: 4px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.room-code-display .code {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffd700;
+  letter-spacing: 3px;
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+}
+
+.room-code-display .copy-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 4px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.room-code-display .copy-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* ===== PLAYERS LIST ===== */
+.players-list {
+  margin: 0 0 1rem;
+}
+
+.players-list .players-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.players-list .players-header h4 {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.players-list .players-header .count {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.player-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.player-item .player-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.player-item .player-name .host-badge {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.player-item .player-status {
+  font-size: 11px;
+  color: rgba(81, 207, 102, 0.6);
+}
+
+.player-item .player-status.waiting {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== SHARE BUTTONS ===== */
+.share-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.share-buttons .share-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.share-buttons .share-btn.whatsapp {
+  background: rgba(37, 211, 102, 0.15);
+  color: #25D366;
+}
+
+.share-buttons .share-btn.whatsapp:hover {
+  background: rgba(37, 211, 102, 0.25);
+}
+
+.share-buttons .share-btn.copy-link {
+  background: rgba(108, 99, 255, 0.12);
+  color: #6c63ff;
+}
+
+.share-buttons .share-btn.copy-link:hover {
+  background: rgba(108, 99, 255, 0.22);
+}
+
+.share-buttons .share-btn.refresh {
+  flex: 0.3;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.share-buttons .share-btn.refresh:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== LOBBY ACTIONS ===== */
+.lobby-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-actions .btn-start {
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00b894, #00a381);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.lobby-actions .btn-start:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 184, 148, 0.25);
+}
+
+.lobby-actions .btn-start:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.lobby-actions .btn-leave {
+  padding: 10px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.lobby-actions .btn-leave:hover {
+  background: rgba(231, 76, 60, 0.08);
+  color: #e74c3c;
+  border-color: rgba(231, 76, 60, 0.15);
+}
+
+/* ===== WAITING TEXT ===== */
+.waiting-text {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.waiting-text strong {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 600px) {
+  .team-modal {
+    padding: 1.5rem 1.2rem 1.2rem;
+    max-width: 100%;
+    border-radius: 18px;
+  }
+
+  .team-options {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .team-option {
+    padding: 1.2rem 1rem;
+  }
+
+  .team-modal .modal-header h2 {
+    font-size: 22px;
+  }
+
+  .room-code-display {
+    padding: 8px 14px;
+  }
+
+  .room-code-display .code {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  .share-buttons {
+    flex-wrap: wrap;
+  }
+
+  .share-buttons .share-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 80px;
+  }
+
+  .share-buttons .share-btn.refresh {
+    flex: 0 0 44px;
+  }
+
+  .join-room-input {
+    flex-direction: column;
+  }
+
+  .join-room-input .btn-secondary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 400px) {
+  .team-modal {
+    padding: 1rem 0.8rem 0.8rem;
+    border-radius: 14px;
+  }
+
+  .team-modal .modal-header h2 {
+    font-size: 19px;
+  }
+
+  .team-option h3 {
+    font-size: 14px;
+  }
+
+  .team-option p {
+    font-size: 11px;
+  }
+
+  .room-code-display .code {
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+
+  .player-item {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .lobby-actions .btn-start {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .team-info p {
+    font-size: 11px;
+  }
+}

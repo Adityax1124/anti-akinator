@@ -6,9 +6,10 @@ import Footer from './components/Footer';
 import Stars from './components/Stars';
 import Home from './pages/Home';
 import Game from './pages/Game';
+import TeamGamePage from './pages/TeamGamePage'; // ✅ ADD THIS IMPORT
 import Login from './pages/Login';
 import Register from './pages/Register';
-import VerifyOTP from './pages/VerifyOTP'; // ✅ ADD THIS IMPORT
+import VerifyOTP from './pages/VerifyOTP';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import Leaderboard from './pages/Leaderboard';
@@ -63,7 +64,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/verify-otp" element={<VerifyOTP />} /> {/* ✅ ADD THIS ROUTE */}
+              <Route path="/verify-otp" element={<VerifyOTP />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/season-winners" element={<SeasonWinners />} />
               
@@ -74,6 +75,13 @@ function App() {
               <Route path="/game" element={
                 <PrivateRouteWrapper>
                   <Game />
+                </PrivateRouteWrapper>
+              } />
+              
+              {/* ✅ TEAM GAME PAGE ROUTE */}
+              <Route path="/team-game/:roomCode" element={
+                <PrivateRouteWrapper>
+                  <TeamGamePage />
                 </PrivateRouteWrapper>
               } />
               

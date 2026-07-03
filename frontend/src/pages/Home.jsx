@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import TeamPlayModal from '../components/TeamPlayModal';
 import './Home.css';
 
 const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
   return (
     <div className="home-container fade-in">
+      {/* Team Play Modal */}
+      <TeamPlayModal 
+        isOpen={isTeamModalOpen} 
+        onClose={() => setIsTeamModalOpen(false)} 
+      />
+
       <div className="hero-section">
         <h1 className="hero-title">
           🎯 Anti-Akinator
@@ -20,12 +28,20 @@ const Home = () => {
           Think of an anime character? No! Here, <strong>YOU</strong> ask questions<br />
           and the AI has a secret character. Can you guess who it is?
         </p>
-        <button 
-          className="btn btn-primary hero-btn"
-          onClick={() => navigate('/game')}
-        >
-          Start Playing Now 🚀
-        </button>
+        <div className="hero-buttons">
+          <button 
+            className="btn btn-primary hero-btn"
+            onClick={() => navigate('/game')}
+          >
+            Start Playing Now 🚀
+          </button>
+          <button 
+            className="btn btn-team hero-btn"
+            onClick={() => setIsTeamModalOpen(true)}
+          >
+            🤝 Team Play
+          </button>
+        </div>
       </div>
 
       <div className="features-section">

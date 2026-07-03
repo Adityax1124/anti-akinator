@@ -5,17 +5,27 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const http = require('http');
+const socketIO = require('socket.io');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
 const profileRoutes = require('./routes/profile');
 const seasonRoutes = require('./routes/season');
 const shopRoutes = require('./routes/shop');
-const referralRoutes = require('./routes/referral'); // ✅ ADDED
+const referralRoutes = require('./routes/referral');
+const teamRoutes = require('./routes/team');
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true
+  }
+});
 
 // ============================================================
 // TRUST PROXY (Secure for Railway/Vercel)
@@ -222,7 +232,7 @@ app.use('/api/profile', profileLimiter);
 app.use('/api/season', profileLimiter);
 app.use('/api/admin', adminLimiter);
 app.use('/api/shop', profileLimiter);
-app.use('/api/referral', profileLimiter); // ✅ ADDED
+app.use('/api/referral', profileLimiter);
 
 // ============================================================
 // REQUEST SIZE LIMIT
@@ -274,6 +284,102 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
+// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE
+// ============================================================
+io.on('connection', (socket) => {
+  console.log(`🔌 Socket connected: ${socket.id}`);
+
+  // Join a room
+  socket.on('join-team-room', (roomCode) => {
+    if (roomCode && roomCode !== 'undefined') {
+      socket.join(roomCode);
+      console.log(`👤 Socket ${socket.id} joined room: ${roomCode}`);
+    }
+  });
+
+  // Leave a room
+  socket.on('leave-team-room', (roomCode) => {
+    if (roomCode && roomCode !== 'undefined') {
+      socket.leave(roomCode);
+      console.log(`👋 Socket ${socket.id} left room: ${roomCode}`);
+    }
+  });
+
+  // ===== VOICE CHAT EVENTS =====
+  socket.on('user-joined-voice', (data) => {
+    const { roomCode, username } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      socket.to(roomCode).emit('user-joined-voice', { username });
+      console.log(`🎤 ${username} joined voice in room: ${roomCode}`);
+    }
+  });
+
+  socket.on('user-left-voice', (data) => {
+    const { roomCode, username } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      socket.to(roomCode).emit('user-left-voice', { username });
+      console.log(`🎤 ${username} left voice in room: ${roomCode}`);
+    }
+  });
+
+  socket.on('voice-offer', (data) => {
+    const { roomCode, to, offer, from } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      socket.to(roomCode).emit('voice-offer', { from, offer });
+      console.log(`📞 Voice offer from ${from} to ${to} in room: ${roomCode}`);
+    }
+  });
+
+  socket.on('voice-answer', (data) => {
+    const { roomCode, to, answer, from } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      socket.to(roomCode).emit('voice-answer', { from, answer });
+      console.log(`📞 Voice answer from ${from} to ${to} in room: ${roomCode}`);
+    }
+  });
+
+  socket.on('voice-ice-candidate', (data) => {
+    const { roomCode, to, candidate, from } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      socket.to(roomCode).emit('voice-ice-candidate', { from, candidate });
+      console.log(`🧊 ICE candidate from ${from} to ${to} in room: ${roomCode}`);
+    }
+  });
+
+  // Player joined notification
+  socket.on('player-joined', (data) => {
+    const { roomCode, player } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      console.log(`📢 Player ${player.username} joined room ${roomCode}`);
+      io.to(roomCode).emit('player-update', { type: 'joined', player });
+    }
+  });
+
+  // Game started notification
+  socket.on('game-started', (data) => {
+    const { roomCode } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      console.log(`🎮 Game started in room ${roomCode}`);
+      io.to(roomCode).emit('game-started', { type: 'started' });
+    }
+  });
+
+  // Player left notification
+  socket.on('player-left', (data) => {
+    const { roomCode, player } = data;
+    if (roomCode && roomCode !== 'undefined') {
+      console.log(`🚪 Player ${player.username} left room ${roomCode}`);
+      io.to(roomCode).emit('player-update', { type: 'left', player });
+    }
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    console.log(`🔌 Socket disconnected: ${socket.id}`);
+  });
+});
+
+// ============================================================
 // ROUTES
 // ============================================================
 app.use('/api/auth', authRoutes);
@@ -282,7 +388,8 @@ app.use('/api/admin', authMiddleware, adminRoutes);
 app.use('/api/profile', authMiddleware, profileRoutes);
 app.use('/api/season', seasonRoutes);
 app.use('/api/shop', authMiddleware, shopRoutes);
-app.use('/api/referral', authMiddleware, referralRoutes); // ✅ ADDED
+app.use('/api/referral', authMiddleware, referralRoutes);
+app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 
 // ============================================================
@@ -376,10 +483,11 @@ process.on('SIGINT', () => {
 // START SERVER
 // ============================================================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔐 HTTPS: ${isProduction ? 'Enabled' : 'Disabled'}`);
   console.log(`📡 API URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
   console.log(`🔗 Healthcheck: /api/health`);
+  console.log(`🔌 Socket.io is ready`);
 });
