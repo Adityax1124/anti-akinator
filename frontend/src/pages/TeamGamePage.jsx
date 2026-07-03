@@ -54,7 +54,7 @@ const TeamGamePage = () => {
       console.log('🔄 Fetching Agora token...');
       const tokenResponse = await api.get(`/agora-token?channel=${roomCode}`);
       const { token, appId, uid } = tokenResponse.data;
-      console.log('✅ Agora token fetched successfully, UID:', uid);
+      console.log(`✅ Agora token: UID=${uid}, channel=${roomCode}`);
 
       const client = AgoraRTC.createClient({
         mode: 'rtc',
@@ -201,7 +201,7 @@ const TeamGamePage = () => {
 
   // ✅ MIC TOGGLE - Only affects mic
   const toggleMic = () => {
-    console.log('🎤 Toggle mic called, current state:', isMicOn);
+    console.log('🎤 Toggle mic, current state:', isMicOn);
     if (isMicOn) {
       stopVoiceChat();
     } else {
@@ -214,11 +214,9 @@ const TeamGamePage = () => {
     const newState = !isSpeakerOn;
     setIsSpeakerOn(newState);
     
-    // ✅ Only update remote tracks, don't affect local mic
     Object.values(remoteUsersRef.current).forEach(track => {
       try {
         track.setVolume(newState ? 100 : 0);
-        console.log(`🔊 Track volume set to ${newState ? 100 : 0}`);
       } catch (e) {}
     });
     console.log(`🔊 Speaker ${newState ? 'unmuted' : 'muted'}`);

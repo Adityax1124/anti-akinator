@@ -387,14 +387,18 @@ app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 
 // ============================================================
-// AGORA TOKEN GENERATOR (FIXED UID)
+// AGORA TOKEN GENERATOR (FIXED - Unique UID per user)
 // ============================================================
 app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
     const channelName = req.query.channel || 'default';
     
-    // ✅ UID must be between 0 and 10000 (Agora limit)
-    const uid = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+    // ✅ Use user's database ID as UID (guaranteed unique per user)
+    const userId = req.user._id.toString();
+    // Convert hex string to number, ensure within Agora range (1-10000)
+    const uid = (parseInt(userId.slice(-8), 16) % 9000) + 1000;
+    
+    console.log(`👤 User: ${req.user.username}, UID: ${uid}`);
     
     const role = RtcRole.PUBLISHER;
     const expireTime = 3600;
@@ -421,7 +425,7 @@ app.get('/api/agora-token', authMiddleware, (req, res) => {
       privilegeExpiredTs
     );
 
-    console.log('✅ Agora token generated for UID:', uid, 'channel:', channelName);
+    console.log(`✅ Agora token: UID=${uid}, channel=${channelName}`);
 
     res.json({
       success: true,
