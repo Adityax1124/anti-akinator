@@ -189,8 +189,8 @@ Female: ${character.attributes?.isFemale ? 'Yes' : 'No'}
 
 USER: "${sanitizedQuestion}"`;
 
-    // ===== SYSTEM PROMPT =====
-    const systemPrompt = `
+   // ===== SYSTEM PROMPT =====
+const systemPrompt = `
 CRITICAL HIERARCHY – FOLLOW IN THIS ORDER:
 1. If user asks "Which anime?" or "What anime is he from?" → RESPOND with the EXACT anime name. This is the HIGHEST priority.
 2. If user asks "Is it [Name]?" or "Is my character [Name]?" → RESPOND with "Maybe". This is SECOND priority.
@@ -207,6 +207,17 @@ If the user asks ANY question about the anime (e.g., "Which anime is he from?", 
 - If they ask "Which anime...?" → RESPOND with the EXACT anime name from the data (e.g., "One Piece", "Naruto", "Attack on Titan")
 - If they ask "Is he from [Anime]?" → RESPOND with "Yes" or "No"
 
+ANIME KNOWLEDGE – Use this to answer "Is he from [Category]?" questions:
+• GODFATHER ANIME: Dragon Ball, Dragon Ball Z, Dragon Ball Super
+• OG BIG 3: Naruto, One Piece, Bleach
+• NEW GEN BIG 3: My Hero Academia, Demon Slayer (Kimetsu no Yaiba), Jujutsu Kaisen
+• NEW GEN (ALL): Any anime from 2015 onwards including: My Hero Academia, Demon Slayer, Jujutsu Kaisen, Attack on Titan, Chainsaw Man, Black Clover, Fire Force, Solo Leveling, Kaiju No. 8, Dandadan, Sakamoto Days, Boruto, Mashle, Kagurabachi, Ichi the Witch, and ALL modern anime released after 2015.
+• OTHER POPULAR ANIME: Any anime not in the categories above but in the character data.
+
+CRITICAL RULE FOR "NEW GEN" QUESTIONS:
+- If user asks "Is he from New Gen?" or "Is this New Gen?" → RESPOND with "Yes" if the character's anime is from 2015 or later (modern era). "No" if it's from before 2015 (OG Big 3 or Godfather era).
+- This includes Solo Leveling, Attack on Titan, Chainsaw Man, etc.
+
 STEP 1: Check for EXACT match in data.
 STEP 2: If no exact match, use SMART logic (synonyms, relationships, context).
 RELATIONSHIPS: "son of", "protégée", "ally", "enemy", "friend" → YES to "related to X".
@@ -222,7 +233,11 @@ Your ONLY allowed responses: "Yes", "No", "Maybe", or the EXACT anime name. Noth
 EXAMPLES:
 - User asks "Which anime?" → "One Piece"
 - User asks "Is it Luffy?" → "Maybe"
-- User asks "Is he from Naruto?" → "Yes" or "No"
+- User asks "Is he from Naruto?" → "Yes" or "No" (check if character's anime is Naruto)
+- User asks "Is he from Big 3?" → "Yes" or "No" (check if anime is Naruto, One Piece, or Bleach)
+- User asks "Is he from New Gen?" → "Yes" (if anime is from 2015+ like Solo Leveling, MHA, Demon Slayer, JJK, etc.) or "No" (if anime is from before 2015 like Naruto, One Piece, Bleach, Dragon Ball)
+- User asks "Is he from Godfather?" → "Yes" or "No" (check if anime is Dragon Ball/Z/Super)
+- User asks "Is he from Dragon Ball?" → "Yes" or "No" (check if anime is Dragon Ball, Dragon Ball Z, or Dragon Ball Super)
 - Data says "Gender: Male" → "Is it female?" = "No"
 - Data says "Powers: Fire" → "Does he use ice?" = "No"
 
