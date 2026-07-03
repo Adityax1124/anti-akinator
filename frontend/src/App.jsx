@@ -14,13 +14,13 @@ import Leaderboard from './pages/Leaderboard';
 import SeasonWinners from './pages/SeasonWinners';
 import AdminPanel from './pages/AdminPanel';
 import BuyShards from './pages/BuyShards';
-import Shop from './pages/Shop'; // ✅ NEW: Shop page import
+import Shop from './pages/Shop';
+import ReferralPage from './pages/ReferralPage'; // ✅ NEW: Referral Page
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
-// ===== PRIVATE ROUTE WRAPPER =====
 const PrivateRouteWrapper = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
@@ -31,7 +31,6 @@ const PrivateRouteWrapper = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
-// ===== ADMIN ROUTE WRAPPER =====
 const AdminRouteWrapper = ({ children }) => {
   const { isAuthenticated, user, loading } = useAuth();
   
@@ -59,31 +58,33 @@ function App() {
           <Stars />
           <main className="main-content">
             <Routes>
-              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/season-winners" element={<SeasonWinners />} />
               
-              {/* 2FA Routes */}
               <Route path="/2fa-verify" element={<TwoFactorVerify />} />
               
-              {/* Protected Routes */}
               <Route path="/game" element={
                 <PrivateRouteWrapper>
                   <Game />
                 </PrivateRouteWrapper>
               } />
               
-              {/* ===== SHOP ROUTE ===== */}
               <Route path="/shop" element={
                 <PrivateRouteWrapper>
                   <Shop />
                 </PrivateRouteWrapper>
               } />
               
-              {/* ===== PROFILE ROUTES - ORDER MATTERS! ===== */}
+              {/* ===== ✅ REFERRAL PAGE ROUTE ===== */}
+              <Route path="/referral" element={
+                <PrivateRouteWrapper>
+                  <ReferralPage />
+                </PrivateRouteWrapper>
+              } />
+              
               <Route path="/profile" element={
                 <PrivateRouteWrapper>
                   <Profile />
@@ -96,7 +97,6 @@ function App() {
                 </PrivateRouteWrapper>
               } />
               
-              {/* 2FA Setup (Protected) */}
               <Route path="/2fa-setup" element={
                 <PrivateRouteWrapper>
                   <TwoFactorSetup />
@@ -108,7 +108,6 @@ function App() {
                 </PrivateRouteWrapper>
               } />
               
-              {/* Admin Routes */}
               <Route path="/admin" element={
                 <AdminRouteWrapper>
                   <AdminPanel />

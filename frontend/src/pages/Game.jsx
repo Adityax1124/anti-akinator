@@ -3,6 +3,139 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import './Game.css';
 
+// ===== Buy Shards Modal Component =====
+const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) => {
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const shardPackages = [
+    { id: 1, shards: 50, price: 35, label: 'Starter', hints: 1 },
+    { id: 2, shards: 150, price: 105, label: 'Enthusiast', hints: 3 },
+    { id: 3, shards: 350, price: 210, label: 'Pro', hints: 7 },
+    { id: 4, shards: 750, price: 375, label: 'Popular', hints: 15 },
+    { id: 5, shards: 1500, price: 750, label: 'Ultimate', hints: 30 },
+    { id: 6, shards: 3000, price: 1350, label: 'Legendary', hints: 60 },
+  ];
+
+  if (!isOpen) return null;
+
+  const handlePurchase = async () => {
+    if (!selectedPackage) {
+      setError('Please select a shard package');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post('/payment/create-order', {
+        amount: selectedPackage.price * 100,
+        shards: selectedPackage.shards,
+        packageId: selectedPackage.id
+      });
+
+      const { orderId, amount, currency } = response.data;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: amount,
+        currency: currency,
+        name: 'Anti-Akinator',
+        description: `Buy ${selectedPackage.shards} Shards (${selectedPackage.hints} Hints)`,
+        order_id: orderId,
+        handler: async function (paymentResponse) {
+          setLoading(false);
+          setSuccess(`✅ Successfully purchased ${selectedPackage.shards} Shards!`);
+
+          try {
+            await api.post('/payment/verify', {
+              orderId: orderId,
+              paymentId: paymentResponse.razorpay_payment_id,
+              signature: paymentResponse.razorpay_signature,
+              shards: selectedPackage.shards
+            });
+
+            onPurchaseComplete(selectedPackage.shards);
+            
+            setTimeout(() => {
+              onClose();
+              setSuccess('');
+              setSelectedPackage(null);
+            }, 2000);
+          } catch (verifyError) {
+            console.error('Payment verification failed:', verifyError);
+            setError('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: localStorage.getItem('username') || '',
+          email: localStorage.getItem('email') || '',
+        },
+        theme: {
+          color: '#6c63ff'
+        },
+        modal: {
+          ondismiss: function() {
+            setLoading(false);
+            setError('Payment cancelled');
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      setError(error.response?.data?.message || 'Failed to initiate payment');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <h2>💎 Buy Shards</h2>
+        <p className="modal-subtitle">Current Shards: <strong>{currentShards}</strong></p>
+        
+        <div className="shard-packages">
+          {shardPackages.map((pkg) => (
+            <div
+              key={pkg.id}
+              className={`shard-package ${selectedPackage?.id === pkg.id ? 'selected' : ''}`}
+              onClick={() => setSelectedPackage(pkg)}
+            >
+              <div className="shard-amount">{pkg.shards}</div>
+              <div className="shard-label">{pkg.label}</div>
+              <div className="shard-hints">💡 {pkg.hints} Hints</div>
+              <div className="shard-price">₹{pkg.price}</div>
+            </div>
+          ))}
+        </div>
+
+        {error && <div className="modal-error">{error}</div>}
+        {success && <div className="modal-success">{success}</div>}
+
+        <button
+          className="btn btn-primary purchase-btn"
+          onClick={handlePurchase}
+          disabled={!selectedPackage || loading}
+        >
+          {loading ? 'Processing...' : `Buy ${selectedPackage?.shards || ''} Shards`}
+        </button>
+
+        <p className="modal-footer">🔒 Secure payment via Razorpay</p>
+      </div>
+    </div>
+  );
+};
+
+// ===== MAIN GAME COMPONENT =====
 const Game = () => {
   const [gameState, setGameState] = useState({
     gameId: null,
@@ -24,9 +157,12 @@ const Game = () => {
   const [hintUsed, setHintUsed] = useState(false);
   const [hintText, setHintText] = useState('');
   const [shards, setShards] = useState(0);
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef(null); // ← ADD THIS REF
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ===== Buy Shards Modal State =====
+  const [isBuyShardsOpen, setIsBuyShardsOpen] = useState(false);
   
   // Track if game has already ended
   const hasEnded = useRef(false);
@@ -36,6 +172,8 @@ const Game = () => {
   const isNavigating = useRef(false);
   // Store previous path to detect navigation
   const prevPathRef = useRef(location.pathname);
+  // Track if payment modal is open
+  const isPaymentModalOpen = useRef(false);
 
   // ===== FETCH SHARDS =====
   useEffect(() => {
@@ -51,18 +189,27 @@ const Game = () => {
     }
   };
 
-  // ===== SCROLL TO BOTTOM =====
+  // ===== SCROLL TO BOTTOM (Only scrolls the chat messages container) =====
+  const scrollToBottom = () => {
+    const messagesContainer = document.querySelector('.chat-messages');
+    if (messagesContainer) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  };
+
+  // ===== AUTO-SCROLL TO BOTTOM WHEN NEW MESSAGES ARRIVE =====
   useEffect(() => {
     scrollToBottom();
-  }, [gameState.questions]);
+  }, [gameState.questions, gameState.loading]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // ===== UPDATE SHARDS AFTER PURCHASE =====
+  const handleShardPurchase = (newShards) => {
+    setShards(prev => prev + newShards);
+    setError('');
   };
 
   // ===== HANDLE GAME ABANDON =====
   const handleGameAbandon = async () => {
-    // ✅ Only abandon if game is active
     if (hasEnded.current) return;
     if (!gameState.gameId) return;
     if (gameState.status !== 'playing') return;
@@ -88,7 +235,6 @@ const Game = () => {
       
       console.log('🏳️ Game abandoned - streak reset');
     } catch (error) {
-      // ✅ If game is already ended, ignore the error
       if (error.response?.status === 400) {
         console.log('ℹ️ Game already ended, ignoring abandon');
         return;
@@ -97,21 +243,22 @@ const Game = () => {
     }
   };
 
-  // ===== DETECT NAVIGATION AWAY (within app) =====
+  // ===== DETECT NAVIGATION AWAY (with payment modal check) =====
   useEffect(() => {
-    // Only track if game is active
     if (gameState.status !== 'playing') return;
 
-    // Reset flags when game starts
     hasEnded.current = false;
     hasWarned.current = false;
     isNavigating.current = false;
     prevPathRef.current = location.pathname;
 
-    // Check if we navigated away from /game
     if (prevPathRef.current === '/game' && location.pathname !== '/game' && location.pathname !== '') {
-      // User navigated away from the game
       if (gameState.status === 'playing' && !hasEnded.current) {
+        if (isPaymentModalOpen.current) {
+          console.log('ℹ️ Payment modal open - ignoring navigation away');
+          return;
+        }
+        
         if (!hasWarned.current) {
           hasWarned.current = true;
           const confirmLeave = window.confirm('⚠️ If you leave now, your streak will be reset! Click OK to leave or Cancel to stay.');
@@ -127,22 +274,23 @@ const Game = () => {
       }
     }
     
-    // Update previous path
     prevPathRef.current = location.pathname;
   }, [location.pathname, gameState.status]);
 
-  // ===== DETECT PAGE LEAVE (PC & Mobile) =====
+  // ===== DETECT PAGE LEAVE (with payment modal check) =====
   useEffect(() => {
-    // Only track if game is active
     if (gameState.status !== 'playing') return;
 
-    // Reset flags when game starts
     hasEnded.current = false;
     hasWarned.current = false;
     isNavigating.current = false;
 
-    // ===== PC: Tab/Window visibility change =====
     const handleVisibilityChange = () => {
+      if (isPaymentModalOpen.current) {
+        console.log('ℹ️ Payment modal open - ignoring visibility change');
+        return;
+      }
+      
       if (document.hidden && gameState.status === 'playing' && !hasEnded.current) {
         if (!hasWarned.current) {
           hasWarned.current = true;
@@ -153,8 +301,12 @@ const Game = () => {
       }
     };
 
-    // ===== PC: Before unload (refresh, close tab) =====
     const handleBeforeUnload = (e) => {
+      if (isPaymentModalOpen.current) {
+        console.log('ℹ️ Payment modal open - ignoring beforeunload');
+        return;
+      }
+      
       if (gameState.status === 'playing' && !hasEnded.current) {
         e.preventDefault();
         e.returnValue = '⚠️ If you leave now, your streak will be reset! Are you sure?';
@@ -163,8 +315,12 @@ const Game = () => {
       }
     };
 
-    // ===== Mobile: App goes to background =====
     const handlePageHide = () => {
+      if (isPaymentModalOpen.current) {
+        console.log('ℹ️ Payment modal open - ignoring pagehide');
+        return;
+      }
+      
       if (gameState.status === 'playing' && !hasEnded.current) {
         if (!hasWarned.current) {
           hasWarned.current = true;
@@ -174,8 +330,12 @@ const Game = () => {
       }
     };
 
-    // ===== Mobile: Freeze detection (iOS) =====
     const handleFreeze = () => {
+      if (isPaymentModalOpen.current) {
+        console.log('ℹ️ Payment modal open - ignoring freeze');
+        return;
+      }
+      
       if (gameState.status === 'playing' && !hasEnded.current) {
         if (!hasWarned.current) {
           hasWarned.current = true;
@@ -185,8 +345,12 @@ const Game = () => {
       }
     };
 
-    // ===== Popstate (back button) =====
     const handlePopState = () => {
+      if (isPaymentModalOpen.current) {
+        console.log('ℹ️ Payment modal open - ignoring popstate');
+        return;
+      }
+      
       if (gameState.status === 'playing' && !hasEnded.current) {
         if (!hasWarned.current) {
           hasWarned.current = true;
@@ -203,17 +367,14 @@ const Game = () => {
       }
     };
 
-    // ===== Push state to catch back button =====
     window.history.pushState(null, '', '/game');
 
-    // ===== Register event listeners =====
     window.addEventListener('popstate', handlePopState);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('pagehide', handlePageHide);
     document.addEventListener('freeze', handleFreeze);
 
-    // ===== CLEANUP =====
     return () => {
       window.removeEventListener('popstate', handlePopState);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -226,8 +387,7 @@ const Game = () => {
   // ===== CLEANUP ON UNMOUNT =====
   useEffect(() => {
     return () => {
-      // ✅ Only abandon if game is still active (not won/lost/idle)
-      if (gameState.status === 'playing' && !hasEnded.current) {
+      if (gameState.status === 'playing' && !hasEnded.current && !isPaymentModalOpen.current) {
         handleGameAbandon();
       }
     };
@@ -235,7 +395,6 @@ const Game = () => {
 
   // ===== HANDLE NAVIGATION AWAY FROM RESULT =====
   useEffect(() => {
-    // ✅ If game is won or lost, mark as ended to prevent abandon
     if (gameState.status === 'won' || gameState.status === 'lost') {
       hasEnded.current = true;
     }
@@ -248,6 +407,7 @@ const Game = () => {
     hasEnded.current = false;
     hasWarned.current = false;
     isNavigating.current = false;
+    isPaymentModalOpen.current = false;
 
     try {
       await fetchUserShards();
@@ -272,6 +432,18 @@ const Game = () => {
       setError('Failed to start game. Please try again.');
       setGameState(prev => ({ ...prev, loading: false }));
     }
+  };
+
+  // ===== OPEN BUY SHARDS MODAL =====
+  const openBuyShardsModal = () => {
+    isPaymentModalOpen.current = true;
+    setIsBuyShardsOpen(true);
+  };
+
+  // ===== CLOSE BUY SHARDS MODAL =====
+  const closeBuyShardsModal = () => {
+    isPaymentModalOpen.current = false;
+    setIsBuyShardsOpen(false);
   };
 
   // ===== ASK QUESTION =====
@@ -490,6 +662,7 @@ const Game = () => {
     hasEnded.current = false;
     hasWarned.current = false;
     isNavigating.current = false;
+    isPaymentModalOpen.current = false;
   };
 
   // ===== GO HOME =====
@@ -528,6 +701,14 @@ const Game = () => {
   // ===== RENDER GAME =====
   return (
     <div className="game-container fade-in">
+      {/* ===== BUY SHARDS MODAL ===== */}
+      <BuyShardsModal
+        isOpen={isBuyShardsOpen}
+        onClose={closeBuyShardsModal}
+        onPurchaseComplete={handleShardPurchase}
+        currentShards={shards}
+      />
+
       {currentUnlock && (
         <div className="unlock-popup">
           <div className="unlock-popup-content">
@@ -589,11 +770,22 @@ const Game = () => {
           )}
           <span className="game-shards">🎴 {shards} Shards</span>
         </div>
-        {gameState.status === 'playing' && (
-          <button className="btn btn-danger btn-sm" onClick={giveUp}>
-            Give Up
-          </button>
-        )}
+        <div className="game-header-buttons">
+          {gameState.status === 'playing' && (
+            <button 
+              className="btn btn-shards btn-sm"
+              onClick={openBuyShardsModal}
+              title="Buy Shards without losing your streak"
+            >
+              💎 Buy Shards
+            </button>
+          )}
+          {gameState.status === 'playing' && (
+            <button className="btn btn-danger btn-sm" onClick={giveUp}>
+              Give Up
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="chat-container">

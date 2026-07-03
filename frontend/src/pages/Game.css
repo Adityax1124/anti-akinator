@@ -2,10 +2,15 @@
    GAME PAGE – Premium Chat Interface
    ============================================================ */
 
+/* ===== GAME CONTAINER – Full height, no page scroll ===== */
 .game-container {
   max-width: 900px;
   margin: 0 auto;
   padding: 0 10px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ===== GAME START SCREEN ===== */
@@ -13,6 +18,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  flex: 1;
   min-height: 70vh;
 }
 
@@ -52,13 +58,29 @@
   display: inline-block;
 }
 
+.game-hint-warning {
+  color: #fd79a8 !important;
+  font-size: 13px !important;
+  background: rgba(253, 121, 168, 0.1);
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
 .start-btn {
   font-size: 18px;
   padding: 14px 40px;
   margin-top: 20px;
 }
 
-/* ===== GAME HEADER ===== */
+.game-error {
+  color: #fd79a8;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+/* ===== GAME HEADER – STICKY TOP ===== */
 .game-header {
   display: flex;
   justify-content: space-between;
@@ -67,16 +89,18 @@
   background: rgba(16, 16, 32, 0.7);
   backdrop-filter: blur(12px);
   border-radius: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   flex-wrap: wrap;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .game-info {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .game-status {
@@ -97,17 +121,325 @@
   font-weight: 600;
 }
 
-/* ===== CHAT CONTAINER ===== */
+.game-header-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ===== BUY SHARDS BUTTON ===== */
+.btn-shards {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  color: #1a1a2e;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-shards:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(247, 151, 30, 0.4);
+}
+
+.btn-shards:active {
+  transform: scale(0.95);
+}
+
+/* ===== BUTTON OVERRIDES ===== */
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== BUY SHARDS MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: #1a1a2e;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 750px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #6c63ff;
+  border-radius: 10px;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+  transition: all 0.2s;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(90deg);
+}
+
+.modal-content h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.3rem;
+  color: #fff;
+  text-align: center;
+}
+
+.modal-subtitle {
+  color: #aaa;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.modal-subtitle strong {
+  color: #ffd700;
+  font-size: 1.2rem;
+}
+
+.shard-packages {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.shard-package {
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.2rem 0.8rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.shard-package:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(108, 99, 255, 0.3);
+}
+
+.shard-package.selected {
+  border-color: #6c63ff;
+  background: rgba(108, 99, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2), 0 8px 25px rgba(108, 99, 255, 0.15);
+}
+
+.shard-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffd700;
+  line-height: 1.2;
+}
+
+.shard-label {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.shard-hints {
+  font-size: 0.75rem;
+  color: #6c63ff;
+  margin-top: 2px;
+}
+
+.shard-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 6px;
+}
+
+.shard-price::before {
+  content: '₹';
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.purchase-btn {
+  width: 100%;
+  padding: 0.9rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.purchase-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
+}
+
+.purchase-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modal-footer {
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 1rem;
+}
+
+.modal-error {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 0.8rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.modal-success {
+  color: #51cf66;
+  background: rgba(81, 207, 102, 0.1);
+  padding: 0.8rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid rgba(81, 207, 102, 0.2);
+}
+
+/* ===== CHAT CONTAINER – Flexible ===== */
 .chat-container {
   background: rgba(16, 16, 32, 0.7);
   backdrop-filter: blur(12px);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  height: 600px;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
+/* ===== CHAT MESSAGES – Scrollable ===== */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -115,6 +447,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  scroll-behavior: smooth;
 }
 
 /* ===== CHAT WELCOME ===== */
@@ -306,10 +639,13 @@
   }
 }
 
-/* ===== CHAT INPUT AREA ===== */
+/* ===== CHAT INPUT AREA – Sticky Bottom ===== */
 .chat-input-area {
   padding: 16px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  background: rgba(16, 16, 32, 0.9);
+  border-radius: 0 0 16px 16px;
 }
 
 .input-tabs {
@@ -379,6 +715,7 @@
   color: white;
   font-size: 15px;
   transition: all 0.3s ease;
+  min-width: 0;
 }
 
 .chat-input:focus {
@@ -399,6 +736,7 @@
   padding: 12px 24px;
   white-space: nowrap;
   border-radius: 12px;
+  flex-shrink: 0;
 }
 
 .hint-btn {
@@ -412,6 +750,7 @@
   color: #1a1a2e;
   white-space: nowrap;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
 .hint-btn:hover:not(:disabled) {
@@ -519,6 +858,17 @@
   padding: 20px;
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .unlock-popup-content {
   background: linear-gradient(145deg, rgba(20, 20, 50, 0.95), rgba(10, 10, 30, 0.98));
   backdrop-filter: blur(20px);
@@ -588,6 +938,12 @@
   min-width: 200px;
 }
 
+.unlock-desc {
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 13px !important;
+  margin-bottom: 16px !important;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .game-start-content {
@@ -599,7 +955,7 @@
   }
 
   .chat-container {
-    height: 500px;
+    height: auto;
   }
 
   .chat-message {
@@ -609,9 +965,16 @@
   .game-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
   }
 
   .game-info {
+    justify-content: center;
+    font-size: 13px;
+    gap: 12px;
+  }
+
+  .game-header-buttons {
     justify-content: center;
   }
 
@@ -658,12 +1021,42 @@
   .unlock-title-preview {
     font-size: 18px;
     padding: 12px 20px;
+    min-width: 150px;
+  }
+
+  .shard-packages {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+  }
+
+  .shard-amount {
+    font-size: 1.5rem;
+  }
+
+  .input-tabs {
+    gap: 4px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    padding: 8px 4px;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
   .chat-container {
-    height: 65vh;
+    height: auto;
+  }
+
+  .chat-messages {
+    padding: 12px;
   }
 
   .chat-form {
@@ -683,17 +1076,6 @@
     width: 100% !important;
   }
 
-  .input-tabs {
-    gap: 4px;
-  }
-
-  .tab-btn {
-    flex: 1;
-    text-align: center;
-    font-size: 12px;
-    padding: 8px 4px;
-  }
-
   .game-header {
     flex-direction: column;
     gap: 8px;
@@ -702,7 +1084,9 @@
 
   .game-info {
     justify-content: center;
-    font-size: 13px;
+    font-size: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .game-start-content {
@@ -711,5 +1095,143 @@
 
   .game-start-content h1 {
     font-size: 28px;
+  }
+
+  .shard-packages {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .shard-package {
+    padding: 0.8rem 0.5rem;
+  }
+
+  .shard-amount {
+    font-size: 1.2rem;
+  }
+
+  .shard-price {
+    font-size: 1rem;
+  }
+
+  .modal-content {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .modal-content h2 {
+    font-size: 1.4rem;
+  }
+
+  .message-text {
+    font-size: 14px;
+  }
+
+  .chat-message {
+    max-width: 100%;
+  }
+
+  .result-image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .unlock-popup-content {
+    padding: 20px 16px;
+    max-width: 300px;
+  }
+
+  .unlock-banner-gif {
+    height: 60px;
+  }
+
+  .unlock-photo-img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .unlock-title-preview {
+    font-size: 16px;
+    padding: 10px 16px;
+    min-width: 120px;
+  }
+
+  .unlock-popup-content h2 {
+    font-size: 20px;
+  }
+
+  .unlock-popup-content h3 {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 400px) {
+  .game-info {
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .game-header {
+    padding: 10px 12px;
+  }
+
+  .chat-messages {
+    padding: 8px;
+  }
+
+  .chat-input-area {
+    padding: 10px 12px;
+  }
+
+  .message-content {
+    padding: 8px 12px;
+  }
+
+  .message-text {
+    font-size: 13px;
+  }
+
+  .message-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .shard-packages {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .shard-package {
+    padding: 0.6rem 0.4rem;
+  }
+
+  .shard-amount {
+    font-size: 1rem;
+  }
+
+  .shard-price {
+    font-size: 0.85rem;
+  }
+
+  .shard-label {
+    font-size: 0.6rem;
+  }
+
+  .shard-hints {
+    font-size: 0.6rem;
+  }
+
+  .modal-content {
+    padding: 0.8rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.2rem;
+  }
+
+  .tab-btn {
+    font-size: 10px;
+    padding: 6px 4px;
   }
 }

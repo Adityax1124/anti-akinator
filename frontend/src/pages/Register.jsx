@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 import './Auth.css';
 
 const Register = () => {
@@ -8,26 +9,47 @@ const Register = () => {
     username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    referralCode: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [csrfToken, setCsrfToken] = useState('');
+  const [referralValid, setReferralValid] = useState(null);
+  const [referralUsername, setReferralUsername] = useState('');
+  const [verifying, setVerifying] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ===== GET CSRF TOKEN =====
+  // ===== GET REFERRAL CODE FROM URL =====
   useEffect(() => {
-    const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('XSRF-TOKEN='))
-      ?.split('=')[1];
-    if (token) {
-      setCsrfToken(token);
+    const params = new URLSearchParams(location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      setFormData(prev => ({ ...prev, referralCode: refCode.toUpperCase() }));
+      verifyReferralCode(refCode.toUpperCase());
     }
-  }, []);
+  }, [location.search]);
 
-  // ===== VALIDATION FUNCTIONS =====
+  // ===== VERIFY REFERRAL CODE =====
+  const verifyReferralCode = async (code) => {
+    if (!code || code.length < 6) return;
+    
+    setVerifying(true);
+    try {
+      const response = await api.post('/auth/verify-referral', { referralCode: code });
+      if (response.data.success) {
+        setReferralValid(true);
+        setReferralUsername(response.data.referrer.username);
+      }
+    } catch (error) {
+      setReferralValid(false);
+      setReferralUsername('');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const validateUsername = (username) => {
     const re = /^[a-zA-Z0-9_]+$/;
     return re.test(username) && username.length >= 3 && username.length <= 20;
@@ -46,7 +68,14 @@ const Register = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Clear error for this field when user types
+    if (name === 'referralCode') {
+      setReferralValid(null);
+      setReferralUsername('');
+      if (value.length >= 6) {
+        verifyReferralCode(value);
+      }
+    }
+    
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
@@ -56,12 +85,12 @@ const Register = () => {
     e.preventDefault();
     setErrors({});
 
-    // ===== FRONTEND VALIDATION =====
     const newErrors = {};
     const trimmedUsername = formData.username.trim();
     const trimmedEmail = formData.email.trim().toLowerCase();
     const trimmedPassword = formData.password.trim();
     const trimmedConfirmPassword = formData.confirmPassword.trim();
+    const trimmedReferralCode = formData.referralCode.trim().toUpperCase();
 
     // Validate username
     if (!trimmedUsername) {
@@ -106,11 +135,22 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const result = await register(
-        trimmedUsername,
-        trimmedEmail,
-        trimmedPassword
-      );
+      // ===== BUILD REGISTRATION DATA =====
+      const registerData = {
+        username: trimmedUsername,
+        email: trimmedEmail,
+        password: trimmedPassword
+      };
+
+      // ===== ✅ ONLY ADD REFERRAL CODE IF VALID =====
+      if (trimmedReferralCode && trimmedReferralCode.length >= 6 && referralValid === true) {
+        registerData.referralCode = trimmedReferralCode;
+        console.log('📝 [Register] Sending referral code:', trimmedReferralCode);
+      } else {
+        console.log('ℹ️ [Register] No valid referral code provided');
+      }
+
+      const result = await register(registerData);
       
       if (result.success) {
         // Clear form data
@@ -118,7 +158,8 @@ const Register = () => {
           username: '',
           email: '',
           password: '',
-          confirmPassword: ''
+          confirmPassword: '',
+          referralCode: ''
         });
         navigate('/');
       } else {
@@ -163,7 +204,6 @@ const Register = () => {
               maxLength={20}
               autoComplete="username"
               disabled={loading}
-              aria-label="Username"
             />
             {errors.username && (
               <div className="auth-error" role="alert">
@@ -189,13 +229,42 @@ const Register = () => {
               autoComplete="email"
               maxLength={100}
               disabled={loading}
-              aria-label="Email address"
             />
             {errors.email && (
               <div className="auth-error" role="alert">
                 {errors.email}
               </div>
             )}
+          </div>
+
+          {/* ===== ✅ REFERRAL CODE FIELD ===== */}
+          <div className="form-group">
+            <label htmlFor="referralCode">Referral Code (Optional)</label>
+            <input
+              id="referralCode"
+              type="text"
+              name="referralCode"
+              className={`form-control ${referralValid === false ? 'is-invalid' : ''} ${referralValid === true ? 'is-valid' : ''}`}
+              placeholder="Enter referral code (e.g., JOHN-ABC1)"
+              value={formData.referralCode}
+              onChange={handleChange}
+              maxLength={20}
+              disabled={loading || verifying}
+              autoCapitalize="characters"
+              style={{ textTransform: 'uppercase' }}
+            />
+            {verifying && (
+              <div className="auth-info">⏳ Verifying referral code...</div>
+            )}
+            {referralValid === true && (
+              <div className="auth-success">✅ Referred by <strong>{referralUsername}</strong>! You'll both get 50 Shards when you win your first game! 🎉</div>
+            )}
+            {referralValid === false && formData.referralCode.length >= 6 && (
+              <div className="auth-error">❌ Invalid referral code</div>
+            )}
+            <small className="form-text text-muted">
+              Have a referral code? Enter it here to earn bonus Shards!
+            </small>
           </div>
 
           <div className="form-group">
@@ -213,7 +282,6 @@ const Register = () => {
               maxLength={100}
               autoComplete="new-password"
               disabled={loading}
-              aria-label="Password"
             />
             {errors.password && (
               <div className="auth-error" role="alert">
@@ -240,7 +308,6 @@ const Register = () => {
               maxLength={100}
               autoComplete="new-password"
               disabled={loading}
-              aria-label="Confirm password"
             />
             {errors.confirmPassword && (
               <div className="auth-error" role="alert">
@@ -266,11 +333,6 @@ const Register = () => {
               'Register'
             )}
           </button>
-
-          {/* Hidden CSRF token field for form */}
-          {csrfToken && (
-            <input type="hidden" name="_csrf" value={csrfToken} />
-          )}
         </form>
 
         <div className="auth-footer">

@@ -10,7 +10,8 @@ const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
 const profileRoutes = require('./routes/profile');
 const seasonRoutes = require('./routes/season');
-const shopRoutes = require('./routes/shop'); // ✅ ADDED
+const shopRoutes = require('./routes/shop');
+const referralRoutes = require('./routes/referral'); // ✅ ADDED
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 
@@ -19,20 +20,17 @@ const app = express();
 // ============================================================
 // TRUST PROXY (Secure for Railway/Vercel)
 // ============================================================
-// Trust only the first proxy (Railway's proxy) - prevents IP spoofing
 app.set('trust proxy', 1);
 
 // ============================================================
 // SECURITY: HELMET (Security Headers)
 // ============================================================
 app.use(helmet({
-  // ===== HSTS - Force HTTPS =====
   hsts: {
-    maxAge: 31536000, // 1 year
+    maxAge: 31536000,
     includeSubDomains: true,
     preload: true
   },
-  // ===== CSP - Content Security Policy =====
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -116,13 +114,12 @@ app.use(cors({
 }));
 
 // ============================================================
-// RATE LIMITING (With Validation Disabled)
+// RATE LIMITING
 // ============================================================
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// General API limiter
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: isDevelopment ? 1000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -134,16 +131,14 @@ const apiLimiter = rateLimit({
     if (isDevelopment) return true;
     return req.path === '/api/health' || req.path === '/api/csp-report';
   },
-  // Disable validation warnings
   validate: {
     trustProxy: false,
     xForwardedForHeader: false
   }
 });
 
-// Auth limiter
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: isDevelopment ? 100 : 10,
   standardHeaders: true,
   legacyHeaders: false,
@@ -161,9 +156,8 @@ const authLimiter = rateLimit({
   }
 });
 
-// Game limiter
 const gameLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: isDevelopment ? 500 : 60,
   standardHeaders: true,
   legacyHeaders: false,
@@ -181,9 +175,8 @@ const gameLimiter = rateLimit({
   }
 });
 
-// Profile limiter
 const profileLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: isDevelopment ? 300 : 30,
   standardHeaders: true,
   legacyHeaders: false,
@@ -201,9 +194,8 @@ const profileLimiter = rateLimit({
   }
 });
 
-// Admin limiter
 const adminLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: isDevelopment ? 200 : 20,
   standardHeaders: true,
   legacyHeaders: false,
@@ -229,7 +221,8 @@ app.use('/api/game', gameLimiter);
 app.use('/api/profile', profileLimiter);
 app.use('/api/season', profileLimiter);
 app.use('/api/admin', adminLimiter);
-app.use('/api/shop', profileLimiter); // ✅ ADDED: Shop rate limiter
+app.use('/api/shop', profileLimiter);
+app.use('/api/referral', profileLimiter); // ✅ ADDED
 
 // ============================================================
 // REQUEST SIZE LIMIT
@@ -288,7 +281,8 @@ app.use('/api/game', authMiddleware, gameRoutes);
 app.use('/api/admin', authMiddleware, adminRoutes);
 app.use('/api/profile', authMiddleware, profileRoutes);
 app.use('/api/season', seasonRoutes);
-app.use('/api/shop', authMiddleware, shopRoutes); // ✅ ADDED: Shop routes
+app.use('/api/shop', authMiddleware, shopRoutes);
+app.use('/api/referral', authMiddleware, referralRoutes); // ✅ ADDED
 app.use('/api/2fa', twoFactorRoutes);
 
 // ============================================================

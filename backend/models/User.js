@@ -176,6 +176,32 @@ const userSchema = new mongoose.Schema({
       default: null 
     }
   },
+
+  // =============================================
+  // ===== 🔗 REFERRAL SYSTEM (NEW) =====
+  // =============================================
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+    uppercase: true,
+    trim: true
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  referrals: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  referralStats: {
+    totalReferrals: { type: Number, default: 0, min: 0 },
+    shardsEarned: { type: Number, default: 0, min: 0 },
+    completedReferrals: { type: Number, default: 0, min: 0 }
+  },
+
   // ===== SECURITY =====
   lastLogin: {
     type: Date,
@@ -239,6 +265,9 @@ userSchema.index({ 'seasonStats.seasonWins': -1 });
 userSchema.index({ 'seasonStats.seasonStreak': -1 });
 userSchema.index({ 'seasonStats.seasonPlayed': -1 });
 userSchema.index({ 'seasonHistory.season': -1 });
+// ===== REFERRAL INDEXES =====
+userSchema.index({ referralCode: 1 });
+userSchema.index({ referredBy: 1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -305,6 +334,24 @@ userSchema.methods.resetFailedAttempts = async function() {
   await this.save();
 };
 
+// ===== REFERRAL METHODS =====
+userSchema.methods.generateReferralCode = function() {
+  if (this.referralCode) return this.referralCode;
+  
+  const prefix = this.username.slice(0, 4).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  this.referralCode = `${prefix}-${random}`;
+  return this.referralCode;
+};
+
+userSchema.methods.getReferralStats = function() {
+  return {
+    totalReferrals: this.referralStats?.totalReferrals || 0,
+    shardsEarned: this.referralStats?.shardsEarned || 0,
+    completedReferrals: this.referralStats?.completedReferrals || 0
+  };
+};
+
 // ===== STATICS =====
 userSchema.statics.findByUsernameOrEmail = function(identifier) {
   const sanitized = sanitizeInput(identifier);
@@ -332,6 +379,24 @@ userSchema.statics.getSeasonLeaderboard = function(season, limit = 50) {
       'seasonStats.seasonPlayed': -1
     })
     .limit(limit);
+};
+
+// ===== ✅ NEW: Find by referral code =====
+userSchema.statics.findByReferralCode = function(code) {
+  return this.findOne({ referralCode: code.toUpperCase().trim() });
+};
+
+// ===== ✅ NEW: Get top referrers =====
+userSchema.statics.getTopReferrers = function(limit = 10) {
+  return this.find({
+    'referralStats.totalReferrals': { $gt: 0 }
+  })
+  .select('username referralStats')
+  .sort({
+    'referralStats.totalReferrals': -1,
+    'referralStats.shardsEarned': -1
+  })
+  .limit(limit);
 };
 
 module.exports = mongoose.model('User', userSchema);

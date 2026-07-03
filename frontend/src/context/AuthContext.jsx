@@ -147,7 +147,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, setAuthHeader, fetchUser]);
 
+  // ============================================================
   // ===== LOGIN =====
+  // ============================================================
   const login = useCallback(async (email, password) => {
     setAuthError(null);
     
@@ -236,9 +238,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, [setAuthHeader, resetSessionTimer]);
 
-  // ===== REGISTER =====
-  const register = useCallback(async (username, email, password) => {
+  // ============================================================
+  // ===== REGISTER (UPDATED WITH REFERRAL CODE SUPPORT) =====
+  // ============================================================
+  const register = useCallback(async (userData) => {
     setAuthError(null);
+    
+    // ===== EXTRACT FIELDS =====
+    const { username, email, password, referralCode } = userData;
     
     if (!username || !email || !password) {
       return {
@@ -247,6 +254,7 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
+    // ===== VALIDATE USERNAME =====
     const usernameRegex = /^[a-zA-Z0-9_]+$/;
     if (!usernameRegex.test(username)) {
       return {
@@ -262,6 +270,7 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
+    // ===== VALIDATE EMAIL =====
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return {
@@ -270,6 +279,7 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
+    // ===== VALIDATE PASSWORD =====
     if (password.length < 6) {
       return {
         success: false,
@@ -291,12 +301,23 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
+    // ===== BUILD REQUEST DATA =====
+    const requestData = {
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: password.trim()
+    };
+
+    // ===== ✅ ONLY ADD REFERRAL CODE IF VALID =====
+    if (referralCode && referralCode.trim() !== '' && referralCode !== 'undefined') {
+      requestData.referralCode = referralCode.trim().toUpperCase();
+      console.log('📝 [AuthContext] Sending referral code:', requestData.referralCode);
+    } else {
+      console.log('ℹ️ [AuthContext] No referral code provided');
+    }
+
     try {
-      const response = await api.post('/auth/register', {
-        username: username.trim(),
-        email: email.trim().toLowerCase(),
-        password: password.trim()
-      });
+      const response = await api.post('/auth/register', requestData);
       
       const { token, user } = response.data;
       
@@ -314,13 +335,16 @@ export const AuthProvider = ({ children }) => {
       fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} registered successfully`);
+      console.log(`✅ Auth: referredBy: ${user.referredBy || 'None'}`);
       
       return {
         success: true,
-        user: user
+        user: user,
+        message: response.data.message
       };
     } catch (error) {
       console.error('❌ Auth: Register error:', error.message);
+      console.error('❌ Response:', error.response?.data);
       
       let message = 'Registration failed. Please try again.';
       

@@ -111,3 +111,36 @@
   .auth-card { padding: 32px 24px; }
   .auth-header h1 { font-size: 26px; }
 }
+/* ===== REFERRAL VALIDATION STYLES ===== */
+.form-control.is-valid {
+  border-color: #51cf66;
+  box-shadow: 0 0 0 3px rgba(81, 207, 102, 0.2);
+}
+
+.form-control.is-invalid {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+}
+
+.auth-success {
+  color: #51cf66;
+  font-size: 13px;
+  margin-top: 4px;
+  background: rgba(81, 207, 102, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(81, 207, 102, 0.15);
+}
+
+.auth-info {
+  color: #ffd93d;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.form-text.text-muted {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
