@@ -161,11 +161,20 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
   };
 
   const handleJoinRoom = async () => {
-    const trimmedCode = joinCode.trim();
+    const trimmedCode = joinCode.trim().toUpperCase();
+    
+    // ✅ Validation
     if (!trimmedCode) {
       setError('Please enter a room code');
       return;
     }
+
+    if (!trimmedCode.startsWith('ANTI-') || trimmedCode.length < 10) {
+      setError('Invalid room code format. Should be ANTI-XXXX (e.g., ANTI-2JDZSB)');
+      return;
+    }
+
+    console.log('📝 Attempting to join room:', trimmedCode);
 
     setLoading(true);
     setError('');
@@ -177,11 +186,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
         const joinedRoom = response.data.room;
         const code = response.data.roomCode || joinedRoom?.roomCode || trimmedCode;
         
-        console.log('📝 [Join Room] Room code:', code);
-        
-        if (!code) {
-          throw new Error('No room code received from server');
-        }
+        console.log('✅ Successfully joined room:', code);
         
         const roomWithCode = {
           ...joinedRoom,
@@ -191,6 +196,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
         setRoom(roomWithCode);
         setRoomCode(code);
         setView('lobby');
+        setJoinCode(''); // ✅ Clear input after successful join
         
         if (socketRef.current) {
           socketRef.current.emit('join-team-room', code);
@@ -198,7 +204,21 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       }
     } catch (error) {
       console.error('❌ Join room error:', error);
-      setError(error.response?.data?.message || error.message || 'Failed to join room');
+      console.error('❌ Response:', error.response?.data);
+      
+      // ✅ User-friendly error messages
+      let errorMessage = 'Failed to join room';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Room not found. Please check the room code.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Room is full or already started.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -217,6 +237,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       setView('main');
       setRoom(null);
       setRoomCode('');
+      setJoinCode('');
     } catch (error) {
       console.error('❌ Leave room error:', error);
     }
@@ -225,6 +246,12 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
   const handleManualRefresh = async () => {
     if (!roomCode) return;
     await fetchRoomData();
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleJoinRoom();
+    }
   };
 
   if (!isOpen) return null;
@@ -269,9 +296,11 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
                       placeholder="ANTI-XXXX"
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                      onKeyDown={handleKeyPress}
                       maxLength={12}
                       disabled={false}
                       autoFocus
+                      className="join-input"
                     />
                     <button 
                       className="btn-secondary"
