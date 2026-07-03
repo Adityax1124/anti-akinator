@@ -3,8 +3,10 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Referral = require('../models/Referral');
+const OTP = require('../models/OTP');
 const TwoFactor = require('../models/TwoFactor');
 const { authMiddleware } = require('../middleware/auth');
+const { sendOTPEmail, sendWelcomeEmail } = require('../utils/email');
 const router = express.Router();
 
 // ===== HELPER: Get Current Season =====
@@ -13,6 +15,11 @@ function getCurrentSeason() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   return parseInt(`${year}${month.toString().padStart(2, '0')}`);
+}
+
+// ===== HELPER: Generate OTP =====
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // ===== VALIDATION RULES =====
@@ -61,8 +68,31 @@ const loginValidation = [
     .withMessage('Password is required')
 ];
 
+const verifyOTPValidation = [
+  body('email')
+    .trim()
+    .escape()
+    .isEmail()
+    .withMessage('Please provide a valid email')
+    .normalizeEmail(),
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('OTP must be 6 digits')
+    .matches(/^[0-9]+$/)
+    .withMessage('OTP must contain only numbers')
+];
+
+const resendOTPValidation = [
+  body('email')
+    .trim()
+    .escape()
+    .isEmail()
+    .withMessage('Please provide a valid email')
+    .normalizeEmail()
+];
+
 // ============================================================
-// REGISTER (with Device Lock ONLY for Registration)
+// REGISTER (with Device Lock + OTP)
 // ============================================================
 router.post('/register', registerValidation, async (req, res) => {
   try {
@@ -81,14 +111,33 @@ router.post('/register', registerValidation, async (req, res) => {
     console.log('========================================');
     console.log('🔍 [REGISTER] New registration attempt');
     console.log(`📝 Username: ${username}`);
+    console.log(`📝 IP Address: ${ipAddress}`);
     console.log(`📝 Device Fingerprint: ${deviceFingerprint ? 'Provided' : 'Not provided'}`);
 
-    // ===== ✅ PERMANENT DEVICE LOCK (Registration ONLY) =====
+    // ===== ✅ LAYER 1: IP ADDRESS LIMIT =====
+    const recentRegistrationsFromIP = await User.countDocuments({
+      ipAddress: ipAddress,
+      createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+    });
+
+    console.log(`📊 Recent registrations from IP ${ipAddress}: ${recentRegistrationsFromIP}`);
+
+    if (recentRegistrationsFromIP >= 3) {
+      console.log(`🚫 IP LIMIT REACHED: ${ipAddress} has ${recentRegistrationsFromIP} registrations in 24 hours`);
+      return res.status(429).json({
+        success: false,
+        message: 'Too many accounts created from this network. Maximum 3 accounts per IP in 24 hours.',
+        code: 'IP_LIMIT',
+        remaining: 3 - recentRegistrationsFromIP
+      });
+    }
+
+    // ===== ✅ LAYER 2: DEVICE FINGERPRINT LOCK =====
     if (deviceFingerprint) {
       const existingDevice = await User.findOne({ deviceFingerprint: deviceFingerprint });
       
       if (existingDevice) {
-        console.log(`🚫 BLOCKED: Device already registered to: ${existingDevice.username}`);
+        console.log(`🚫 DEVICE LOCKED: ${deviceFingerprint} already registered to: ${existingDevice.username}`);
         return res.status(429).json({
           success: false,
           message: 'This device already has an account. Only one account per device is allowed.',
@@ -141,13 +190,15 @@ router.post('/register', registerValidation, async (req, res) => {
     // ✅ Get current season
     const currentSeason = getCurrentSeason();
 
-    // ✅ Create user
+    // ✅ Create user (isActive = false until email verified)
     const user = new User({ 
       username: username.trim(), 
       email: email.toLowerCase().trim(), 
       password,
       deviceFingerprint: deviceFingerprint || null,
       ipAddress: ipAddress,
+      isActive: false,
+      isEmailVerified: false,
       seasonStats: {
         currentSeason: currentSeason,
         seasonWins: 0,
@@ -172,6 +223,7 @@ router.post('/register', registerValidation, async (req, res) => {
     await user.save();
     console.log(`✅ [REGISTER] User ${user.username} saved successfully!`);
     console.log(`✅ [REGISTER] Device Fingerprint: ${user.deviceFingerprint || 'None'}`);
+    console.log(`✅ [REGISTER] IP Address: ${user.ipAddress}`);
     console.log(`✅ [REGISTER] referredBy: ${user.referredBy || 'None'}`);
 
     // ===== ✅ Create referral document if valid referral =====
@@ -180,7 +232,7 @@ router.post('/register', registerValidation, async (req, res) => {
         referrer: referrer._id,
         referredUser: user._id,
         code: cleanReferralCode.toUpperCase().trim(),
-        status: 'registered',
+        status: 'pending',
         registeredAt: new Date()
       });
       await referralDoc.save();
@@ -193,50 +245,49 @@ router.post('/register', registerValidation, async (req, res) => {
       console.log(`✅ [REGISTER] Added ${user.username} to ${referrer.username}'s referrals list`);
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    // ===== ✅ SEND OTP =====
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+    // Delete old OTPs for this email
+    await OTP.deleteMany({ email: user.email });
+
+    const otpRecord = new OTP({
+      email: user.email,
+      otp: otp,
+      userId: user._id,
+      expiresAt: expiresAt
+    });
+    await otpRecord.save();
+
+    // Send OTP email
+    await sendOTPEmail(user.email, otp, user.username);
+
+    console.log(`📧 OTP sent to ${user.email}: ${otp}`);
+    console.log(`✅ [REGISTER] Registration complete for ${username} - Awaiting email verification`);
+    console.log('========================================');
+
+    // ✅ Return without token - user must verify first
     const userResponse = {
       id: user._id,
       username: user.username,
       email: user.email,
       role: user.role,
-      stats: user.stats,
-      shards: user.shards,
-      seasonStats: user.seasonStats,
-      referralCode: user.referralCode,
-      referredBy: user.referredBy,
-      referralStats: user.referralStats,
-      deviceFingerprint: user.deviceFingerprint
+      isEmailVerified: false,
+      isActive: false
     };
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
-
-    const responseMessage = referrer 
-      ? `User created successfully! You were referred by ${referrer.username}. You both will get 50 Shards when you win your first game! 🎉`
-      : 'User created successfully!';
-
-    console.log(`✅ [REGISTER] Registration complete for ${username}`);
-    console.log('========================================');
 
     res.status(201).json({
       success: true,
-      message: responseMessage,
-      token,
+      message: 'Registration successful! Please verify your email.',
+      requiresVerification: true,
+      email: user.email,
+      userId: user._id,
       user: userResponse,
       referral: referralDoc ? {
         referrer: referrer.username,
-        status: 'registered',
-        message: `You've been referred by ${referrer.username}! Win your first game to earn 50 Shards each! 🎉`
+        status: 'pending',
+        message: `You've been referred by ${referrer.username}! Please verify your email to activate your account.`
       } : null
     });
 
@@ -254,7 +305,232 @@ router.post('/register', registerValidation, async (req, res) => {
 });
 
 // ============================================================
-// LOGIN (No device check - login from ANY device)
+// VERIFY OTP
+// ============================================================
+router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
+    const { email, otp } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find OTP record
+    const otpRecord = await OTP.findOne({
+      email: normalizedEmail,
+      isVerified: false
+    });
+
+    if (!otpRecord) {
+      return res.status(404).json({
+        success: false,
+        message: 'No pending verification found'
+      });
+    }
+
+    // Check if OTP has expired
+    if (otpRecord.expiresAt < new Date()) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new one.'
+      });
+    }
+
+    // Check attempts
+    if (otpRecord.attempts >= 5) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({
+        success: false,
+        message: 'Too many failed attempts. Please request a new OTP.'
+      });
+    }
+
+    // Verify OTP
+    if (otpRecord.otp !== otp) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      return res.status(400).json({
+        success: false,
+        message: `Invalid OTP. ${5 - otpRecord.attempts} attempts remaining.`
+      });
+    }
+
+    // Mark OTP as verified
+    otpRecord.isVerified = true;
+    await otpRecord.save();
+
+    // ✅ Update user
+    const user = await User.findById(otpRecord.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.isEmailVerified = true;
+    user.isActive = true;
+    await user.save();
+
+    // ✅ Activate referral
+    if (user.referredBy) {
+      const referral = await Referral.findOne({
+        referredUser: user._id,
+        status: 'pending'
+      });
+      if (referral) {
+        referral.status = 'registered';
+        referral.registeredAt = new Date();
+        await referral.save();
+        console.log(`📝 [VERIFY] Referral activated for ${user.username}`);
+      }
+    }
+
+    // Send welcome email
+    await sendWelcomeEmail(normalizedEmail, user.username);
+
+    // Delete used OTP
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    // ✅ Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const userResponse = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      stats: user.stats,
+      shards: user.shards,
+      seasonStats: user.seasonStats,
+      referralCode: user.referralCode,
+      referredBy: user.referredBy,
+      referralStats: user.referralStats,
+      isEmailVerified: true,
+      isActive: true
+    };
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    console.log(`✅ Email verified: ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! 🎉',
+      token: token,
+      user: userResponse
+    });
+
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify OTP. Please try again.'
+    });
+  }
+});
+
+// ============================================================
+// RESEND OTP
+// ============================================================
+router.post('/resend-otp', resendOTPValidation, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(e => e.msg)
+      });
+    }
+
+    const { email } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user exists
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if user is already verified
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already verified'
+      });
+    }
+
+    // Check if OTP was recently sent (rate limit - 60 seconds)
+    const recentOTP = await OTP.findOne({
+      email: normalizedEmail,
+      createdAt: { $gt: new Date(Date.now() - 60 * 1000) }
+    });
+
+    if (recentOTP) {
+      return res.status(429).json({
+        success: false,
+        message: 'Please wait 60 seconds before requesting another OTP'
+      });
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    // Delete old OTPs
+    await OTP.deleteMany({ email: normalizedEmail });
+
+    // Save new OTP
+    const otpRecord = new OTP({
+      email: normalizedEmail,
+      otp: otp,
+      userId: user._id,
+      expiresAt: expiresAt
+    });
+    await otpRecord.save();
+
+    // Send OTP email
+    await sendOTPEmail(normalizedEmail, otp, user.username);
+
+    console.log(`📧 New OTP sent to ${normalizedEmail}: ${otp}`);
+
+    res.json({
+      success: true,
+      message: 'New OTP sent to your email',
+      expiresIn: 300
+    });
+
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to resend OTP. Please try again.'
+    });
+  }
+});
+
+// ============================================================
+// LOGIN (NO email verification check - login works normally)
 // ============================================================
 router.post('/login', loginValidation, async (req, res) => {
   try {
@@ -277,6 +553,7 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
+    // Check if account is locked
     if (user.isLocked && user.isLocked()) {
       return res.status(423).json({
         success: false,
@@ -284,6 +561,7 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
+    // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       await user.incrementFailedAttempts();
@@ -295,6 +573,7 @@ router.post('/login', loginValidation, async (req, res) => {
 
     await user.resetFailedAttempts();
 
+    // ===== CHECK IF 2FA IS ENABLED =====
     const twoFactor = await TwoFactor.findOne({ user: user._id });
 
     if (twoFactor && twoFactor.enabled) {
@@ -307,6 +586,7 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
+    // If no 2FA, proceed with normal login
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -324,7 +604,8 @@ router.post('/login', loginValidation, async (req, res) => {
       referralCode: user.referralCode,
       referredBy: user.referredBy,
       referralStats: user.referralStats,
-      deviceFingerprint: user.deviceFingerprint
+      deviceFingerprint: user.deviceFingerprint,
+      isEmailVerified: user.isEmailVerified || false
     };
 
     res.cookie('token', token, {
