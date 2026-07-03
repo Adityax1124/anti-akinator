@@ -29,7 +29,6 @@ const api = axios.create({
   withCredentials: true,
   timeout: 30000,
   maxContentLength: 10 * 1024 * 1024
-  // ===== REMOVED httpsAgent - it doesn't work in browsers =====
 });
 
 // ===== REQUEST INTERCEPTOR =====
@@ -47,6 +46,8 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn('⚠️ No token found in localStorage');
     }
 
     // ===== Add CSRF token =====
@@ -57,8 +58,11 @@ api.interceptors.request.use(
       }
     }
 
-    // ===== Cache busting =====
-    if (config.method?.toLowerCase() === 'get') {
+    // ===== Cache busting - ONLY for specific endpoints =====
+    const skipCacheEndpoints = ['/team/room', '/team/join', '/team/create'];
+    const shouldSkipCache = skipCacheEndpoints.some(endpoint => config.url?.includes(endpoint));
+    
+    if (config.method?.toLowerCase() === 'get' && !shouldSkipCache) {
       config.params = {
         ...config.params,
         _t: Date.now()
@@ -102,23 +106,16 @@ api.interceptors.response.use(
       });
     }
 
-    // ===== 401 Unauthorized =====
+    // ===== 401 Unauthorized - FIXED =====
     if (error.response?.status === 401) {
-      if (error.response?.data?.code === 'TOKEN_EXPIRED') {
-        console.warn('🔑 Token expired. Redirecting to login...');
+      console.warn('🔑 Unauthorized - Token may be expired');
+      
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict;';
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-      } else {
-        console.warn('🔒 Unauthorized access');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
+        delete api.defaults.headers.common['Authorization'];
+        // Don't redirect immediately - let the component handle it
       }
     }
 
@@ -151,11 +148,13 @@ api.interceptors.response.use(
 api.clearAuth = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  delete api.defaults.headers.common['Authorization'];
   document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict;';
 };
 
 api.setAuth = (token) => {
   localStorage.setItem('token', token);
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 };
 
 api.isAuthenticated = () => {

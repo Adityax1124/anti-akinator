@@ -93,12 +93,11 @@ export const AuthProvider = ({ children }) => {
 
   // ===== FETCH USER (ONLY ONCE) =====
   const fetchUser = useCallback(async () => {
-    // ===== PREVENT MULTIPLE FETCHES =====
     if (fetchUserRef.current) return;
     fetchUserRef.current = true;
 
     try {
-      const response = await api.get('/auth/me', { params: { _t: Date.now() } });
+      const response = await api.get('/auth/me');
       setUser(response.data.user);
       setAuthError(null);
       resetSessionTimer();
@@ -106,7 +105,11 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('🔴 Auth: Error fetching user:', error.message);
       if (error.response?.status === 401) {
-        await logout();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        delete api.defaults.headers.common['Authorization'];
+        setToken(null);
+        setUser(null);
       } else {
         setAuthError('Unable to fetch user data. Please try refreshing.');
       }
@@ -114,7 +117,6 @@ export const AuthProvider = ({ children }) => {
       return null;
     } finally {
       setLoading(false);
-      // Don't reset fetchUserRef here - we only want to fetch ONCE
     }
   }, [logout, resetSessionTimer]);
 
@@ -125,7 +127,6 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
     
-    // Allow refresh even if already fetched
     fetchUserRef.current = false;
     setLoading(true);
     const userData = await fetchUser();
@@ -133,9 +134,8 @@ export const AuthProvider = ({ children }) => {
     return userData;
   }, [token, fetchUser]);
 
-  // ===== INITIALIZE AUTH (ONLY ONCE) =====
+  // ===== INITIALIZE AUTH =====
   useEffect(() => {
-    // ===== ONLY RUN ONCE =====
     if (initialFetchDone.current) return;
     initialFetchDone.current = true;
     
@@ -148,7 +148,7 @@ export const AuthProvider = ({ children }) => {
   }, [token, setAuthHeader, fetchUser]);
 
   // ============================================================
-  // ===== LOGIN (NO verification check) =====
+  // ===== LOGIN =====
   // ============================================================
   const login = useCallback(async (email, password) => {
     setAuthError(null);
@@ -168,7 +168,6 @@ export const AuthProvider = ({ children }) => {
       
       const data = response.data;
 
-      // ===== CHECK IF 2FA REQUIRED =====
       if (data.requires2FA) {
         return {
           success: true,
@@ -193,7 +192,6 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
       resetSessionTimer();
       
-      // Reset fetch ref so refresh works after login
       fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} logged in successfully`);
@@ -241,12 +239,11 @@ export const AuthProvider = ({ children }) => {
   }, [setAuthHeader, resetSessionTimer]);
 
   // ============================================================
-  // ===== REGISTER (UPDATED WITH EMAIL VERIFICATION) =====
+  // ===== REGISTER =====
   // ============================================================
   const register = useCallback(async (userData) => {
     setAuthError(null);
     
-    // ===== EXTRACT FIELDS =====
     const { username, email, password, referralCode, deviceFingerprint } = userData;
     
     if (!username || !email || !password) {
@@ -256,7 +253,6 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
-    // ===== VALIDATE USERNAME =====
     const usernameRegex = /^[a-zA-Z0-9_]+$/;
     if (!usernameRegex.test(username)) {
       return {
@@ -272,7 +268,6 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
-    // ===== VALIDATE EMAIL =====
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return {
@@ -281,7 +276,6 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
-    // ===== VALIDATE PASSWORD =====
     if (password.length < 6) {
       return {
         success: false,
@@ -303,7 +297,6 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
-    // ===== BUILD REQUEST DATA =====
     const requestData = {
       username: username.trim(),
       email: email.trim().toLowerCase(),
@@ -311,7 +304,6 @@ export const AuthProvider = ({ children }) => {
       deviceFingerprint: deviceFingerprint || null
     };
 
-    // ===== ✅ ONLY ADD REFERRAL CODE IF VALID =====
     if (referralCode && referralCode.trim() !== '' && referralCode !== 'undefined') {
       requestData.referralCode = referralCode.trim().toUpperCase();
       console.log('📝 [AuthContext] Sending referral code:', requestData.referralCode);
@@ -326,7 +318,6 @@ export const AuthProvider = ({ children }) => {
       
       const data = response.data;
 
-      // ===== ✅ CHECK IF EMAIL VERIFICATION REQUIRED =====
       if (data.requiresVerification) {
         console.log('📧 [AuthContext] Email verification required');
         return {
@@ -338,7 +329,6 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      // ===== OLD FLOW (No verification - fallback) =====
       const { token, user } = data;
       
       if (!token || !user) {
@@ -352,12 +342,9 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setAuthError(null);
       
-      // Reset fetch ref
       fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} registered successfully`);
-      console.log(`✅ Auth: referredBy: ${user.referredBy || 'None'}`);
-      console.log(`✅ Auth: deviceFingerprint: ${user.deviceFingerprint || 'None'}`);
       
       return {
         success: true,
@@ -366,7 +353,6 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('❌ Auth: Register error:', error.message);
-      console.error('❌ Response:', error.response?.data);
       
       let message = 'Registration failed. Please try again.';
       
