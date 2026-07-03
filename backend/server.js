@@ -393,10 +393,8 @@ app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
     const channelName = req.query.channel || 'default';
     
-    // ✅ Use user's database ID as UID (guaranteed unique per user)
-    const userId = req.user._id.toString();
-    // Convert hex string to number, ensure within Agora range (1-10000)
-    const uid = (parseInt(userId.slice(-8), 16) % 9000) + 1000;
+    // ✅ Use user's ID as string UID (Agora supports string UID up to 255 chars)
+    const uid = req.user._id.toString();
     
     console.log(`👤 User: ${req.user.username}, UID: ${uid}`);
     
@@ -420,19 +418,19 @@ app.get('/api/agora-token', authMiddleware, (req, res) => {
       APP_ID,
       APP_CERTIFICATE,
       channelName,
-      uid,
+      parseInt(uid.slice(-8), 16),
       role,
       privilegeExpiredTs
     );
 
-    console.log(`✅ Agora token: UID=${uid}, channel=${channelName}`);
+    console.log(`✅ Agora token: UID=${parseInt(uid.slice(-8), 16)}, channel=${channelName}`);
 
     res.json({
       success: true,
       token: token,
       appId: APP_ID,
       channel: channelName,
-      uid: uid
+      uid: parseInt(uid.slice(-8), 16)
     });
   } catch (error) {
     console.error('❌ Error generating Agora token:', error);
