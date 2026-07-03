@@ -239,13 +239,13 @@ export const AuthProvider = ({ children }) => {
   }, [setAuthHeader, resetSessionTimer]);
 
   // ============================================================
-  // ===== REGISTER (UPDATED WITH REFERRAL CODE SUPPORT) =====
+  // ===== REGISTER (UPDATED WITH DEVICE FINGERPRINT) =====
   // ============================================================
   const register = useCallback(async (userData) => {
     setAuthError(null);
     
     // ===== EXTRACT FIELDS =====
-    const { username, email, password, referralCode } = userData;
+    const { username, email, password, referralCode, deviceFingerprint } = userData;
     
     if (!username || !email || !password) {
       return {
@@ -305,7 +305,8 @@ export const AuthProvider = ({ children }) => {
     const requestData = {
       username: username.trim(),
       email: email.trim().toLowerCase(),
-      password: password.trim()
+      password: password.trim(),
+      deviceFingerprint: deviceFingerprint || null // ✅ ADD DEVICE FINGERPRINT
     };
 
     // ===== ✅ ONLY ADD REFERRAL CODE IF VALID =====
@@ -315,6 +316,8 @@ export const AuthProvider = ({ children }) => {
     } else {
       console.log('ℹ️ [AuthContext] No referral code provided');
     }
+
+    console.log('📝 [AuthContext] Sending device fingerprint:', requestData.deviceFingerprint);
 
     try {
       const response = await api.post('/auth/register', requestData);
@@ -336,6 +339,7 @@ export const AuthProvider = ({ children }) => {
       
       console.log(`✅ Auth: ${user.username} registered successfully`);
       console.log(`✅ Auth: referredBy: ${user.referredBy || 'None'}`);
+      console.log(`✅ Auth: deviceFingerprint: ${user.deviceFingerprint || 'None'}`);
       
       return {
         success: true,
@@ -357,7 +361,7 @@ export const AuthProvider = ({ children }) => {
             message = error.response.data?.message || 'User already exists with this email or username';
             break;
           case 429:
-            message = 'Too many registration attempts. Please wait.';
+            message = error.response.data?.message || 'Too many registration attempts. Please wait.';
             break;
           case 500:
             message = 'Server error. Please try again later.';

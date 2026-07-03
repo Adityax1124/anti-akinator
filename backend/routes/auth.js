@@ -42,7 +42,11 @@ const registerValidation = [
     .trim()
     .escape()
     .isLength({ min: 6, max: 20 })
-    .withMessage('Invalid referral code')
+    .withMessage('Invalid referral code'),
+  body('deviceFingerprint')
+    .optional()
+    .isString()
+    .withMessage('Invalid device fingerprint')
 ];
 
 const loginValidation = [
@@ -58,7 +62,7 @@ const loginValidation = [
 ];
 
 // ============================================================
-// REGISTER (with Referral Support - FIXED)
+// REGISTER (with Device Lock ONLY for Registration)
 // ============================================================
 router.post('/register', registerValidation, async (req, res) => {
   try {
@@ -71,19 +75,34 @@ router.post('/register', registerValidation, async (req, res) => {
       });
     }
 
-    const { username, email, password, referralCode } = req.body;
+    const { username, email, password, referralCode, deviceFingerprint } = req.body;
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
     console.log('========================================');
     console.log('🔍 [REGISTER] New registration attempt');
     console.log(`📝 Username: ${username}`);
-    
-    // ✅ FIX: Check if referralCode is valid (not undefined, not null, not "undefined")
+    console.log(`📝 Device Fingerprint: ${deviceFingerprint ? 'Provided' : 'Not provided'}`);
+
+    // ===== ✅ PERMANENT DEVICE LOCK (Registration ONLY) =====
+    if (deviceFingerprint) {
+      const existingDevice = await User.findOne({ deviceFingerprint: deviceFingerprint });
+      
+      if (existingDevice) {
+        console.log(`🚫 BLOCKED: Device already registered to: ${existingDevice.username}`);
+        return res.status(429).json({
+          success: false,
+          message: 'This device already has an account. Only one account per device is allowed.',
+          code: 'DEVICE_LOCKED'
+        });
+      }
+    }
+
+    // Clean referral code
     const cleanReferralCode = referralCode && referralCode !== 'undefined' && referralCode.trim() !== '' 
       ? referralCode.trim() 
       : null;
-    
+
     console.log(`📝 Referral Code Provided: "${cleanReferralCode}"`);
-    console.log('========================================');
 
     // Check if user already exists
     const existingUser = await User.findOne({ 
@@ -108,24 +127,18 @@ router.post('/register', registerValidation, async (req, res) => {
       const cleanCode = cleanReferralCode.toUpperCase().trim();
       console.log(`🔍 [REGISTER] Looking for referrer with code: "${cleanCode}"`);
       
-      // Find the referrer by their referral code
       referrer = await User.findOne({ referralCode: cleanCode });
       
       if (referrer) {
         console.log(`✅ [REGISTER] Referrer FOUND: ${referrer.username} (ID: ${referrer._id})`);
-        console.log(`✅ [REGISTER] Referrer's referralCode: ${referrer.referralCode}`);
       } else {
         console.log(`❌ [REGISTER] No user found with referral code: "${cleanCode}"`);
-        
-        // DEBUG: Check all referral codes in DB
-        const allCodes = await User.find({ referralCode: { $exists: true } }, { username: 1, referralCode: 1 }).limit(10);
-        console.log('📋 [REGISTER] Existing referral codes in DB:', allCodes.map(u => `${u.username}: ${u.referralCode}`).join(', '));
       }
     } else {
       console.log(`ℹ️ [REGISTER] No valid referral code provided`);
     }
 
-    // ✅ Get current season dynamically
+    // ✅ Get current season
     const currentSeason = getCurrentSeason();
 
     // ✅ Create user
@@ -133,6 +146,8 @@ router.post('/register', registerValidation, async (req, res) => {
       username: username.trim(), 
       email: email.toLowerCase().trim(), 
       password,
+      deviceFingerprint: deviceFingerprint || null,
+      ipAddress: ipAddress,
       seasonStats: {
         currentSeason: currentSeason,
         seasonWins: 0,
@@ -141,29 +156,23 @@ router.post('/register', registerValidation, async (req, res) => {
       }
     });
 
-    // ===== ✅ If valid referral, save referrer info =====
+    // ===== ✅ If valid referral =====
     if (referrer) {
       user.referredBy = referrer._id;
       console.log(`✅ [REGISTER] Set user.referredBy = ${referrer._id}`);
-      
-      // Generate referral code for the new user
-      const prefix = username.slice(0, 4).toUpperCase();
-      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-      user.referralCode = `${prefix}-${random}`;
-      console.log(`✅ [REGISTER] Generated referral code for new user: ${user.referralCode}`);
-    } else {
-      // Generate referral code for the new user (even without a referrer)
-      const prefix = username.slice(0, 4).toUpperCase();
-      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-      user.referralCode = `${prefix}-${random}`;
-      console.log(`✅ [REGISTER] Generated referral code for new user (no referrer): ${user.referralCode}`);
     }
+
+    // ✅ Generate referral code for the new user
+    const prefix = username.slice(0, 4).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    user.referralCode = `${prefix}-${random}`;
+    console.log(`✅ [REGISTER] Generated referral code: ${user.referralCode}`);
 
     // ✅ SAVE USER
     await user.save();
     console.log(`✅ [REGISTER] User ${user.username} saved successfully!`);
-    console.log(`✅ [REGISTER] referredBy: ${user.referredBy}`);
-    console.log(`✅ [REGISTER] referralCode: ${user.referralCode}`);
+    console.log(`✅ [REGISTER] Device Fingerprint: ${user.deviceFingerprint || 'None'}`);
+    console.log(`✅ [REGISTER] referredBy: ${user.referredBy || 'None'}`);
 
     // ===== ✅ Create referral document if valid referral =====
     if (referrer) {
@@ -175,15 +184,13 @@ router.post('/register', registerValidation, async (req, res) => {
         registeredAt: new Date()
       });
       await referralDoc.save();
-      console.log(`📝 [REGISTER] Referral document created! ID: ${referralDoc._id}`);
+      console.log(`📝 [REGISTER] Referral document created!`);
       
       // ✅ Update referrer's referrals list
       referrer.referrals.push(user._id);
       referrer.referralStats.totalReferrals = (referrer.referralStats?.totalReferrals || 0) + 1;
       await referrer.save();
       console.log(`✅ [REGISTER] Added ${user.username} to ${referrer.username}'s referrals list`);
-    } else {
-      console.log(`ℹ️ [REGISTER] No referral document created (no referrer)`);
     }
 
     // Generate JWT token
@@ -203,7 +210,8 @@ router.post('/register', registerValidation, async (req, res) => {
       seasonStats: user.seasonStats,
       referralCode: user.referralCode,
       referredBy: user.referredBy,
-      referralStats: user.referralStats
+      referralStats: user.referralStats,
+      deviceFingerprint: user.deviceFingerprint
     };
 
     res.cookie('token', token, {
@@ -213,7 +221,6 @@ router.post('/register', registerValidation, async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // ===== ✅ Send response =====
     const responseMessage = referrer 
       ? `User created successfully! You were referred by ${referrer.username}. You both will get 50 Shards when you win your first game! 🎉`
       : 'User created successfully!';
@@ -247,7 +254,7 @@ router.post('/register', registerValidation, async (req, res) => {
 });
 
 // ============================================================
-// LOGIN
+// LOGIN (No device check - login from ANY device)
 // ============================================================
 router.post('/login', loginValidation, async (req, res) => {
   try {
@@ -316,7 +323,8 @@ router.post('/login', loginValidation, async (req, res) => {
       seasonStats: user.seasonStats,
       referralCode: user.referralCode,
       referredBy: user.referredBy,
-      referralStats: user.referralStats
+      referralStats: user.referralStats,
+      deviceFingerprint: user.deviceFingerprint
     };
 
     res.cookie('token', token, {

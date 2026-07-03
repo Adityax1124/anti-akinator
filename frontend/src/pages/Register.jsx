@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import { getDeviceFingerprint } from '../utils/deviceFingerprint'; // ✅ NEW IMPORT
 import './Auth.css';
 
 const Register = () => {
@@ -135,11 +136,12 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // ===== BUILD REGISTRATION DATA =====
+      // ===== ✅ BUILD REGISTRATION DATA WITH DEVICE FINGERPRINT =====
       const registerData = {
         username: trimmedUsername,
         email: trimmedEmail,
-        password: trimmedPassword
+        password: trimmedPassword,
+        deviceFingerprint: getDeviceFingerprint() // ✅ NEW: Send device fingerprint
       };
 
       // ===== ✅ ONLY ADD REFERRAL CODE IF VALID =====
@@ -149,6 +151,8 @@ const Register = () => {
       } else {
         console.log('ℹ️ [Register] No valid referral code provided');
       }
+
+      console.log('📝 [Register] Sending device fingerprint:', registerData.deviceFingerprint);
 
       const result = await register(registerData);
       
@@ -163,13 +167,19 @@ const Register = () => {
         });
         navigate('/');
       } else {
-        setErrors({ general: result.message || 'Registration failed. Please try again.' });
+        // Check if it's a device lock error
+        if (result.message?.includes('device already has an account')) {
+          setErrors({ general: '❌ This device already has an account. Only one account per device is allowed.' });
+        } else {
+          setErrors({ general: result.message || 'Registration failed. Please try again.' });
+        }
       }
     } catch (err) {
       if (err.message?.includes('Network')) {
         setErrors({ general: 'Network error. Please check your connection.' });
       } else if (err.response?.status === 429) {
-        setErrors({ general: 'Too many registration attempts. Please wait.' });
+        const msg = err.response?.data?.message || 'Too many registration attempts. Please wait.';
+        setErrors({ general: msg });
       } else if (err.response?.status === 409) {
         setErrors({ general: 'User already exists with this email or username' });
       } else {

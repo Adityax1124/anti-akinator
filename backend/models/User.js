@@ -178,7 +178,7 @@ const userSchema = new mongoose.Schema({
   },
 
   // =============================================
-  // ===== 🔗 REFERRAL SYSTEM (NEW) =====
+  // ===== 🔗 REFERRAL SYSTEM =====
   // =============================================
   referralCode: {
     type: String,
@@ -200,6 +200,20 @@ const userSchema = new mongoose.Schema({
     totalReferrals: { type: Number, default: 0, min: 0 },
     shardsEarned: { type: Number, default: 0, min: 0 },
     completedReferrals: { type: Number, default: 0, min: 0 }
+  },
+
+  // =============================================
+  // ===== 🛡️ DEVICE FINGERPRINT (Anti-Spam) =====
+  // =============================================
+  deviceFingerprint: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  ipAddress: {
+    type: String,
+    default: null
   },
 
   // ===== SECURITY =====
@@ -268,6 +282,8 @@ userSchema.index({ 'seasonHistory.season': -1 });
 // ===== REFERRAL INDEXES =====
 userSchema.index({ referralCode: 1 });
 userSchema.index({ referredBy: 1 });
+// ===== DEVICE FINGERPRINT INDEX =====
+userSchema.index({ deviceFingerprint: 1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -397,6 +413,18 @@ userSchema.statics.getTopReferrers = function(limit = 10) {
     'referralStats.shardsEarned': -1
   })
   .limit(limit);
+};
+
+// ===== ✅ NEW: Find by device fingerprint =====
+userSchema.statics.findByDeviceFingerprint = function(fingerprint) {
+  return this.findOne({ deviceFingerprint: fingerprint });
+};
+
+// ===== ✅ NEW: Check if device is already registered =====
+userSchema.statics.isDeviceRegistered = async function(fingerprint) {
+  if (!fingerprint) return false;
+  const user = await this.findOne({ deviceFingerprint: fingerprint });
+  return !!user;
 };
 
 module.exports = mongoose.model('User', userSchema);
