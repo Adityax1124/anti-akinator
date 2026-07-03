@@ -27,6 +27,7 @@ const TeamGamePage = () => {
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceParticipants, setVoiceParticipants] = useState([]);
+  const [micError, setMicError] = useState('');
   
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -51,7 +52,6 @@ const TeamGamePage = () => {
       console.log('🔌 Socket connected:', socket.id);
       socket.emit('join-team-room', roomCode);
       
-      // ✅ Only join voice if mic is already on (persistent)
       if (isMicOn) {
         socket.emit('user-joined-voice', { 
           roomCode, 
@@ -111,14 +111,12 @@ const TeamGamePage = () => {
 
     socket.on('disconnect', () => {
       console.log('🔌 Socket disconnected');
-      // ✅ Only stop voice if mic was on
       if (isMicOn) {
         stopVoiceChat();
       }
     });
 
     return () => {
-      // ✅ Cleanup on unmount
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
@@ -190,6 +188,9 @@ const TeamGamePage = () => {
 
   const startVoiceChat = async () => {
     try {
+      console.log('🎤 Starting voice chat...');
+      setMicError('');
+      
       // Get user media
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -199,6 +200,7 @@ const TeamGamePage = () => {
         }
       });
       
+      console.log('✅ Microphone access granted');
       localStreamRef.current = stream;
       
       // Set up audio analysis
@@ -212,7 +214,7 @@ const TeamGamePage = () => {
       
       setIsMicOn(true);
       
-      // ✅ Only emit join voice AFTER mic is on
+      // Notify others
       if (socketRef.current) {
         socketRef.current.emit('user-joined-voice', { 
           roomCode, 
@@ -221,23 +223,39 @@ const TeamGamePage = () => {
       }
       
       // Create peer connections for all other players
-      for (const player of players) {
-        if (player.username !== user.username) {
-          await createPeerConnection(player.username);
-        }
+      const otherPlayers = players.filter(p => p.username !== user.username);
+      console.log(`👥 Creating connections for: ${otherPlayers.map(p => p.username).join(', ')}`);
+      
+      for (const player of otherPlayers) {
+        await createPeerConnection(player.username);
       }
       
-      console.log('🎤 Voice chat started');
+      console.log('🎤 Voice chat started successfully');
     } catch (error) {
-      console.error('Failed to start voice chat:', error);
-      alert('Could not access microphone. Please check your permissions.');
+      console.error('❌ Failed to start voice chat:', error);
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setMicError('Microphone access denied. Please allow microphone access in your browser settings.');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        setMicError('No microphone found. Please connect a microphone and try again.');
+      } else {
+        setMicError('Could not access microphone. Please check your permissions and try again.');
+      }
+      alert(micError || 'Could not access microphone. Please check your permissions.');
     }
   };
 
   const stopVoiceChat = () => {
-    // Stop all peer connections
+    console.log('🎤 Stopping voice chat...');
+    
+    // Close all peer connections
     for (const username in peerConnectionsRef.current) {
-      peerConnectionsRef.current[username].close();
+      try {
+        peerConnectionsRef.current[username].close();
+        const audioEl = document.getElementById(`audio-${username}`);
+        if (audioEl) audioEl.remove();
+      } catch (e) {
+        console.error('Error closing connection:', e);
+      }
     }
     peerConnectionsRef.current = {};
     
@@ -253,7 +271,7 @@ const TeamGamePage = () => {
       audioContextRef.current = null;
     }
     
-    // ✅ Only emit leave voice if mic was on
+    // Notify others
     if (isMicOn && socketRef.current) {
       socketRef.current.emit('user-left-voice', { 
         roomCode, 
@@ -263,6 +281,7 @@ const TeamGamePage = () => {
     
     setIsMicOn(false);
     setVoiceParticipants([]);
+    setMicError('');
     
     console.log('🎤 Voice chat stopped');
   };
@@ -277,27 +296,29 @@ const TeamGamePage = () => {
 
   const toggleSpeaker = () => {
     setIsSpeakerOn(!isSpeakerOn);
-    // Mute/unmute all peer connections
-    for (const username in peerConnectionsRef.current) {
-      const pc = peerConnectionsRef.current[username];
-      const receivers = pc.getReceivers();
-      receivers.forEach(receiver => {
-        if (receiver.track && receiver.track.kind === 'audio') {
-          receiver.track.enabled = isSpeakerOn;
-        }
-      });
-    }
+    
+    // Update all audio elements
+    const audioElements = document.querySelectorAll('audio[id^="audio-"]');
+    audioElements.forEach(el => {
+      el.volume = isSpeakerOn ? 0 : 1;
+    });
+    
+    console.log(`🔊 Speaker ${isSpeakerOn ? 'muted' : 'unmuted'}`);
   };
 
   const createPeerConnection = async (targetUsername) => {
     if (peerConnectionsRef.current[targetUsername]) {
+      console.log(`⚠️ Connection to ${targetUsername} already exists`);
       return;
     }
+    
+    console.log(`🔗 Creating peer connection to: ${targetUsername}`);
     
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
       ]
     });
     
@@ -313,6 +334,7 @@ const TeamGamePage = () => {
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log(`🧊 ICE candidate from ${user.username} to ${targetUsername}`);
         socketRef.current.emit('voice-ice-candidate', {
           roomCode,
           to: targetUsername,
@@ -322,16 +344,34 @@ const TeamGamePage = () => {
       }
     };
     
-    // Handle incoming tracks
+    // Handle incoming audio tracks
     pc.ontrack = (event) => {
-      const audioElement = new Audio();
+      console.log(`🎵 Received audio track from ${targetUsername}`);
+      
+      const existingEl = document.getElementById(`audio-${targetUsername}`);
+      if (existingEl) existingEl.remove();
+      
+      const audioElement = document.createElement('audio');
+      audioElement.id = `audio-${targetUsername}`;
       audioElement.srcObject = event.streams[0];
       audioElement.autoplay = true;
       audioElement.volume = isSpeakerOn ? 1 : 0;
-      
-      // Add to DOM for debugging
-      audioElement.id = `audio-${targetUsername}`;
+      audioElement.style.display = 'none';
       document.body.appendChild(audioElement);
+      
+      console.log(`🔊 Audio element created for ${targetUsername}, volume: ${audioElement.volume}`);
+    };
+    
+    // Connection state monitoring
+    pc.onconnectionstatechange = () => {
+      console.log(`🔗 Connection to ${targetUsername}: ${pc.connectionState}`);
+      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+        console.log(`⚠️ Connection to ${targetUsername} lost, cleaning up...`);
+        delete peerConnectionsRef.current[targetUsername];
+        const audioEl = document.getElementById(`audio-${targetUsername}`);
+        if (audioEl) audioEl.remove();
+        setVoiceParticipants(prev => prev.filter(name => name !== targetUsername));
+      }
     };
     
     // Create and send offer
@@ -345,26 +385,28 @@ const TeamGamePage = () => {
         offer: pc.localDescription,
         from: user.username
       });
+      
+      console.log(`📤 Offer sent to ${targetUsername}`);
     } catch (error) {
-      console.error('Error creating offer:', error);
+      console.error(`❌ Error creating offer for ${targetUsername}:`, error);
     }
   };
 
   const handleVoiceOffer = async (data) => {
     const { from, offer } = data;
+    console.log(`📞 Voice offer from ${from}`);
     
-    // Create peer connection if doesn't exist
     if (!peerConnectionsRef.current[from]) {
       const pc = new RTCPeerConnection({
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
         ]
       });
       
       peerConnectionsRef.current[from] = pc;
       
-      // Add local stream tracks
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => {
           pc.addTrack(track, localStreamRef.current);
@@ -383,12 +425,30 @@ const TeamGamePage = () => {
       };
       
       pc.ontrack = (event) => {
-        const audioElement = new Audio();
+        console.log(`🎵 Received audio track from ${from}`);
+        
+        const existingEl = document.getElementById(`audio-${from}`);
+        if (existingEl) existingEl.remove();
+        
+        const audioElement = document.createElement('audio');
+        audioElement.id = `audio-${from}`;
         audioElement.srcObject = event.streams[0];
         audioElement.autoplay = true;
         audioElement.volume = isSpeakerOn ? 1 : 0;
-        audioElement.id = `audio-${from}`;
+        audioElement.style.display = 'none';
         document.body.appendChild(audioElement);
+        
+        console.log(`🔊 Audio element created for ${from}`);
+      };
+      
+      pc.onconnectionstatechange = () => {
+        console.log(`🔗 Connection to ${from}: ${pc.connectionState}`);
+        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+          delete peerConnectionsRef.current[from];
+          const audioEl = document.getElementById(`audio-${from}`);
+          if (audioEl) audioEl.remove();
+          setVoiceParticipants(prev => prev.filter(name => name !== from));
+        }
       };
     }
     
@@ -405,21 +465,27 @@ const TeamGamePage = () => {
         answer: pc.localDescription,
         from: user.username
       });
+      
+      console.log(`📤 Answer sent to ${from}`);
     } catch (error) {
-      console.error('Error handling voice offer:', error);
+      console.error(`❌ Error handling offer from ${from}:`, error);
     }
   };
 
   const handleVoiceAnswer = async (data) => {
     const { from, answer } = data;
-    const pc = peerConnectionsRef.current[from];
+    console.log(`📞 Voice answer from ${from}`);
     
+    const pc = peerConnectionsRef.current[from];
     if (pc) {
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        console.log(`✅ Remote description set for ${from}`);
       } catch (error) {
-        console.error('Error handling voice answer:', error);
+        console.error(`❌ Error handling answer from ${from}:`, error);
       }
+    } else {
+      console.warn(`⚠️ No peer connection found for ${from}`);
     }
   };
 
@@ -430,8 +496,9 @@ const TeamGamePage = () => {
     if (pc) {
       try {
         await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log(`✅ ICE candidate added for ${from}`);
       } catch (error) {
-        console.error('Error adding ICE candidate:', error);
+        console.error(`❌ Error adding ICE candidate from ${from}:`, error);
       }
     }
   };
@@ -441,7 +508,7 @@ const TeamGamePage = () => {
     
     const dataArray = new Uint8Array(analyserRef.current.fftSize);
     const checkVoice = () => {
-      if (!analyserRef.current) return;
+      if (!analyserRef.current || !isMicOn) return;
       
       analyserRef.current.getByteFrequencyData(dataArray);
       let average = 0;
@@ -738,6 +805,11 @@ const TeamGamePage = () => {
         {isMicOn && (
           <span className={`voice-status ${isSpeaking ? 'speaking' : ''}`}>
             {isSpeaking ? '🔴 Speaking...' : '🎤 Connected'}
+          </span>
+        )}
+        {micError && (
+          <span className="voice-status error">
+            ⚠️ {micError}
           </span>
         )}
       </div>
