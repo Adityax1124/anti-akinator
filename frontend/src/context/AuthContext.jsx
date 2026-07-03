@@ -3,7 +3,7 @@ import api from '../api/axios';
 
 const AuthContext = createContext();
 
-const SESSION_TIMEOUT = 30 * 60 * 1000;
+const SESSION_TIMEOUT = 7 * 24 * 60 * 60 * 1000;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
