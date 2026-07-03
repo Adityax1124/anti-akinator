@@ -17,8 +17,19 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
   const [joinCode, setJoinCode] = useState('');
   const socketRef = useRef(null);
   const pollingIntervalRef = useRef(null);
+  const joinInputRef = useRef(null);
 
-  // ✅ Check authentication
+  // ✅ Auto-focus input when modal opens
+  useEffect(() => {
+    if (isOpen && view === 'main') {
+      setTimeout(() => {
+        if (joinInputRef.current) {
+          joinInputRef.current.focus();
+        }
+      }, 200);
+    }
+  }, [isOpen, view]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       setError('Please login to play team games');
@@ -29,16 +40,13 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     }
   }, [isAuthenticated]);
 
-  // Initialize socket connection
   useEffect(() => {
     if (!isOpen || !isAuthenticated) return;
 
     const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
       withCredentials: true,
       transports: ['websocket', 'polling'],
-      auth: {
-        token: token // ✅ Send token with socket
-      }
+      auth: { token }
     });
 
     socketRef.current = socket;
@@ -51,17 +59,13 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       console.log('🔌 Socket disconnected');
     });
 
-    socket.on('player-update', (data) => {
-      console.log('📢 Player update received:', data);
+    socket.on('player-update', () => {
       fetchRoomData();
     });
 
     socket.on('game-started', (data) => {
-      console.log('🎮 Game started event received:', data);
       const codeToNavigate = data.roomCode || roomCode;
-      
       if (codeToNavigate && codeToNavigate !== 'undefined') {
-        console.log('🚀 Navigating to team game page:', codeToNavigate);
         onClose();
         navigate(`/team-game/${codeToNavigate}`);
       }
@@ -78,14 +82,11 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen, roomCode, isAuthenticated, token]);
 
-  // Join socket room when roomCode changes
   useEffect(() => {
     if (!roomCode || roomCode === 'undefined' || !socketRef.current || !isAuthenticated) return;
-    console.log('🔌 Joining socket room:', roomCode);
     socketRef.current.emit('join-team-room', roomCode);
   }, [roomCode, isAuthenticated]);
 
-  // Polling fallback - fetch room data every 3 seconds when in lobby
   useEffect(() => {
     if (!isOpen || !roomCode || roomCode === 'undefined' || view !== 'lobby' || !isAuthenticated) {
       if (pollingIntervalRef.current) {
@@ -95,8 +96,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    console.log('🔄 Starting polling for room:', roomCode);
-    
     fetchRoomData();
 
     pollingIntervalRef.current = setInterval(() => {
@@ -114,33 +113,17 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
   const fetchRoomData = async () => {
     if (!roomCode || roomCode === 'undefined' || !isAuthenticated) return;
     try {
-      console.log('📡 Fetching room data for:', roomCode);
       const response = await api.get(`/team/room/${roomCode}`);
       if (response.data.success) {
         const fetchedRoom = response.data.room;
-        console.log('📊 Room data fetched:', {
-          roomCode: fetchedRoom.roomCode,
-          players: fetchedRoom.players?.length,
-          status: fetchedRoom.status,
-          host: fetchedRoom.host?.username
-        });
         setRoom(fetchedRoom);
-        
         if (fetchedRoom.status === 'playing') {
-          console.log('🎮 Room is already playing, redirecting to game page');
           onClose();
           navigate(`/team-game/${roomCode}`);
         }
       }
     } catch (error) {
-      console.error('❌ Fetch room error:', error);
-      if (error.response?.status === 401) {
-        setError('Session expired. Please login again.');
-        setTimeout(() => {
-          onClose();
-          navigate('/login');
-        }, 2000);
-      }
+      console.error('Fetch room error:', error);
     }
   };
 
@@ -154,17 +137,9 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     setError('');
     try {
       const response = await api.post('/team/create');
-      console.log('📝 [Create Room] Full response:', response.data);
-      
       if (response.data.success) {
         const newRoom = response.data.room;
         const code = response.data.roomCode || newRoom?.roomCode;
-        
-        console.log('📝 [Create Room] Room code:', code);
-        
-        if (!code) {
-          throw new Error('No room code received from server');
-        }
         
         const roomWithCode = {
           ...newRoom,
@@ -180,19 +155,13 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
         }
       }
     } catch (error) {
-      console.error('❌ Create room error:', error);
-      setError(error.response?.data?.message || error.message || 'Failed to create room');
+      setError(error.response?.data?.message || 'Failed to create room');
     } finally {
       setLoading(false);
     }
   };
 
   const handleJoinRoom = async () => {
-    if (!isAuthenticated) {
-      setError('Please login first');
-      return;
-    }
-    
     const trimmedCode = joinCode.trim().toUpperCase();
     
     if (!trimmedCode) {
@@ -200,24 +169,13 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (!trimmedCode.startsWith('ANTI-') || trimmedCode.length < 10) {
-      setError('Invalid room code format. Should be ANTI-XXXX (e.g., ANTI-2JDZSB)');
-      return;
-    }
-
-    console.log('📝 Attempting to join room:', trimmedCode);
-
     setLoading(true);
     setError('');
     try {
       const response = await api.post('/team/join', { roomCode: trimmedCode });
-      console.log('📝 [Join Room] Full response:', response.data);
-      
       if (response.data.success) {
         const joinedRoom = response.data.room;
         const code = response.data.roomCode || joinedRoom?.roomCode || trimmedCode;
-        
-        console.log('✅ Successfully joined room:', code);
         
         const roomWithCode = {
           ...joinedRoom,
@@ -234,23 +192,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
         }
       }
     } catch (error) {
-      console.error('❌ Join room error:', error);
-      console.error('❌ Response:', error.response?.data);
-      
-      let errorMessage = 'Failed to join room';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Please login to join a room';
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Room not found. Please check the room code.';
-      } else if (error.response?.status === 400) {
-        errorMessage = 'Room is full or already started.';
-      } else if (error.response?.status === 500) {
-        errorMessage = 'Server error. Please try again.';
-      }
-      
-      setError(errorMessage);
+      setError(error.response?.data?.message || 'Failed to join room');
     } finally {
       setLoading(false);
     }
@@ -271,17 +213,13 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       setRoomCode('');
       setJoinCode('');
     } catch (error) {
-      console.error('❌ Leave room error:', error);
+      console.error('Leave room error:', error);
     }
-  };
-
-  const handleManualRefresh = async () => {
-    if (!roomCode) return;
-    await fetchRoomData();
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleJoinRoom();
     }
   };
@@ -304,6 +242,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
             </div>
 
             <div className="team-options">
+              {/* Create Room */}
               <div className="team-option">
                 <span className="opt-icon">👑</span>
                 <h3>Create Room</h3>
@@ -311,12 +250,13 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
                 <button 
                   className="btn btn-primary"
                   onClick={handleCreateRoom}
-                  disabled={loading || !isAuthenticated}
+                  disabled={loading}
                 >
                   {loading ? 'Creating...' : 'Create Room →'}
                 </button>
               </div>
 
+              {/* Join Room */}
               <div className="team-option">
                 <span className="opt-icon">🔗</span>
                 <h3>Join Room</h3>
@@ -330,14 +270,15 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       onKeyDown={handleKeyPress}
                       maxLength={12}
-                      disabled={false}
-                      autoFocus
                       className="join-input"
+                      id="team-join-input"
+                      autoComplete="off"
+                      ref={joinInputRef}
                     />
                     <button 
                       className="btn-secondary"
                       onClick={handleJoinRoom}
-                      disabled={loading || !joinCode.trim() || !isAuthenticated}
+                      disabled={loading || !joinCode.trim()}
                     >
                       {loading ? 'Joining...' : 'Join'}
                     </button>
@@ -376,11 +317,10 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
             user={user}
             onLeave={handleLeaveRoom}
             onGameStart={() => {
-              console.log('🚀 Host starting game, redirecting to:', roomCode);
               onClose();
               navigate(`/team-game/${roomCode}`);
             }}
-            onRefresh={handleManualRefresh}
+            onRefresh={fetchRoomData}
           />
         )}
       </div>
