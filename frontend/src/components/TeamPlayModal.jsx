@@ -161,7 +161,8 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
   };
 
   const handleJoinRoom = async () => {
-    if (!joinCode.trim()) {
+    const trimmedCode = joinCode.trim();
+    if (!trimmedCode) {
       setError('Please enter a room code');
       return;
     }
@@ -169,12 +170,12 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/team/join', { roomCode: joinCode });
+      const response = await api.post('/team/join', { roomCode: trimmedCode });
       console.log('📝 [Join Room] Full response:', response.data);
       
       if (response.data.success) {
         const joinedRoom = response.data.room;
-        const code = response.data.roomCode || joinedRoom?.roomCode || joinCode;
+        const code = response.data.roomCode || joinedRoom?.roomCode || trimmedCode;
         
         console.log('📝 [Join Room] Room code:', code);
         
@@ -269,14 +270,15 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       maxLength={12}
-                      disabled={loading}
+                      disabled={false}
+                      autoFocus
                     />
                     <button 
                       className="btn-secondary"
                       onClick={handleJoinRoom}
                       disabled={loading || !joinCode.trim()}
                     >
-                      Join
+                      {loading ? 'Joining...' : 'Join'}
                     </button>
                   </div>
                 </div>
