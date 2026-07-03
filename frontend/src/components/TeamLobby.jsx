@@ -6,20 +6,15 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
-  // Debug logs
-  console.log('🔍 [TeamLobby] Props:');
-  console.log('  roomCode:', roomCode);
-  console.log('  room:', room);
-  console.log('  user._id:', user?._id);
-  console.log('  user.username:', user?.username);
-
-  // ✅ FIX: Better host detection
+  // ✅ FIXED: Better host detection
   const getHostId = () => {
     if (!room?.host) return null;
     // If host is an object with _id
     if (room.host._id) return room.host._id;
     // If host is just an ID string
     if (typeof room.host === 'string') return room.host;
+    // If host is the player object directly
+    if (room.host.user) return room.host.user;
     return null;
   };
 
@@ -30,12 +25,18 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
   };
 
   const hostId = getHostId();
-  const isHost = hostId && user?._id && hostId.toString() === user._id.toString();
+  const userId = user?._id || user?.id;
+  
+  // ✅ Compare as strings to avoid type mismatches
+  const isHost = hostId && userId && hostId.toString() === userId.toString();
 
-  console.log('🔍 [TeamLobby] Host detection:');
+  // Debug logs
+  console.log('🔍 [TeamLobby] Host Detection:');
+  console.log('  room.host:', room?.host);
   console.log('  hostId:', hostId);
-  console.log('  user._id:', user?._id);
+  console.log('  userId:', userId);
   console.log('  isHost:', isHost);
+  console.log('  room.players:', room?.players);
 
   const copyRoomCode = () => {
     if (!roomCode) {
@@ -100,8 +101,8 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
         <h4>Players ({playerCount}/{room?.maxPlayers || 4})</h4>
         {room?.players && room.players.length > 0 ? (
           room.players.map((player, index) => {
-            // Check if this player is the host
-            const playerId = player.user?._id || player.user;
+            // ✅ Check if this player is the host
+            const playerId = player.user?._id || player.user || player._id;
             const isPlayerHost = playerId && hostId && playerId.toString() === hostId.toString();
             
             return (
