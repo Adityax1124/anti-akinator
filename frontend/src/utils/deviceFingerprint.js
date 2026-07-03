@@ -18,51 +18,61 @@ export const getDeviceFingerprint = () => {
   return hashString(fingerprintString);
 };
 
+// ===== IMPROVED HASH FUNCTION =====
 const hashString = (str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+    hash = hash & hash; // Convert to 32bit integer
   }
-  return 'fp_' + Math.abs(hash).toString(36).padStart(8, '0');
+  // Return a unique string with timestamp to ensure uniqueness
+  return 'fp_' + Math.abs(hash).toString(36).padStart(8, '0') + '_' + Date.now().toString(36);
 };
 
 const getCanvasFingerprint = () => {
-  const canvas = document.createElement('canvas');
-  canvas.width = 200;
-  canvas.height = 50;
-  const ctx = canvas.getContext('2d');
-  ctx.textBaseline = 'top';
-  ctx.font = '14px Arial';
-  ctx.fillStyle = '#f60';
-  ctx.fillRect(0, 0, 100, 100);
-  ctx.fillStyle = '#069';
-  ctx.fillText('Anti-Akinator', 20, 20);
-  return canvas.toDataURL();
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(0, 0, 100, 100);
+    ctx.fillStyle = '#069';
+    ctx.fillText('Anti-Akinator', 20, 20);
+    return canvas.toDataURL();
+  } catch (e) {
+    return 'canvas-error';
+  }
 };
 
 const getFontFingerprint = () => {
-  const fonts = [
-    'Arial', 'Courier New', 'Georgia', 'Times New Roman', 'Verdana',
-    'Comic Sans MS', 'Impact', 'Trebuchet MS', 'Monaco', 'Helvetica'
-  ];
-  const detectedFonts = [];
-  
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.font = '72px monospace';
-  const defaultWidth = ctx.measureText('mmmmmmmmmmlli').width;
-  
-  fonts.forEach(font => {
-    ctx.font = `72px ${font}, monospace`;
-    const width = ctx.measureText('mmmmmmmmmmlli').width;
-    if (width !== defaultWidth) {
-      detectedFonts.push(font);
-    }
-  });
-  
-  return detectedFonts.join(',');
+  try {
+    const fonts = [
+      'Arial', 'Courier New', 'Georgia', 'Times New Roman', 'Verdana',
+      'Comic Sans MS', 'Impact', 'Trebuchet MS', 'Monaco', 'Helvetica'
+    ];
+    const detectedFonts = [];
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = '72px monospace';
+    const defaultWidth = ctx.measureText('mmmmmmmmmmlli').width;
+    
+    fonts.forEach(font => {
+      ctx.font = `72px ${font}, monospace`;
+      const width = ctx.measureText('mmmmmmmmmmlli').width;
+      if (width !== defaultWidth) {
+        detectedFonts.push(font);
+      }
+    });
+    
+    return detectedFonts.join(',');
+  } catch (e) {
+    return 'fonts-error';
+  }
 };
 
 const getWebGLFingerprint = () => {

@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Game from './pages/Game';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyOTP from './pages/VerifyOTP'; // ✅ ADD THIS IMPORT
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import Leaderboard from './pages/Leaderboard';
@@ -15,7 +16,7 @@ import SeasonWinners from './pages/SeasonWinners';
 import AdminPanel from './pages/AdminPanel';
 import BuyShards from './pages/BuyShards';
 import Shop from './pages/Shop';
-import ReferralPage from './pages/ReferralPage'; // ✅ NEW: Referral Page
+import ReferralPage from './pages/ReferralPage';
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
@@ -58,14 +59,18 @@ function App() {
           <Stars />
           <main className="main-content">
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/verify-otp" element={<VerifyOTP />} /> {/* ✅ ADD THIS ROUTE */}
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/season-winners" element={<SeasonWinners />} />
               
+              {/* 2FA Routes */}
               <Route path="/2fa-verify" element={<TwoFactorVerify />} />
               
+              {/* Protected Routes */}
               <Route path="/game" element={
                 <PrivateRouteWrapper>
                   <Game />
@@ -78,7 +83,6 @@ function App() {
                 </PrivateRouteWrapper>
               } />
               
-              {/* ===== ✅ REFERRAL PAGE ROUTE ===== */}
               <Route path="/referral" element={
                 <PrivateRouteWrapper>
                   <ReferralPage />
@@ -102,12 +106,14 @@ function App() {
                   <TwoFactorSetup />
                 </PrivateRouteWrapper>
               } />
+              
               <Route path="/buy-shards" element={
                 <PrivateRouteWrapper>
                   <BuyShards />
                 </PrivateRouteWrapper>
               } />
               
+              {/* Admin Routes */}
               <Route path="/admin" element={
                 <AdminRouteWrapper>
                   <AdminPanel />

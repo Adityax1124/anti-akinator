@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { getDeviceFingerprint } from '../utils/deviceFingerprint'; // ✅ NEW IMPORT
+import { getDeviceFingerprint } from '../utils/deviceFingerprint';
 import './Auth.css';
 
 const Register = () => {
@@ -18,6 +18,8 @@ const Register = () => {
   const [referralValid, setReferralValid] = useState(null);
   const [referralUsername, setReferralUsername] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -136,15 +138,13 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // ===== ✅ BUILD REGISTRATION DATA WITH DEVICE FINGERPRINT =====
       const registerData = {
         username: trimmedUsername,
         email: trimmedEmail,
         password: trimmedPassword,
-        deviceFingerprint: getDeviceFingerprint() // ✅ NEW: Send device fingerprint
+        deviceFingerprint: getDeviceFingerprint()
       };
 
-      // ===== ✅ ONLY ADD REFERRAL CODE IF VALID =====
       if (trimmedReferralCode && trimmedReferralCode.length >= 6 && referralValid === true) {
         registerData.referralCode = trimmedReferralCode;
         console.log('📝 [Register] Sending referral code:', trimmedReferralCode);
@@ -157,17 +157,37 @@ const Register = () => {
       const result = await register(registerData);
       
       if (result.success) {
-        // Clear form data
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-          referralCode: ''
-        });
-        navigate('/');
+        // ✅ Check if verification is required
+        if (result.requiresVerification) {
+          setRegisteredEmail(result.email || trimmedEmail);
+          setRegistrationSuccess(true);
+          localStorage.setItem('pendingVerificationEmail', result.email || trimmedEmail);
+          
+          // Clear form data
+          setFormData({
+            username: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            referralCode: ''
+          });
+          
+          // Navigate to verify page
+          navigate('/verify-otp', { 
+            state: { email: result.email || trimmedEmail }
+          });
+        } else {
+          // Old flow (no verification)
+          setFormData({
+            username: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            referralCode: ''
+          });
+          navigate('/');
+        }
       } else {
-        // Check if it's a device lock error
         if (result.message?.includes('device already has an account')) {
           setErrors({ general: '❌ This device already has an account. Only one account per device is allowed.' });
         } else {
@@ -189,6 +209,34 @@ const Register = () => {
       setLoading(false);
     }
   };
+
+  // ===== If registration success, show success message =====
+  if (registrationSuccess) {
+    return (
+      <div className="auth-container fade-in">
+        <div className="auth-card">
+          <div className="auth-header">
+            <h1>📧 Verify Your Email</h1>
+            <p>We've sent a 6-digit verification code to</p>
+            <p className="auth-email-display"><strong>{registeredEmail}</strong></p>
+          </div>
+          <div className="auth-form">
+            <div className="success-box">
+              <p>✅ Registration successful!</p>
+              <p style={{ color: '#aaa', fontSize: '14px' }}>Please check your email for the OTP.</p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-block"
+              onClick={() => navigate('/verify-otp', { state: { email: registeredEmail } })}
+            >
+              Enter OTP
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-container fade-in">
@@ -245,6 +293,9 @@ const Register = () => {
                 {errors.email}
               </div>
             )}
+            <small className="form-text text-muted">
+              We'll send a verification code to this email
+            </small>
           </div>
 
           {/* ===== ✅ REFERRAL CODE FIELD ===== */}

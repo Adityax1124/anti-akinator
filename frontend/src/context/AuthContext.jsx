@@ -148,7 +148,7 @@ export const AuthProvider = ({ children }) => {
   }, [token, setAuthHeader, fetchUser]);
 
   // ============================================================
-  // ===== LOGIN =====
+  // ===== LOGIN (NO verification check) =====
   // ============================================================
   const login = useCallback(async (email, password) => {
     setAuthError(null);
@@ -168,6 +168,7 @@ export const AuthProvider = ({ children }) => {
       
       const data = response.data;
 
+      // ===== CHECK IF 2FA REQUIRED =====
       if (data.requires2FA) {
         return {
           success: true,
@@ -185,6 +186,7 @@ export const AuthProvider = ({ children }) => {
       }
       
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       setToken(token);
       setAuthHeader(token);
       setUser(user);
@@ -239,7 +241,7 @@ export const AuthProvider = ({ children }) => {
   }, [setAuthHeader, resetSessionTimer]);
 
   // ============================================================
-  // ===== REGISTER (UPDATED WITH DEVICE FINGERPRINT) =====
+  // ===== REGISTER (UPDATED WITH EMAIL VERIFICATION) =====
   // ============================================================
   const register = useCallback(async (userData) => {
     setAuthError(null);
@@ -306,7 +308,7 @@ export const AuthProvider = ({ children }) => {
       username: username.trim(),
       email: email.trim().toLowerCase(),
       password: password.trim(),
-      deviceFingerprint: deviceFingerprint || null // ✅ ADD DEVICE FINGERPRINT
+      deviceFingerprint: deviceFingerprint || null
     };
 
     // ===== ✅ ONLY ADD REFERRAL CODE IF VALID =====
@@ -322,13 +324,29 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/register', requestData);
       
-      const { token, user } = response.data;
+      const data = response.data;
+
+      // ===== ✅ CHECK IF EMAIL VERIFICATION REQUIRED =====
+      if (data.requiresVerification) {
+        console.log('📧 [AuthContext] Email verification required');
+        return {
+          success: true,
+          requiresVerification: true,
+          email: data.email,
+          userId: data.userId,
+          message: data.message || 'Please verify your email'
+        };
+      }
+
+      // ===== OLD FLOW (No verification - fallback) =====
+      const { token, user } = data;
       
       if (!token || !user) {
         throw new Error('Invalid response from server');
       }
       
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       setToken(token);
       setAuthHeader(token);
       setUser(user);
@@ -344,7 +362,7 @@ export const AuthProvider = ({ children }) => {
       return {
         success: true,
         user: user,
-        message: response.data.message
+        message: data.message
       };
     } catch (error) {
       console.error('❌ Auth: Register error:', error.message);
@@ -382,6 +400,114 @@ export const AuthProvider = ({ children }) => {
     }
   }, [setAuthHeader]);
 
+  // ============================================================
+  // ===== VERIFY OTP =====
+  // ============================================================
+  const verifyOTP = useCallback(async (email, otp) => {
+    setAuthError(null);
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/verify-otp', { email, otp });
+      
+      const { token, user } = response.data;
+      
+      if (!token || !user) {
+        throw new Error('Invalid response from server');
+      }
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setToken(token);
+      setAuthHeader(token);
+      setUser(user);
+      setAuthError(null);
+      resetSessionTimer();
+      
+      fetchUserRef.current = false;
+      
+      console.log(`✅ Auth: ${user.username} email verified successfully`);
+      
+      return {
+        success: true,
+        user: user,
+        message: response.data.message
+      };
+    } catch (error) {
+      console.error('❌ Auth: Verify OTP error:', error.message);
+      
+      let message = 'Failed to verify OTP. Please try again.';
+      
+      if (error.response) {
+        switch (error.response.status) {
+          case 400:
+            message = error.response.data?.message || 'Invalid OTP';
+            break;
+          case 404:
+            message = error.response.data?.message || 'No pending verification found';
+            break;
+          case 429:
+            message = 'Too many attempts. Please try again later.';
+            break;
+          default:
+            message = error.response.data?.message || message;
+        }
+      }
+      
+      setAuthError(message);
+      
+      return {
+        success: false,
+        message: message
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [setAuthHeader, resetSessionTimer]);
+
+  // ============================================================
+  // ===== RESEND OTP =====
+  // ============================================================
+  const resendOTP = useCallback(async (email) => {
+    setAuthError(null);
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/resend-otp', { email });
+      
+      return {
+        success: true,
+        message: response.data.message || 'New OTP sent to your email'
+      };
+    } catch (error) {
+      console.error('❌ Auth: Resend OTP error:', error.message);
+      
+      let message = 'Failed to resend OTP. Please try again.';
+      
+      if (error.response) {
+        switch (error.response.status) {
+          case 429:
+            message = error.response.data?.message || 'Please wait 60 seconds before requesting another OTP';
+            break;
+          case 404:
+            message = error.response.data?.message || 'User not found';
+            break;
+          default:
+            message = error.response.data?.message || message;
+        }
+      }
+      
+      setAuthError(message);
+      
+      return {
+        success: false,
+        message: message
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // ===== CLEAR ERROR =====
   const clearError = useCallback(() => {
     setAuthError(null);
@@ -411,6 +537,8 @@ export const AuthProvider = ({ children }) => {
     sessionExpiry,
     login,
     register,
+    verifyOTP,
+    resendOTP,
     logout,
     refreshUser,
     clearError,
