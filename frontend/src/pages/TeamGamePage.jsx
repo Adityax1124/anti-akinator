@@ -37,33 +37,6 @@ const TeamGamePage = () => {
   const localAudioTrackRef = useRef(null);
   const remoteUsersRef = useRef({});
 
-  // ===== DEBUG HELPERS =====
-  useEffect(() => {
-    window.__debug = {
-      client: () => console.log('🔍 Client state:', clientRef.current?.connectionState),
-      remoteUsers: () => console.log('🔍 Remote users:', Object.keys(remoteUsersRef.current)),
-      localTrack: () => console.log('🔍 Local track:', localAudioTrackRef.current ? '✅ exists' : '❌ null'),
-      room: () => console.log('🔍 Room:', roomCode),
-      voiceParticipants: () => console.log('🔍 Voice participants:', voiceParticipants),
-      forceBeep: () => {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.frequency.value = 440;
-        gainNode.gain.value = 0.3;
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 500);
-        console.log('🔊 Beep played!');
-      }
-    };
-    console.log('🔍 Debug helpers added! Try:');
-    console.log('  window.__debug.client()');
-    console.log('  window.__debug.remoteUsers()');
-    console.log('  window.__debug.forceBeep()');
-  }, [roomCode, voiceParticipants]);
-
   // ============================================================
   // AGORA VOICE CHAT FUNCTIONS
   // ============================================================
@@ -72,6 +45,12 @@ const TeamGamePage = () => {
     try {
       console.log('🎤 Starting Agora voice chat...');
       setMicError('');
+
+      // ✅ Check microphone permission
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setMicError('Your browser does not support microphone access');
+        return;
+      }
 
       // Fetch token from backend
       console.log('🔄 Fetching Agora token...');
@@ -86,24 +65,24 @@ const TeamGamePage = () => {
       });
       clientRef.current = client;
 
-      // ✅ Add connection state monitoring
+      // ✅ Track connection state
       client.on('connection-state-change', (curState, prevState) => {
         console.log('🔄 Connection state:', prevState, '→', curState);
+        if (curState === 'CONNECTED') {
+          console.log('✅ Client connected successfully!');
+        }
         if (curState === 'DISCONNECTED') {
           console.warn('⚠️ Client disconnected!');
           setIsMicOn(false);
         }
-        if (curState === 'CONNECTED') {
-          console.log('✅ Client connected successfully!');
-          setIsMicOn(true);
-        }
       });
 
-      // ✅ Add exception handler
+      // ✅ Handle errors
       client.on('exception', (event) => {
         console.error('❌ Agora exception:', event);
         if (event.code === 2) {
-          console.log('⚠️ UID conflict detected');
+          console.log('⚠️ UID conflict detected. Retrying...');
+          setTimeout(() => startVoiceChat(), 2000);
         }
       });
 
@@ -116,26 +95,45 @@ const TeamGamePage = () => {
       );
       console.log('✅ Joined Agora channel:', roomCode, 'with UID:', uid);
 
-      // Create local audio track
-      const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+      // ✅ Create local audio track
+      console.log('🎤 Creating microphone audio track...');
+      const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+        encoderConfig: {
+          bitrate: 32000,
+          codec: 'opus'
+        }
+      });
       localAudioTrackRef.current = localAudioTrack;
-      
-      // Publish to channel
+      console.log('✅ Microphone audio track created');
+
+      // ✅ Publish to channel
       await client.publish([localAudioTrack]);
       console.log('✅ Published local audio track');
 
-      // Handle remote user events
+      setIsMicOn(true);
+
+      // ============================================================
+      // ✅ Remote user published handler with proper audio playback
+      // ============================================================
       client.on('user-published', async (user, mediaType) => {
         console.log('👤 Remote user published:', user.uid, 'mediaType:', mediaType);
         if (mediaType === 'audio') {
           try {
+            // ✅ Subscribe to the remote user
             await client.subscribe(user, mediaType);
             console.log('🔊 Subscribed to remote audio for user:', user.uid);
             
+            // ✅ Get the audio track
             const audioTrack = user.audioTrack;
+            
+            // ✅ Play the audio track with proper volume
             audioTrack.play();
+            audioTrack.setVolume(100);
+            
+            // ✅ Store the track for later
             remoteUsersRef.current[user.uid] = audioTrack;
             
+            // ✅ Update UI
             setVoiceParticipants(prev => {
               if (!prev.includes(user.uid)) {
                 return [...prev, user.uid];
@@ -143,13 +141,14 @@ const TeamGamePage = () => {
               return prev;
             });
             
-            console.log(`🔊 Audio playing for user ${user.uid}`);
+            console.log(`🔊 Audio playing for user ${user.uid} with volume 100`);
           } catch (error) {
             console.error('❌ Error subscribing to remote audio:', error);
           }
         }
       });
 
+      // ✅ Remote user unpublished
       client.on('user-unpublished', (user, mediaType) => {
         console.log('👤 Remote user unpublished:', user.uid);
         if (mediaType === 'audio') {
@@ -162,6 +161,7 @@ const TeamGamePage = () => {
         }
       });
 
+      // ✅ User left
       client.on('user-left', (user) => {
         console.log('👤 Remote user left:', user.uid);
         const audioTrack = remoteUsersRef.current[user.uid];
@@ -181,7 +181,6 @@ const TeamGamePage = () => {
       }
 
       console.log('🎤 Agora voice chat started successfully');
-      console.log('🔍 Use window.__debug to inspect state');
     } catch (error) {
       console.error('❌ Failed to start voice chat:', error);
       setMicError('Failed to start voice chat: ' + (error.message || 'Unknown error'));
@@ -192,19 +191,29 @@ const TeamGamePage = () => {
     console.log('🎤 Stopping voice chat...');
 
     try {
+      // Unpublish and close local track
       if (localAudioTrackRef.current) {
-        await clientRef.current?.unpublish([localAudioTrackRef.current]);
-        localAudioTrackRef.current.close();
+        try {
+          await clientRef.current?.unpublish([localAudioTrackRef.current]);
+          localAudioTrackRef.current.close();
+        } catch (e) {
+          console.warn('Error unpublishing track:', e);
+        }
         localAudioTrackRef.current = null;
       }
 
-      // Stop all remote tracks
+      // ✅ Stop all remote tracks
       Object.values(remoteUsersRef.current).forEach(track => {
         try { track.stop(); } catch (e) {}
       });
       remoteUsersRef.current = {};
 
-      await clientRef.current?.leave();
+      // Leave channel
+      try {
+        await clientRef.current?.leave();
+      } catch (e) {
+        console.warn('Error leaving channel:', e);
+      }
       clientRef.current = null;
 
       setVoiceParticipants([]);
@@ -227,8 +236,12 @@ const TeamGamePage = () => {
 
   const toggleSpeaker = () => {
     setIsSpeakerOn(!isSpeakerOn);
+    // ✅ Update volume for all remote tracks
     Object.values(remoteUsersRef.current).forEach(track => {
-      try { track.setVolume(isSpeakerOn ? 0 : 100); } catch (e) {}
+      try {
+        track.setVolume(isSpeakerOn ? 0 : 100);
+        console.log(`🔊 Track volume set to ${isSpeakerOn ? 0 : 100}`);
+      } catch (e) {}
     });
     console.log(`🔊 Speaker ${isSpeakerOn ? 'muted' : 'unmuted'}`);
   };

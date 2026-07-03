@@ -399,10 +399,12 @@ app.use('/api/2fa', twoFactorRoutes);
 app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
     const channelName = req.query.channel || 'default';
-    // ✅ Use user ID + random number for unique UID
-    const userId = req.user._id.toString().slice(-6);
-    const randomSuffix = Math.floor(Math.random() * 1000);
-    const uid = parseInt(userId + randomSuffix);
+    
+    // ✅ Generate unique UID
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    const uid = parseInt(`${timestamp.toString().slice(-6)}${random}`);
+    
     const role = RtcRole.PUBLISHER;
     const expireTime = 3600;
     const currentTimestamp = Math.floor(Date.now() / 1000);
