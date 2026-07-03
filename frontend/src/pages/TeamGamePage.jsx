@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import io from 'socket.io-client';
+import AgoraRTC from 'agora-rtc-sdk-ng';
 import './TeamGamePage.css';
 
 const TeamGamePage = () => {
@@ -32,107 +33,308 @@ const TeamGamePage = () => {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const socketRef = useRef(null);
-  const localStreamRef = useRef(null);
-  const peerConnectionsRef = useRef({});
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
+  const clientRef = useRef(null);
+  const localAudioTrackRef = useRef(null);
+  const remoteUsersRef = useRef({});
 
-  // Initialize socket
+  // ===== DEBUG HELPERS =====
   useEffect(() => {
-    if (!roomCode) return;
+    window.__debug = {
+      client: () => console.log('🔍 Client state:', clientRef.current?.connectionState),
+      remoteUsers: () => console.log('🔍 Remote users:', Object.keys(remoteUsersRef.current)),
+      localTrack: () => console.log('🔍 Local track:', localAudioTrackRef.current ? '✅ exists' : '❌ null'),
+      room: () => console.log('🔍 Room:', roomCode),
+      voiceParticipants: () => console.log('🔍 Voice participants:', voiceParticipants),
+      forceBeep: () => {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.frequency.value = 440;
+        gainNode.gain.value = 0.3;
+        oscillator.start();
+        setTimeout(() => oscillator.stop(), 500);
+        console.log('🔊 Beep played!');
+      }
+    };
+    console.log('🔍 Debug helpers added! Try:');
+    console.log('  window.__debug.client()');
+    console.log('  window.__debug.remoteUsers()');
+    console.log('  window.__debug.forceBeep()');
+  }, [roomCode, voiceParticipants]);
 
-    const socket = io('http://localhost:5000', {
-      withCredentials: true,
-      transports: ['websocket', 'polling']
-    });
+  // ============================================================
+  // AGORA VOICE CHAT FUNCTIONS
+  // ============================================================
 
-    socketRef.current = socket;
+  const startVoiceChat = async () => {
+    try {
+      console.log('🎤 Starting Agora voice chat...');
+      setMicError('');
 
-    socket.on('connect', () => {
-      console.log('🔌 Socket connected:', socket.id);
-      socket.emit('join-team-room', roomCode);
+      // Fetch token from backend
+      console.log('🔄 Fetching Agora token...');
+      const tokenResponse = await api.get(`/agora-token?channel=${roomCode}`);
+      const { token, appId, uid } = tokenResponse.data;
+      console.log('✅ Agora token fetched successfully, UID:', uid);
+
+      // Create client
+      const client = AgoraRTC.createClient({
+        mode: 'rtc',
+        codec: 'vp8'
+      });
+      clientRef.current = client;
+
+      // ✅ Add connection state monitoring
+      client.on('connection-state-change', (curState, prevState) => {
+        console.log('🔄 Connection state:', prevState, '→', curState);
+        if (curState === 'DISCONNECTED') {
+          console.warn('⚠️ Client disconnected!');
+          setIsMicOn(false);
+        }
+        if (curState === 'CONNECTED') {
+          console.log('✅ Client connected successfully!');
+          setIsMicOn(true);
+        }
+      });
+
+      // ✅ Add exception handler
+      client.on('exception', (event) => {
+        console.error('❌ Agora exception:', event);
+        if (event.code === 2) {
+          console.log('⚠️ UID conflict detected');
+        }
+      });
+
+      // Join the channel with token
+      await client.join(
+        appId,
+        roomCode,
+        token,
+        uid
+      );
+      console.log('✅ Joined Agora channel:', roomCode, 'with UID:', uid);
+
+      // Create local audio track
+      const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+      localAudioTrackRef.current = localAudioTrack;
       
-      if (isMicOn) {
-        socket.emit('user-joined-voice', { 
+      // Publish to channel
+      await client.publish([localAudioTrack]);
+      console.log('✅ Published local audio track');
+
+      // Handle remote user events
+      client.on('user-published', async (user, mediaType) => {
+        console.log('👤 Remote user published:', user.uid, 'mediaType:', mediaType);
+        if (mediaType === 'audio') {
+          try {
+            await client.subscribe(user, mediaType);
+            console.log('🔊 Subscribed to remote audio for user:', user.uid);
+            
+            const audioTrack = user.audioTrack;
+            audioTrack.play();
+            remoteUsersRef.current[user.uid] = audioTrack;
+            
+            setVoiceParticipants(prev => {
+              if (!prev.includes(user.uid)) {
+                return [...prev, user.uid];
+              }
+              return prev;
+            });
+            
+            console.log(`🔊 Audio playing for user ${user.uid}`);
+          } catch (error) {
+            console.error('❌ Error subscribing to remote audio:', error);
+          }
+        }
+      });
+
+      client.on('user-unpublished', (user, mediaType) => {
+        console.log('👤 Remote user unpublished:', user.uid);
+        if (mediaType === 'audio') {
+          const audioTrack = remoteUsersRef.current[user.uid];
+          if (audioTrack) {
+            audioTrack.stop();
+            delete remoteUsersRef.current[user.uid];
+            setVoiceParticipants(prev => prev.filter(id => id !== user.uid));
+          }
+        }
+      });
+
+      client.on('user-left', (user) => {
+        console.log('👤 Remote user left:', user.uid);
+        const audioTrack = remoteUsersRef.current[user.uid];
+        if (audioTrack) {
+          audioTrack.stop();
+          delete remoteUsersRef.current[user.uid];
+          setVoiceParticipants(prev => prev.filter(id => id !== user.uid));
+        }
+      });
+
+      // Notify others via socket
+      if (socketRef.current) {
+        socketRef.current.emit('user-joined-voice', { 
           roomCode, 
           username: user.username 
         });
       }
-    });
 
-    socket.on('player-update', (data) => {
-      console.log('📢 Player update:', data);
-      fetchRoomData();
-    });
+      console.log('🎤 Agora voice chat started successfully');
+      console.log('🔍 Use window.__debug to inspect state');
+    } catch (error) {
+      console.error('❌ Failed to start voice chat:', error);
+      setMicError('Failed to start voice chat: ' + (error.message || 'Unknown error'));
+    }
+  };
 
-    socket.on('game-started', (data) => {
-      console.log('🎮 Game started:', data);
-      fetchRoomData();
-    });
+  const stopVoiceChat = async () => {
+    console.log('🎤 Stopping voice chat...');
 
-    // ===== VOICE CHAT EVENTS =====
-    socket.on('voice-offer', async (data) => {
-      console.log('📞 Voice offer received from:', data.from);
-      if (isMicOn) {
-        await handleVoiceOffer(data);
+    try {
+      if (localAudioTrackRef.current) {
+        await clientRef.current?.unpublish([localAudioTrackRef.current]);
+        localAudioTrackRef.current.close();
+        localAudioTrackRef.current = null;
       }
+
+      // Stop all remote tracks
+      Object.values(remoteUsersRef.current).forEach(track => {
+        try { track.stop(); } catch (e) {}
+      });
+      remoteUsersRef.current = {};
+
+      await clientRef.current?.leave();
+      clientRef.current = null;
+
+      setVoiceParticipants([]);
+      setIsMicOn(false);
+      setMicError('');
+
+      console.log('🎤 Voice chat stopped');
+    } catch (error) {
+      console.error('Error stopping voice chat:', error);
+    }
+  };
+
+  const toggleMic = () => {
+    if (isMicOn) {
+      stopVoiceChat();
+    } else {
+      startVoiceChat();
+    }
+  };
+
+  const toggleSpeaker = () => {
+    setIsSpeakerOn(!isSpeakerOn);
+    Object.values(remoteUsersRef.current).forEach(track => {
+      try { track.setVolume(isSpeakerOn ? 0 : 100); } catch (e) {}
     });
+    console.log(`🔊 Speaker ${isSpeakerOn ? 'muted' : 'unmuted'}`);
+  };
 
-    socket.on('voice-answer', async (data) => {
-      console.log('📞 Voice answer received from:', data.from);
-      if (isMicOn) {
-        await handleVoiceAnswer(data);
+  // ============================================================
+  // GAME FUNCTIONS
+  // ============================================================
+
+  const handleAskQuestion = async (e) => {
+    e.preventDefault();
+    if (!question.trim() || sending || gameOver) return;
+
+    setSending(true);
+    try {
+      const response = await api.post('/team/question', {
+        roomCode,
+        question: question.trim()
+      });
+
+      if (response.data.success) {
+        const newMessage = {
+          question: question.trim(),
+          answer: response.data.answer || 'Maybe',
+          askedBy: response.data.askedBy || user.username,
+          timestamp: new Date().toISOString()
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
+        setQuestionCount(response.data.questionCount || questionCount + 1);
+        setQuestion('');
+        setTimeout(() => fetchRoomData(), 500);
       }
-    });
+    } catch (error) {
+      console.error('Ask question error:', error);
+      alert(error.response?.data?.message || 'Failed to ask question');
+    } finally {
+      setSending(false);
+    }
+  };
 
-    socket.on('voice-ice-candidate', async (data) => {
-      console.log('🧊 ICE candidate received from:', data.from);
-      if (isMicOn) {
-        await handleIceCandidate(data);
+  const handleMakeGuess = async (e) => {
+    e.preventDefault();
+    if (!guess.trim() || sending || gameOver) return;
+
+    setSending(true);
+    try {
+      const response = await api.post('/team/guess', {
+        roomCode,
+        guess: guess.trim()
+      });
+
+      if (response.data.success) {
+        const newMessage = {
+          type: response.data.isCorrect ? 'guess-correct' : 'guess-wrong',
+          guessedBy: user.username,
+          text: response.data.isCorrect ? `🎉 Correct! It was ${response.data.character}!` : `❌ ${guess.trim()} is not correct`,
+          character: response.data.character,
+          image: response.data.image,
+          reward: response.data.reward,
+          players: response.data.players
+        };
+        setMessages(prev => [...prev, newMessage]);
+        setGuess('');
+
+        if (response.data.isCorrect) {
+          setGameOver(true);
+          setResult({
+            success: true,
+            character: response.data.character,
+            image: response.data.image,
+            reward: response.data.reward,
+            players: response.data.players
+          });
+        }
+        setTimeout(() => fetchRoomData(), 500);
       }
-    });
+    } catch (error) {
+      console.error('Guess error:', error);
+      alert(error.response?.data?.message || 'Failed to make guess');
+    } finally {
+      setSending(false);
+    }
+  };
 
-    socket.on('user-joined-voice', (data) => {
-      console.log('🎤 User joined voice:', data.username);
-      if (isMicOn) {
-        setVoiceParticipants(prev => {
-          if (!prev.includes(data.username)) {
-            return [...prev, data.username];
-          }
-          return prev;
-        });
-      }
-    });
+  const handleLeave = () => {
+    stopVoiceChat();
+    if (socketRef.current) {
+      socketRef.current.emit('leave-team-room', roomCode);
+    }
+    navigate('/');
+  };
 
-    socket.on('user-left-voice', (data) => {
-      console.log('🎤 User left voice:', data.username);
-      setVoiceParticipants(prev => prev.filter(name => name !== data.username));
-    });
+  const handlePlayAgain = () => {
+    stopVoiceChat();
+    navigate('/');
+  };
 
-    socket.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
-      if (isMicOn) {
-        stopVoiceChat();
-      }
-    });
+  // ============================================================
+  // FETCH FUNCTIONS
+  // ============================================================
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-      if (isMicOn) {
-        stopVoiceChat();
-      }
-    };
-  }, [roomCode]);
-
-  // Fetch room data
   const fetchRoomData = async () => {
     try {
       const response = await api.get(`/team/room/${roomCode}`);
       if (response.data.success) {
         const roomData = response.data.room;
-        console.log('📊 Room data fetched:', roomData);
         setRoom(roomData);
         setPlayers(roomData.players || []);
         setQuestionCount(roomData.gameData?.totalQuestions || 0);
@@ -160,7 +362,6 @@ const TeamGamePage = () => {
             character: roomData.gameData?.characterName || 'Unknown'
           });
         }
-        
         setLoading(false);
       }
     } catch (error) {
@@ -169,6 +370,60 @@ const TeamGamePage = () => {
       setLoading(false);
     }
   };
+
+  // ============================================================
+  // USE EFFECTS
+  // ============================================================
+
+  useEffect(() => {
+    if (!roomCode) return;
+
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('🔌 Socket connected:', socket.id);
+      socket.emit('join-team-room', roomCode);
+    });
+
+    socket.on('player-update', (data) => {
+      console.log('📢 Player update:', data);
+      fetchRoomData();
+    });
+
+    socket.on('game-started', (data) => {
+      console.log('🎮 Game started:', data);
+      fetchRoomData();
+    });
+
+    socket.on('user-joined-voice', (data) => {
+      console.log('🎤 User joined voice:', data.username);
+    });
+
+    socket.on('user-left-voice', (data) => {
+      console.log('🎤 User left voice:', data.username);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('🔌 Socket disconnected');
+      if (isMicOn) {
+        stopVoiceChat();
+      }
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      if (isMicOn) {
+        stopVoiceChat();
+      }
+    };
+  }, [roomCode]);
 
   useEffect(() => {
     fetchRoomData();
@@ -183,446 +438,8 @@ const TeamGamePage = () => {
   }, [messages]);
 
   // ============================================================
-  // VOICE CHAT FUNCTIONS
+  // RENDER
   // ============================================================
-
-  const startVoiceChat = async () => {
-    try {
-      console.log('🎤 Starting voice chat...');
-      setMicError('');
-      
-      // Get user media
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-      
-      console.log('✅ Microphone access granted');
-      localStreamRef.current = stream;
-      
-      // Set up audio analysis
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      source.connect(analyserRef.current);
-      
-      // Start voice activity detection
-      detectVoiceActivity();
-      
-      setIsMicOn(true);
-      
-      // Notify others
-      if (socketRef.current) {
-        socketRef.current.emit('user-joined-voice', { 
-          roomCode, 
-          username: user.username 
-        });
-      }
-      
-      // Create peer connections for all other players
-      const otherPlayers = players.filter(p => p.username !== user.username);
-      console.log(`👥 Creating connections for: ${otherPlayers.map(p => p.username).join(', ')}`);
-      
-      for (const player of otherPlayers) {
-        await createPeerConnection(player.username);
-      }
-      
-      console.log('🎤 Voice chat started successfully');
-    } catch (error) {
-      console.error('❌ Failed to start voice chat:', error);
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        setMicError('Microphone access denied. Please allow microphone access in your browser settings.');
-      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        setMicError('No microphone found. Please connect a microphone and try again.');
-      } else {
-        setMicError('Could not access microphone. Please check your permissions and try again.');
-      }
-      alert(micError || 'Could not access microphone. Please check your permissions.');
-    }
-  };
-
-  const stopVoiceChat = () => {
-    console.log('🎤 Stopping voice chat...');
-    
-    // Close all peer connections
-    for (const username in peerConnectionsRef.current) {
-      try {
-        peerConnectionsRef.current[username].close();
-        const audioEl = document.getElementById(`audio-${username}`);
-        if (audioEl) audioEl.remove();
-      } catch (e) {
-        console.error('Error closing connection:', e);
-      }
-    }
-    peerConnectionsRef.current = {};
-    
-    // Stop local stream
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
-      localStreamRef.current = null;
-    }
-    
-    // Close audio context
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-    
-    // Notify others
-    if (isMicOn && socketRef.current) {
-      socketRef.current.emit('user-left-voice', { 
-        roomCode, 
-        username: user.username 
-      });
-    }
-    
-    setIsMicOn(false);
-    setVoiceParticipants([]);
-    setMicError('');
-    
-    console.log('🎤 Voice chat stopped');
-  };
-
-  const toggleMic = () => {
-    if (isMicOn) {
-      stopVoiceChat();
-    } else {
-      startVoiceChat();
-    }
-  };
-
-  const toggleSpeaker = () => {
-    setIsSpeakerOn(!isSpeakerOn);
-    
-    // Update all audio elements
-    const audioElements = document.querySelectorAll('audio[id^="audio-"]');
-    audioElements.forEach(el => {
-      el.volume = isSpeakerOn ? 0 : 1;
-    });
-    
-    console.log(`🔊 Speaker ${isSpeakerOn ? 'muted' : 'unmuted'}`);
-  };
-
-  const createPeerConnection = async (targetUsername) => {
-    if (peerConnectionsRef.current[targetUsername]) {
-      console.log(`⚠️ Connection to ${targetUsername} already exists`);
-      return;
-    }
-    
-    console.log(`🔗 Creating peer connection to: ${targetUsername}`);
-    
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-      ]
-    });
-    
-    peerConnectionsRef.current[targetUsername] = pc;
-    
-    // Add local stream tracks
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => {
-        pc.addTrack(track, localStreamRef.current);
-      });
-    }
-    
-    // Handle ICE candidates
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        console.log(`🧊 ICE candidate from ${user.username} to ${targetUsername}`);
-        socketRef.current.emit('voice-ice-candidate', {
-          roomCode,
-          to: targetUsername,
-          candidate: event.candidate,
-          from: user.username
-        });
-      }
-    };
-    
-    // Handle incoming audio tracks
-    pc.ontrack = (event) => {
-      console.log(`🎵 Received audio track from ${targetUsername}`);
-      
-      const existingEl = document.getElementById(`audio-${targetUsername}`);
-      if (existingEl) existingEl.remove();
-      
-      const audioElement = document.createElement('audio');
-      audioElement.id = `audio-${targetUsername}`;
-      audioElement.srcObject = event.streams[0];
-      audioElement.autoplay = true;
-      audioElement.volume = isSpeakerOn ? 1 : 0;
-      audioElement.style.display = 'none';
-      document.body.appendChild(audioElement);
-      
-      console.log(`🔊 Audio element created for ${targetUsername}, volume: ${audioElement.volume}`);
-    };
-    
-    // Connection state monitoring
-    pc.onconnectionstatechange = () => {
-      console.log(`🔗 Connection to ${targetUsername}: ${pc.connectionState}`);
-      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-        console.log(`⚠️ Connection to ${targetUsername} lost, cleaning up...`);
-        delete peerConnectionsRef.current[targetUsername];
-        const audioEl = document.getElementById(`audio-${targetUsername}`);
-        if (audioEl) audioEl.remove();
-        setVoiceParticipants(prev => prev.filter(name => name !== targetUsername));
-      }
-    };
-    
-    // Create and send offer
-    try {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      
-      socketRef.current.emit('voice-offer', {
-        roomCode,
-        to: targetUsername,
-        offer: pc.localDescription,
-        from: user.username
-      });
-      
-      console.log(`📤 Offer sent to ${targetUsername}`);
-    } catch (error) {
-      console.error(`❌ Error creating offer for ${targetUsername}:`, error);
-    }
-  };
-
-  const handleVoiceOffer = async (data) => {
-    const { from, offer } = data;
-    console.log(`📞 Voice offer from ${from}`);
-    
-    if (!peerConnectionsRef.current[from]) {
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
-        ]
-      });
-      
-      peerConnectionsRef.current[from] = pc;
-      
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => {
-          pc.addTrack(track, localStreamRef.current);
-        });
-      }
-      
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          socketRef.current.emit('voice-ice-candidate', {
-            roomCode,
-            to: from,
-            candidate: event.candidate,
-            from: user.username
-          });
-        }
-      };
-      
-      pc.ontrack = (event) => {
-        console.log(`🎵 Received audio track from ${from}`);
-        
-        const existingEl = document.getElementById(`audio-${from}`);
-        if (existingEl) existingEl.remove();
-        
-        const audioElement = document.createElement('audio');
-        audioElement.id = `audio-${from}`;
-        audioElement.srcObject = event.streams[0];
-        audioElement.autoplay = true;
-        audioElement.volume = isSpeakerOn ? 1 : 0;
-        audioElement.style.display = 'none';
-        document.body.appendChild(audioElement);
-        
-        console.log(`🔊 Audio element created for ${from}`);
-      };
-      
-      pc.onconnectionstatechange = () => {
-        console.log(`🔗 Connection to ${from}: ${pc.connectionState}`);
-        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-          delete peerConnectionsRef.current[from];
-          const audioEl = document.getElementById(`audio-${from}`);
-          if (audioEl) audioEl.remove();
-          setVoiceParticipants(prev => prev.filter(name => name !== from));
-        }
-      };
-    }
-    
-    const pc = peerConnectionsRef.current[from];
-    
-    try {
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      
-      socketRef.current.emit('voice-answer', {
-        roomCode,
-        to: from,
-        answer: pc.localDescription,
-        from: user.username
-      });
-      
-      console.log(`📤 Answer sent to ${from}`);
-    } catch (error) {
-      console.error(`❌ Error handling offer from ${from}:`, error);
-    }
-  };
-
-  const handleVoiceAnswer = async (data) => {
-    const { from, answer } = data;
-    console.log(`📞 Voice answer from ${from}`);
-    
-    const pc = peerConnectionsRef.current[from];
-    if (pc) {
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        console.log(`✅ Remote description set for ${from}`);
-      } catch (error) {
-        console.error(`❌ Error handling answer from ${from}:`, error);
-      }
-    } else {
-      console.warn(`⚠️ No peer connection found for ${from}`);
-    }
-  };
-
-  const handleIceCandidate = async (data) => {
-    const { from, candidate } = data;
-    const pc = peerConnectionsRef.current[from];
-    
-    if (pc) {
-      try {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-        console.log(`✅ ICE candidate added for ${from}`);
-      } catch (error) {
-        console.error(`❌ Error adding ICE candidate from ${from}:`, error);
-      }
-    }
-  };
-
-  const detectVoiceActivity = () => {
-    if (!analyserRef.current) return;
-    
-    const dataArray = new Uint8Array(analyserRef.current.fftSize);
-    const checkVoice = () => {
-      if (!analyserRef.current || !isMicOn) return;
-      
-      analyserRef.current.getByteFrequencyData(dataArray);
-      let average = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        average += dataArray[i];
-      }
-      average /= dataArray.length;
-      
-      const isActive = average > 30;
-      if (isActive !== isSpeaking) {
-        setIsSpeaking(isActive);
-      }
-      
-      requestAnimationFrame(checkVoice);
-    };
-    
-    checkVoice();
-  };
-
-  const handleAskQuestion = async (e) => {
-    e.preventDefault();
-    if (!question.trim() || sending || gameOver) return;
-
-    setSending(true);
-    try {
-      const response = await api.post('/team/question', {
-        roomCode,
-        question: question.trim()
-      });
-
-      console.log('📝 Ask question response:', response.data);
-
-      if (response.data.success) {
-        const newMessage = {
-          question: question.trim(),
-          answer: response.data.answer || 'Maybe',
-          askedBy: response.data.askedBy || user.username,
-          timestamp: new Date().toISOString()
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
-        setQuestionCount(response.data.questionCount || questionCount + 1);
-        setQuestion('');
-        
-        setTimeout(() => fetchRoomData(), 500);
-      }
-    } catch (error) {
-      console.error('Ask question error:', error);
-      alert(error.response?.data?.message || 'Failed to ask question');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleMakeGuess = async (e) => {
-    e.preventDefault();
-    if (!guess.trim() || sending || gameOver) return;
-
-    setSending(true);
-    try {
-      const response = await api.post('/team/guess', {
-        roomCode,
-        guess: guess.trim()
-      });
-
-      console.log('📝 Guess response:', response.data);
-
-      if (response.data.success) {
-        const newMessage = {
-          type: response.data.isCorrect ? 'guess-correct' : 'guess-wrong',
-          guessedBy: user.username,
-          text: response.data.isCorrect ? `🎉 Correct! It was ${response.data.character}!` : `❌ ${guess.trim()} is not correct`,
-          character: response.data.character,
-          image: response.data.image,
-          reward: response.data.reward,
-          players: response.data.players
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
-        setGuess('');
-
-        if (response.data.isCorrect) {
-          setGameOver(true);
-          setResult({
-            success: true,
-            character: response.data.character,
-            image: response.data.image,
-            reward: response.data.reward,
-            players: response.data.players
-          });
-        }
-        
-        setTimeout(() => fetchRoomData(), 500);
-      }
-    } catch (error) {
-      console.error('Guess error:', error);
-      alert(error.response?.data?.message || 'Failed to make guess');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleLeave = () => {
-    stopVoiceChat();
-    if (socketRef.current) {
-      socketRef.current.emit('leave-team-room', roomCode);
-    }
-    navigate('/');
-  };
-
-  const handlePlayAgain = () => {
-    stopVoiceChat();
-    navigate('/');
-  };
 
   if (loading) {
     return (
@@ -665,7 +482,6 @@ const TeamGamePage = () => {
           </span>
         </div>
         <div className="header-right">
-          {/* ===== VOICE CONTROLS ===== */}
           <div className="voice-controls">
             <button 
               className={`voice-btn ${isMicOn ? 'active' : ''}`}
@@ -682,9 +498,9 @@ const TeamGamePage = () => {
             >
               {isSpeakerOn ? '🔊' : '🔇'}
             </button>
-            {voiceParticipants.length > 0 && (
+            {Object.keys(remoteUsersRef.current).length > 0 && (
               <span className="voice-participants">
-                {voiceParticipants.length} 🎤
+                {Object.keys(remoteUsersRef.current).length} 🎤
               </span>
             )}
           </div>

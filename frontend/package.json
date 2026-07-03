@@ -12,6 +12,7 @@
   "dependencies": {
     "@babel/plugin-transform-runtime": "^8.0.1",
     "@rollup/plugin-terser": "^1.0.0",
+    "agora-rtc-sdk-ng": "^4.24.5",
     "axios": "^1.18.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

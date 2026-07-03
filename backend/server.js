@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketIO = require('socket.io');
+const { RtcTokenBuilder, RtcRole } = require('agora-access-token');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
@@ -391,6 +392,59 @@ app.use('/api/shop', authMiddleware, shopRoutes);
 app.use('/api/referral', authMiddleware, referralRoutes);
 app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/2fa', twoFactorRoutes);
+
+// ============================================================
+// AGORA TOKEN GENERATOR
+// ============================================================
+app.get('/api/agora-token', authMiddleware, (req, res) => {
+  try {
+    const channelName = req.query.channel || 'default';
+    // ✅ Use user ID + random number for unique UID
+    const userId = req.user._id.toString().slice(-6);
+    const randomSuffix = Math.floor(Math.random() * 1000);
+    const uid = parseInt(userId + randomSuffix);
+    const role = RtcRole.PUBLISHER;
+    const expireTime = 3600;
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const privilegeExpiredTs = currentTimestamp + expireTime;
+
+    const APP_ID = process.env.AGORA_APP_ID;
+    const APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
+
+    if (!APP_ID || !APP_CERTIFICATE) {
+      console.error('❌ Agora credentials not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Agora credentials not configured'
+      });
+    }
+
+    const token = RtcTokenBuilder.buildTokenWithUid(
+      APP_ID,
+      APP_CERTIFICATE,
+      channelName,
+      uid,
+      role,
+      privilegeExpiredTs
+    );
+
+    console.log('✅ Agora token generated for UID:', uid, 'channel:', channelName);
+
+    res.json({
+      success: true,
+      token: token,
+      appId: APP_ID,
+      channel: channelName,
+      uid: uid
+    });
+  } catch (error) {
+    console.error('❌ Error generating Agora token:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate Agora token'
+    });
+  }
+});
 
 // ============================================================
 // HEALTH CHECK
