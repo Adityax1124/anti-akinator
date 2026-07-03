@@ -290,7 +290,6 @@ app.use((req, res, next) => {
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
 
-  // Join a room
   socket.on('join-team-room', (roomCode) => {
     if (roomCode && roomCode !== 'undefined') {
       socket.join(roomCode);
@@ -298,7 +297,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Leave a room
   socket.on('leave-team-room', (roomCode) => {
     if (roomCode && roomCode !== 'undefined') {
       socket.leave(roomCode);
@@ -306,7 +304,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ===== VOICE CHAT EVENTS =====
   socket.on('user-joined-voice', (data) => {
     const { roomCode, username } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -347,7 +344,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Player joined notification
   socket.on('player-joined', (data) => {
     const { roomCode, player } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -356,7 +352,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Game started notification
   socket.on('game-started', (data) => {
     const { roomCode } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -365,7 +360,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Player left notification
   socket.on('player-left', (data) => {
     const { roomCode, player } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -374,7 +368,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Disconnect
   socket.on('disconnect', () => {
     console.log(`🔌 Socket disconnected: ${socket.id}`);
   });
@@ -394,16 +387,14 @@ app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 
 // ============================================================
-// AGORA TOKEN GENERATOR
+// AGORA TOKEN GENERATOR (FIXED UID)
 // ============================================================
 app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
     const channelName = req.query.channel || 'default';
     
-    // ✅ Generate unique UID
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 10000);
-    const uid = parseInt(`${timestamp.toString().slice(-6)}${random}`);
+    // ✅ UID must be between 0 and 10000 (Agora limit)
+    const uid = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
     
     const role = RtcRole.PUBLISHER;
     const expireTime = 3600;
