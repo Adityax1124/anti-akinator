@@ -98,10 +98,21 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data.user);
+      const userData = response.data.user;
+      
+      // ✅ Ensure user has _id
+      if (userData && !userData._id && userData.id) {
+        userData._id = userData.id;
+      }
+      
+      setUser(userData);
       setAuthError(null);
       resetSessionTimer();
-      return response.data.user;
+      
+      // ✅ Also store in localStorage with _id
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return userData;
     } catch (error) {
       console.error('🔴 Auth: Error fetching user:', error.message);
       if (error.response?.status === 401) {
@@ -138,6 +149,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (initialFetchDone.current) return;
     initialFetchDone.current = true;
+    
+    // ✅ Try to restore user from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && !user) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (e) {}
+    }
     
     if (token) {
       setAuthHeader(token);
@@ -184,6 +204,11 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
+      // ✅ Ensure user has _id
+      if (user && !user._id && user.id) {
+        user._id = user.id;
+      }
+      
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setToken(token);
@@ -195,6 +220,7 @@ export const AuthProvider = ({ children }) => {
       fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} logged in successfully`);
+      console.log(`👤 User ID: ${user._id || user.id}`);
       
       return { 
         success: true,
@@ -335,6 +361,11 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
+      // ✅ Ensure user has _id
+      if (user && !user._id && user.id) {
+        user._id = user.id;
+      }
+      
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setToken(token);
@@ -345,6 +376,7 @@ export const AuthProvider = ({ children }) => {
       fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} registered successfully`);
+      console.log(`👤 User ID: ${user._id || user.id}`);
       
       return {
         success: true,
@@ -402,6 +434,11 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
+      // ✅ Ensure user has _id
+      if (user && !user._id && user.id) {
+        user._id = user.id;
+      }
+      
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setToken(token);
@@ -413,6 +450,7 @@ export const AuthProvider = ({ children }) => {
       fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} email verified successfully`);
+      console.log(`👤 User ID: ${user._id || user.id}`);
       
       return {
         success: true,

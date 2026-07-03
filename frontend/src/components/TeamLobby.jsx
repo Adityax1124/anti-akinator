@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 
 const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) => {
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+  const [friends, setFriends] = useState([]);
+  const [showInviteDropdown, setShowInviteDropdown] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState('');
 
-  // ✅ FIXED: Better host detection
+  useEffect(() => {
+    fetchFriends();
+  }, []);
+
+  const fetchFriends = async () => {
+    try {
+      const response = await api.get('/friend/list');
+      console.log('📊 Friends list:', response.data.friends);
+      setFriends(response.data.friends || []);
+    } catch (error) {
+      console.error('Fetch friends error:', error);
+    }
+  };
+
   const getHostId = () => {
     if (!room?.host) return null;
-    // If host is an object with _id
     if (room.host._id) return room.host._id;
-    // If host is just an ID string
     if (typeof room.host === 'string') return room.host;
-    // If host is the player object directly
     if (room.host.user) return room.host.user;
     return null;
   };
@@ -26,26 +39,45 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
 
   const hostId = getHostId();
   const userId = user?._id || user?.id;
-  
-  // ✅ Compare as strings to avoid type mismatches
   const isHost = hostId && userId && hostId.toString() === userId.toString();
 
-  // Debug logs
-  console.log('🔍 [TeamLobby] Host Detection:');
-  console.log('  room.host:', room?.host);
-  console.log('  hostId:', hostId);
-  console.log('  userId:', userId);
-  console.log('  isHost:', isHost);
-  console.log('  room.players:', room?.players);
-
-  const copyRoomCode = () => {
-    if (!roomCode) {
-      alert('Room code not available');
+  const handleInviteFriend = async (friendId, friendUsername) => {
+    console.log('📤 [INVITE] Sending invite to:', { friendId, friendUsername });
+    console.log('📤 [INVITE] Room code:', roomCode);
+    
+    if (!friendId) {
+      console.error('❌ [INVITE] No friend ID provided');
+      setInviteMessage('❌ Invalid friend');
+      setTimeout(() => setInviteMessage(''), 3000);
       return;
     }
-    navigator.clipboard.writeText(roomCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+
+    setInviteLoading(true);
+    setInviteMessage('');
+    try {
+      const response = await api.post('/team/invite', {
+        roomCode: roomCode,
+        friendId: friendId
+      });
+
+      console.log('📨 [INVITE] Response:', response.data);
+
+      if (response.data.success) {
+        setInviteMessage(`✅ Invite sent to ${friendUsername}!`);
+        setTimeout(() => setInviteMessage(''), 3000);
+        setShowInviteDropdown(false);
+      } else {
+        setInviteMessage(`❌ ${response.data.message || 'Failed to send invite'}`);
+        setTimeout(() => setInviteMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('❌ [INVITE] Error:', error);
+      console.error('❌ [INVITE] Response:', error.response?.data);
+      setInviteMessage(`❌ ${error.response?.data?.message || 'Failed to send invite'}`);
+      setTimeout(() => setInviteMessage(''), 3000);
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
   const handleStartGame = async () => {
@@ -67,41 +99,26 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
     }
   };
 
-  const shareLink = () => {
-    if (!roomCode) return;
-    const link = `${window.location.origin}/join?room=${roomCode}`;
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareWhatsApp = () => {
-    if (!roomCode) return;
-    const message = `🎯 Join my team on Anti-Akinator! Room Code: ${roomCode}\n\n${window.location.origin}/join?room=${roomCode}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
   const playerCount = room?.players?.length || 0;
+
+  // Filter out friends already in the room
+  const availableFriends = friends.filter(friend => {
+    const isInRoom = room?.players?.some(
+      p => p.user && (p.user._id || p.user) === friend.userId
+    );
+    return !isInRoom;
+  });
 
   return (
     <div className="team-lobby">
       <h2>👑 Team Lobby</h2>
       
-      <div className="room-code-section">
-        <div className="room-code-label">Room Code</div>
-        <div className="room-code-display">
-          <span className="code">{roomCode || 'Loading...'}</span>
-          <button className="copy-btn" onClick={copyRoomCode}>
-            {copied ? '✅ Copied!' : '📋 Copy'}
-          </button>
-        </div>
-      </div>
+      {/* ✅ REMOVED Room Code Section - No longer needed */}
 
       <div className="players-list">
         <h4>Players ({playerCount}/{room?.maxPlayers || 4})</h4>
         {room?.players && room.players.length > 0 ? (
           room.players.map((player, index) => {
-            // ✅ Check if this player is the host
             const playerId = player.user?._id || player.user || player._id;
             const isPlayerHost = playerId && hostId && playerId.toString() === hostId.toString();
             
@@ -122,38 +139,59 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
           })
         ) : (
           <div style={{ color: '#666', textAlign: 'center', padding: '1rem 0' }}>
-            No players yet. Share the room code!
+            No players yet. Invite your friends!
           </div>
         )}
       </div>
 
-      {error && <div className="auth-error" style={{ margin: '0.5rem 0' }}>{error}</div>}
-
-      <div className="share-buttons" style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
-        <button 
-          className="share-btn whatsapp" 
-          onClick={shareWhatsApp} 
-          style={{ flex: 1, padding: '0.5rem', borderRadius: '8px', border: 'none', background: '#25D366', color: '#fff', fontWeight: '600', cursor: 'pointer' }}
-        >
-          📱 WhatsApp
-        </button>
-        <button 
-          className="share-btn copy-link" 
-          onClick={shareLink} 
-          style={{ flex: 1, padding: '0.5rem', borderRadius: '8px', border: 'none', background: '#6c63ff', color: '#fff', fontWeight: '600', cursor: 'pointer' }}
-        >
-          🔗 Share Link
-        </button>
-        {onRefresh && (
+      {/* ✅ INVITE FRIENDS SECTION (Host Only) */}
+      {isHost && (
+        <div className="invite-section">
           <button 
-            className="share-btn refresh" 
-            onClick={onRefresh} 
-            style={{ padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: 'rgba(255,255,255,0.1)', color: '#fff', fontWeight: '600', cursor: 'pointer' }}
+            className="invite-toggle-btn"
+            onClick={() => setShowInviteDropdown(!showInviteDropdown)}
           >
-            🔄
+            👥 Invite Friends {availableFriends.length > 0 && `(${availableFriends.length})`}
           </button>
-        )}
-      </div>
+
+          {showInviteDropdown && (
+            <div className="invite-dropdown">
+              {availableFriends.length === 0 ? (
+                <div className="invite-empty">
+                  <p>No friends available to invite.</p>
+                  <p>All your friends are either in the room or offline.</p>
+                </div>
+              ) : (
+                <div className="invite-list">
+                  {availableFriends.map((friend) => (
+                    <div key={friend.id} className="invite-item">
+                      <span className="invite-friend-name">
+                        {friend.username}
+                        <span className="invite-badge online">🟢 Online</span>
+                      </span>
+                      <button 
+                        className="invite-friend-btn"
+                        onClick={() => handleInviteFriend(friend.userId, friend.username)}
+                        disabled={inviteLoading}
+                      >
+                        {inviteLoading ? 'Sending...' : 'Invite'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {inviteMessage && (
+            <div className={`invite-message ${inviteMessage.includes('❌') ? 'error' : ''}`}>
+              {inviteMessage}
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <div className="auth-error" style={{ margin: '0.5rem 0' }}>{error}</div>}
 
       <div className="lobby-actions">
         {isHost ? (
@@ -165,7 +203,7 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
             {loading ? 'Starting...' : `🚀 Start Game (${playerCount}/2 min)`}
           </button>
         ) : (
-          <div style={{ textAlign: 'center', color: '#888', padding: '0.5rem' }}>
+          <div className="waiting-text">
             Waiting for host <strong>{getHostUsername()}</strong> to start the game...
           </div>
         )}
@@ -174,7 +212,7 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
         </button>
       </div>
 
-      <div className="team-info" style={{ marginTop: '1rem' }}>
+      <div className="team-info">
         <p>💡 Need at least <strong>2</strong> players to start</p>
         <p>🎴 Reward: <strong>5 Shards</strong> each if you guess correctly</p>
         <p>⚡ No streak or leaderboard impact</p>

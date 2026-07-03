@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import ReferralModal from './ReferralModal'; // ✅ ADDED
+import ReferralModal from './ReferralModal';
+import FriendModal from './FriendModal'; // ✅ ADDED
 import './Navbar.css';
 
 const Navbar = () => {
@@ -13,7 +14,8 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false); // ✅ ADDED
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isFriendModalOpen, setIsFriendModalOpen] = useState(false); // ✅ ADDED
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -38,7 +40,6 @@ const Navbar = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  // ===== REFERRAL MODAL HANDLERS =====
   const openReferralModal = () => {
     closeMobileMenu();
     setIsReferralModalOpen(true);
@@ -46,6 +47,16 @@ const Navbar = () => {
 
   const closeReferralModal = () => {
     setIsReferralModalOpen(false);
+  };
+
+  // ===== FRIEND MODAL HANDLERS =====
+  const openFriendModal = () => {
+    closeMobileMenu();
+    setIsFriendModalOpen(true);
+  };
+
+  const closeFriendModal = () => {
+    setIsFriendModalOpen(false);
   };
 
   const handleSearch = async (e) => {
@@ -146,7 +157,11 @@ const Navbar = () => {
                 <Link to="/season-winners" className="nav-link" onClick={closeMobileMenu}>🏆 Winners</Link>
                 <Link to="/shop" className="nav-link" onClick={closeMobileMenu}>🛒 Shop</Link>
                 
-                {/* ===== ✅ NEW: REFER & EARN BUTTON ===== */}
+                {/* ===== FRIENDS BUTTON ===== */}
+                <button className="nav-link friends-btn" onClick={openFriendModal}>
+                  👥 Friends
+                </button>
+                
                 <button className="nav-link referral-btn" onClick={openReferralModal}>
                   🤝 Refer & Earn
                 </button>
@@ -191,10 +206,16 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ===== ✅ REFERRAL MODAL ===== */}
+      {/* ===== REFERRAL MODAL ===== */}
       <ReferralModal 
         isOpen={isReferralModalOpen} 
         onClose={closeReferralModal} 
+      />
+
+      {/* ===== FRIEND MODAL ===== */}
+      <FriendModal 
+        isOpen={isFriendModalOpen} 
+        onClose={closeFriendModal} 
       />
     </>
   );

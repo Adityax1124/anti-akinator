@@ -16,6 +16,7 @@ const seasonRoutes = require('./routes/season');
 const shopRoutes = require('./routes/shop');
 const referralRoutes = require('./routes/referral');
 const teamRoutes = require('./routes/team');
+const friendRoutes = require('./routes/friend');
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 
@@ -27,6 +28,10 @@ const io = socketIO(server, {
     credentials: true
   }
 });
+
+// ✅ CRITICAL FIX: Pass io instance to team routes
+teamRoutes.setIO(io);
+console.log('🔌 Socket.io instance passed to team routes');
 
 // ============================================================
 // TRUST PROXY (Secure for Railway/Vercel)
@@ -285,11 +290,20 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE
+// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE & INVITES
 // ============================================================
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
 
+  // ✅ Register user for private messages (invites)
+  socket.on('register-user', (data) => {
+    if (data?.userId) {
+      socket.join(`user_${data.userId}`);
+      console.log(`👤 User ${data.userId} registered for private messages`);
+    }
+  });
+
+  // Join a team room
   socket.on('join-team-room', (roomCode) => {
     if (roomCode && roomCode !== 'undefined') {
       socket.join(roomCode);
@@ -297,6 +311,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Leave a team room
   socket.on('leave-team-room', (roomCode) => {
     if (roomCode && roomCode !== 'undefined') {
       socket.leave(roomCode);
@@ -304,6 +319,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ===== VOICE CHAT EVENTS =====
   socket.on('user-joined-voice', (data) => {
     const { roomCode, username } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -344,6 +360,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Player joined notification
   socket.on('player-joined', (data) => {
     const { roomCode, player } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -352,6 +369,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Game started notification
   socket.on('game-started', (data) => {
     const { roomCode } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -360,6 +378,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Player left notification
   socket.on('player-left', (data) => {
     const { roomCode, player } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -368,6 +387,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Disconnect
   socket.on('disconnect', () => {
     console.log(`🔌 Socket disconnected: ${socket.id}`);
   });
@@ -384,6 +404,7 @@ app.use('/api/season', seasonRoutes);
 app.use('/api/shop', authMiddleware, shopRoutes);
 app.use('/api/referral', authMiddleware, referralRoutes);
 app.use('/api/team', authMiddleware, teamRoutes);
+app.use('/api/friend', authMiddleware, friendRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 
 // ============================================================
@@ -393,7 +414,6 @@ app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
     const channelName = req.query.channel || 'default';
     
-    // ✅ Use user's ID as string UID (Agora supports string UID up to 255 chars)
     const uid = req.user._id.toString();
     
     console.log(`👤 User: ${req.user.username}, UID: ${uid}`);

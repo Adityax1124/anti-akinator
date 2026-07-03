@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import io from 'socket.io-client';
 import AgoraRTC from 'agora-rtc-sdk-ng';
+import TeamLobby from '../components/TeamLobby';
 import './TeamGamePage.css';
 
 const TeamGamePage = () => {
@@ -13,6 +14,7 @@ const TeamGamePage = () => {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [gameStarted, setGameStarted] = useState(false);
   const [messages, setMessages] = useState([]);
   const [question, setQuestion] = useState('');
   const [guess, setGuess] = useState('');
@@ -23,12 +25,18 @@ const TeamGamePage = () => {
   const [maxQuestions, setMaxQuestions] = useState(10);
   const [players, setPlayers] = useState([]);
   
+  // ===== GAME TIMER STATE =====
+  const [timeLeft, setTimeLeft] = useState(120);
+  const [timerActive, setTimerActive] = useState(false);
+  const [timeWarning, setTimeWarning] = useState(false);
+  const timerStartedRef = useRef(false);
+  
   // ===== VOICE CHAT STATE =====
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceParticipants, setVoiceParticipants] = useState([]);
   const [micError, setMicError] = useState('');
+  const [speakingUsers, setSpeakingUsers] = useState([]);
   
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -36,25 +44,196 @@ const TeamGamePage = () => {
   const clientRef = useRef(null);
   const localAudioTrackRef = useRef(null);
   const remoteUsersRef = useRef({});
+  const isLeavingRef = useRef(false);
+  const voiceCleanupDoneRef = useRef(false);
+  const isConnectedRef = useRef(false);
+  const timerIntervalRef = useRef(null);
+
+  // ============================================================
+  // GAME TIMER FUNCTIONS
+  // ============================================================
+
+  const startGameTimer = () => {
+    // ✅ Prevent multiple timer starts
+    if (timerStartedRef.current) {
+      console.log('⏰ Timer already started, skipping...');
+      return;
+    }
+    
+    console.log('⏰ Starting game timer...');
+    timerStartedRef.current = true;
+    
+    // Reset timer
+    setTimeLeft(120);
+    setTimerActive(true);
+    setTimeWarning(false);
+    
+    // Clear any existing interval
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    
+    // Start countdown
+    timerIntervalRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        const newTime = prev - 1;
+        
+        // Warning at 30 seconds
+        if (newTime <= 30 && newTime > 0) {
+          setTimeWarning(true);
+        }
+        
+        // Time's up - END THE GAME
+        if (newTime <= 0) {
+          console.log('⏰ Game time limit reached! Ending game...');
+          setTimerActive(false);
+          setTimeWarning(false);
+          
+          // End the game with time up result
+          handleTimeUp();
+          
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+          return 0;
+        }
+        
+        return newTime;
+      });
+    }, 1000);
+  };
+
+  const stopGameTimer = () => {
+    console.log('⏰ Stopping game timer...');
+    setTimerActive(false);
+    setTimeWarning(false);
+    timerStartedRef.current = false;
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  };
+
+  // ✅ Handle Time Up - End Game
+  const handleTimeUp = async () => {
+    if (gameOver) return;
+    
+    console.log('⏰ Time is up! Ending game...');
+    
+    // Get the character from room data
+    let characterName = 'Unknown';
+    let characterImage = '';
+    
+    try {
+      const response = await api.get(`/team/room/${roomCode}`);
+      if (response.data.success) {
+        const roomData = response.data.room;
+        if (roomData.gameData?.characterId) {
+          // Fetch character details
+          const charResponse = await api.get(`/game/character/${roomData.gameData.characterId}`);
+          if (charResponse.data.success) {
+            characterName = charResponse.data.character.name;
+            characterImage = charResponse.data.character.image || '';
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching character for time up:', error);
+    }
+    
+    // Set game over with time up result
+    setGameOver(true);
+    setResult({
+      success: false,
+      reason: 'timeout',
+      character: characterName,
+      image: characterImage,
+      message: '⏰ Time\'s Up! You ran out of time!'
+    });
+    
+    // Disconnect voice chat
+    if (isMicOn) {
+      await stopVoiceChat();
+    }
+    
+    // Mark game as finished in backend
+    try {
+      await api.post('/team/end-game', { roomCode });
+    } catch (error) {
+      console.error('Error ending game:', error);
+    }
+  };
 
   // ============================================================
   // AGORA VOICE CHAT FUNCTIONS
   // ============================================================
 
+  const cleanupVoice = async () => {
+    if (voiceCleanupDoneRef.current) return;
+    voiceCleanupDoneRef.current = true;
+    
+    console.log('🧹 [CLEANUP] Starting voice cleanup...');
+    
+    try {
+      if (clientRef.current) {
+        try {
+          clientRef.current.disableAudioVolumeIndicator();
+        } catch (e) {}
+      }
+
+      if (localAudioTrackRef.current) {
+        try {
+          if (clientRef.current) {
+            await clientRef.current.unpublish([localAudioTrackRef.current]);
+          }
+          localAudioTrackRef.current.close();
+        } catch (e) {}
+        localAudioTrackRef.current = null;
+      }
+
+      Object.values(remoteUsersRef.current).forEach(remoteData => {
+        try { 
+          if (remoteData && remoteData.track) {
+            remoteData.track.stop();
+          }
+        } catch (e) {}
+      });
+      remoteUsersRef.current = {};
+
+      if (clientRef.current) {
+        try {
+          await clientRef.current.leave();
+          console.log('✅ Left Agora channel');
+        } catch (e) {}
+      }
+      
+      clientRef.current = null;
+      setVoiceParticipants([]);
+      setSpeakingUsers([]);
+      setIsMicOn(false);
+      isConnectedRef.current = false;
+      
+      console.log('✅ Voice cleanup complete');
+    } catch (error) {
+      console.error('❌ Error during voice cleanup:', error);
+    }
+  };
+
   const startVoiceChat = async () => {
     try {
       console.log('🎤 Starting Agora voice chat...');
       setMicError('');
+      voiceCleanupDoneRef.current = false;
+      isConnectedRef.current = false;
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setMicError('Your browser does not support microphone access');
         return;
       }
 
-      console.log('🔄 Fetching Agora token...');
+      console.log('🔄 Fetching Agora token for channel:', roomCode);
       const tokenResponse = await api.get(`/agora-token?channel=${roomCode}`);
       const { token, appId, uid } = tokenResponse.data;
-      console.log(`✅ Agora token: UID=${uid}, channel=${roomCode}`);
+      console.log(`✅ Agora token received: UID=${uid}`);
 
       const client = AgoraRTC.createClient({
         mode: 'rtc',
@@ -65,25 +244,83 @@ const TeamGamePage = () => {
       client.on('connection-state-change', (curState, prevState) => {
         console.log('🔄 Connection state:', prevState, '→', curState);
         if (curState === 'CONNECTED') {
-          console.log('✅ Client connected successfully!');
+          console.log('✅ Connected to Agora!');
+          isConnectedRef.current = true;
         }
         if (curState === 'DISCONNECTED') {
-          console.warn('⚠️ Client disconnected!');
+          console.warn('⚠️ Disconnected from Agora');
           setIsMicOn(false);
+          isConnectedRef.current = false;
         }
       });
 
-      client.on('exception', (event) => {
-        console.error('❌ Agora exception:', event);
+      client.on('user-published', async (remoteUser, mediaType) => {
+        console.log(`👤 Remote user ${remoteUser.uid} published ${mediaType}`);
+        
+        if (mediaType === 'audio') {
+          try {
+            await client.subscribe(remoteUser, mediaType);
+            console.log(`✅ Subscribed to audio from user ${remoteUser.uid}`);
+            
+            const audioTrack = remoteUser.audioTrack;
+            if (audioTrack) {
+              audioTrack.play();
+              audioTrack.setVolume(isSpeakerOn ? 100 : 0);
+              
+              remoteUsersRef.current[remoteUser.uid] = {
+                track: audioTrack,
+                userId: remoteUser.uid
+              };
+              
+              setVoiceParticipants(prev => {
+                if (!prev.includes(remoteUser.uid)) {
+                  return [...prev, remoteUser.uid];
+                }
+                return prev;
+              });
+              
+              console.log(`🔊 Audio playing for user ${remoteUser.uid}`);
+            }
+          } catch (error) {
+            console.error('❌ Error subscribing to remote audio:', error);
+          }
+        }
       });
 
-      await client.join(
-        appId,
-        roomCode,
-        token,
-        uid
-      );
-      console.log('✅ Joined Agora channel:', roomCode, 'with UID:', uid);
+      client.on('user-unpublished', (remoteUser, mediaType) => {
+        console.log(`👤 Remote user ${remoteUser.uid} unpublished ${mediaType}`);
+        if (mediaType === 'audio') {
+          const remoteData = remoteUsersRef.current[remoteUser.uid];
+          if (remoteData && remoteData.track) {
+            remoteData.track.stop();
+            delete remoteUsersRef.current[remoteUser.uid];
+            setVoiceParticipants(prev => prev.filter(id => id !== remoteUser.uid));
+          }
+        }
+      });
+
+      client.on('user-left', (remoteUser) => {
+        console.log(`👤 Remote user ${remoteUser.uid} left`);
+        const remoteData = remoteUsersRef.current[remoteUser.uid];
+        if (remoteData && remoteData.track) {
+          remoteData.track.stop();
+          delete remoteUsersRef.current[remoteUser.uid];
+          setVoiceParticipants(prev => prev.filter(id => id !== remoteUser.uid));
+        }
+      });
+
+      client.on('volume-indicator', (volumes) => {
+        const speaking = [];
+        volumes.forEach(volume => {
+          if (volume.level > 5) {
+            speaking.push(volume.uid);
+          }
+        });
+        setSpeakingUsers(speaking);
+      });
+
+      await client.join(appId, roomCode, token, uid);
+      console.log(`✅ Joined Agora channel: ${roomCode}`);
 
       console.log('🎤 Creating microphone audio track...');
       const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
@@ -93,115 +330,40 @@ const TeamGamePage = () => {
         }
       });
       localAudioTrackRef.current = localAudioTrack;
-      console.log('✅ Microphone audio track created');
+      console.log('✅ Microphone track created');
+
+      client.enableAudioVolumeIndicator();
 
       await client.publish([localAudioTrack]);
       console.log('✅ Published local audio track');
 
       setIsMicOn(true);
 
-      // ✅ Remote user published handler
-      client.on('user-published', async (user, mediaType) => {
-        console.log('👤 Remote user published:', user.uid, 'mediaType:', mediaType);
-        if (mediaType === 'audio') {
-          try {
-            await client.subscribe(user, mediaType);
-            console.log('🔊 Subscribed to remote audio for user:', user.uid);
-            
-            const audioTrack = user.audioTrack;
-            audioTrack.play();
-            audioTrack.setVolume(100);
-            remoteUsersRef.current[user.uid] = audioTrack;
-            
-            setVoiceParticipants(prev => {
-              if (!prev.includes(user.uid)) {
-                return [...prev, user.uid];
-              }
-              return prev;
-            });
-            
-            console.log(`🔊 Audio playing for user ${user.uid}`);
-          } catch (error) {
-            console.error('❌ Error subscribing to remote audio:', error);
-          }
-        }
-      });
-
-      client.on('user-unpublished', (user, mediaType) => {
-        console.log('👤 Remote user unpublished:', user.uid);
-        if (mediaType === 'audio') {
-          const audioTrack = remoteUsersRef.current[user.uid];
-          if (audioTrack) {
-            audioTrack.stop();
-            delete remoteUsersRef.current[user.uid];
-            setVoiceParticipants(prev => prev.filter(id => id !== user.uid));
-          }
-        }
-      });
-
-      client.on('user-left', (user) => {
-        console.log('👤 Remote user left:', user.uid);
-        const audioTrack = remoteUsersRef.current[user.uid];
-        if (audioTrack) {
-          audioTrack.stop();
-          delete remoteUsersRef.current[user.uid];
-          setVoiceParticipants(prev => prev.filter(id => id !== user.uid));
-        }
-      });
-
       if (socketRef.current) {
         socketRef.current.emit('user-joined-voice', { 
           roomCode, 
-          username: user.username 
+          username: user.username
         });
       }
 
-      console.log('🎤 Agora voice chat started successfully');
+      console.log('🎤 Voice chat started successfully!');
     } catch (error) {
       console.error('❌ Failed to start voice chat:', error);
       setMicError('Failed to start voice chat: ' + (error.message || 'Unknown error'));
+      setIsMicOn(false);
     }
   };
 
   const stopVoiceChat = async () => {
     console.log('🎤 Stopping voice chat...');
-
-    try {
-      if (localAudioTrackRef.current) {
-        try {
-          await clientRef.current?.unpublish([localAudioTrackRef.current]);
-          localAudioTrackRef.current.close();
-        } catch (e) {
-          console.warn('Error unpublishing track:', e);
-        }
-        localAudioTrackRef.current = null;
-      }
-
-      Object.values(remoteUsersRef.current).forEach(track => {
-        try { track.stop(); } catch (e) {}
-      });
-      remoteUsersRef.current = {};
-
-      try {
-        await clientRef.current?.leave();
-      } catch (e) {
-        console.warn('Error leaving channel:', e);
-      }
-      clientRef.current = null;
-
-      setVoiceParticipants([]);
-      setIsMicOn(false);
-      setMicError('');
-
-      console.log('🎤 Voice chat stopped');
-    } catch (error) {
-      console.error('Error stopping voice chat:', error);
-    }
+    await cleanupVoice();
   };
 
-  // ✅ MIC TOGGLE - Only affects mic
   const toggleMic = () => {
-    console.log('🎤 Toggle mic, current state:', isMicOn);
+    if (gameOver) {
+      alert('Game is already over!');
+      return;
+    }
     if (isMicOn) {
       stopVoiceChat();
     } else {
@@ -209,14 +371,13 @@ const TeamGamePage = () => {
     }
   };
 
-  // ✅ SPEAKER TOGGLE - Only affects speaker, NOT mic
   const toggleSpeaker = () => {
     const newState = !isSpeakerOn;
     setIsSpeakerOn(newState);
     
-    Object.values(remoteUsersRef.current).forEach(track => {
+    Object.values(remoteUsersRef.current).forEach(remoteData => {
       try {
-        track.setVolume(newState ? 100 : 0);
+        remoteData.track.setVolume(newState ? 100 : 0);
       } catch (e) {}
     });
     console.log(`🔊 Speaker ${newState ? 'unmuted' : 'muted'}`);
@@ -283,6 +444,7 @@ const TeamGamePage = () => {
         setGuess('');
 
         if (response.data.isCorrect) {
+          stopGameTimer();
           setGameOver(true);
           setResult({
             success: true,
@@ -302,17 +464,32 @@ const TeamGamePage = () => {
     }
   };
 
-  const handleLeave = () => {
-    stopVoiceChat();
+  const handleLeave = async () => {
+    console.log('🚪 Leaving game...');
+    isLeavingRef.current = true;
+    
+    stopGameTimer();
+    await cleanupVoice();
+    
     if (socketRef.current) {
       socketRef.current.emit('leave-team-room', roomCode);
+      socketRef.current.disconnect();
+      socketRef.current = null;
     }
+    
     navigate('/');
   };
 
-  const handlePlayAgain = () => {
-    stopVoiceChat();
+  const handlePlayAgain = async () => {
+    console.log('🔄 Playing again...');
+    stopGameTimer();
+    await cleanupVoice();
     navigate('/');
+  };
+
+  const handleGameStart = () => {
+    console.log('🎮 Game started from lobby!');
+    setGameStarted(true);
   };
 
   // ============================================================
@@ -329,11 +506,22 @@ const TeamGamePage = () => {
         setQuestionCount(roomData.gameData?.totalQuestions || 0);
         setMaxQuestions(roomData.gameData?.maxQuestions || 10);
         
+        // ✅ Check if game is already playing
+        if (roomData.status === 'playing') {
+          setGameStarted(true);
+          // ✅ Start timer if game is playing and timer hasn't started
+          if (!timerStartedRef.current && !gameOver) {
+            console.log('⏰ Game is already playing, starting timer...');
+            startGameTimer();
+          }
+        }
+        
         if (roomData.gameData?.questions) {
           setMessages(roomData.gameData.questions);
         }
         
         if (roomData.gameData?.isGuessed) {
+          stopGameTimer();
           setGameOver(true);
           setResult({
             success: true,
@@ -344,9 +532,11 @@ const TeamGamePage = () => {
         }
         
         if (roomData.status === 'finished' && !roomData.gameData?.isGuessed) {
+          stopGameTimer();
           setGameOver(true);
           setResult({
             success: false,
+            reason: 'finished',
             message: 'Game ended',
             character: roomData.gameData?.characterName || 'Unknown'
           });
@@ -385,7 +575,12 @@ const TeamGamePage = () => {
     });
 
     socket.on('game-started', (data) => {
-      console.log('🎮 Game started:', data);
+      console.log('🎮 Game started via socket:', data);
+      setGameStarted(true);
+      // ✅ Start timer when game starts via socket
+      if (!timerStartedRef.current && !gameOver) {
+        startGameTimer();
+      }
       fetchRoomData();
     });
 
@@ -399,17 +594,16 @@ const TeamGamePage = () => {
 
     socket.on('disconnect', () => {
       console.log('🔌 Socket disconnected');
-      if (isMicOn) {
-        stopVoiceChat();
-      }
     });
 
     return () => {
+      console.log('🧹 Component unmounting...');
+      isLeavingRef.current = true;
+      stopGameTimer();
+      cleanupVoice();
       if (socketRef.current) {
         socketRef.current.disconnect();
-      }
-      if (isMicOn) {
-        stopVoiceChat();
+        socketRef.current = null;
       }
     };
   }, [roomCode]);
@@ -426,6 +620,13 @@ const TeamGamePage = () => {
     }
   }, [messages]);
 
+  // Format time as MM:SS
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // ============================================================
   // RENDER
   // ============================================================
@@ -435,7 +636,7 @@ const TeamGamePage = () => {
       <div className="team-game-page">
         <div className="loading-container">
           <div className="loader"></div>
-          <p>Loading game...</p>
+          <p>Loading room...</p>
         </div>
       </div>
     );
@@ -454,6 +655,21 @@ const TeamGamePage = () => {
     );
   }
 
+  if (!gameStarted) {
+    return (
+      <div className="team-game-page lobby-view">
+        <TeamLobby
+          room={room}
+          roomCode={roomCode}
+          user={user}
+          onLeave={handleLeave}
+          onGameStart={handleGameStart}
+          onRefresh={fetchRoomData}
+        />
+      </div>
+    );
+  }
+
   const isQuestionLimitReached = questionCount >= maxQuestions;
 
   return (
@@ -463,7 +679,10 @@ const TeamGamePage = () => {
           <button className="btn-leave" onClick={handleLeave}>
             ← Leave
           </button>
-          <span className="room-code-display">Room: {roomCode}</span>
+          {/* ✅ Timer Display */}
+          <span className={`timer-display ${timeWarning ? 'warning' : ''} ${timeLeft <= 10 ? 'danger' : ''}`}>
+            ⏱️ {formatTime(timeLeft)}
+          </span>
         </div>
         <div className="header-center">
           <span className="team-name">
@@ -476,9 +695,9 @@ const TeamGamePage = () => {
               className={`voice-btn ${isMicOn ? 'active' : ''}`}
               onClick={toggleMic}
               title={isMicOn ? 'Mute Mic' : 'Unmute Mic'}
+              disabled={gameOver}
             >
               {isMicOn ? '🎤' : '🎤🔇'}
-              {isSpeaking && isMicOn && <span className="speaking-indicator"></span>}
             </button>
             <button 
               className={`voice-btn ${isSpeakerOn ? 'active' : ''}`}
@@ -487,10 +706,21 @@ const TeamGamePage = () => {
             >
               {isSpeakerOn ? '🔊' : '🔇'}
             </button>
-            {Object.keys(remoteUsersRef.current).length > 0 && (
+            {voiceParticipants.length > 0 && (
               <span className="voice-participants">
-                {Object.keys(remoteUsersRef.current).length} 🎤
+                {voiceParticipants.map(uid => (
+                  <span 
+                    key={uid} 
+                    className={`participant-dot ${speakingUsers.includes(uid) ? 'speaking' : ''}`}
+                    title={`Player ${uid} ${speakingUsers.includes(uid) ? '🔴 Speaking' : ''}`}
+                  >
+                    🟢
+                  </span>
+                ))}
               </span>
+            )}
+            {voiceParticipants.length > 0 && (
+              <span className="voice-count">{voiceParticipants.length} 🎤</span>
             )}
           </div>
           <span className="question-count">
@@ -505,6 +735,7 @@ const TeamGamePage = () => {
             <div className="empty-state">
               <p>🤔 Start asking questions to find the secret character!</p>
               <p>Team members can take turns asking questions</p>
+              <p className="timer-info">⏱️ You have <strong>2 minutes</strong> to guess the character!</p>
             </div>
           )}
           
@@ -549,17 +780,32 @@ const TeamGamePage = () => {
         </div>
 
         {gameOver && result ? (
-          <div className="team-game-result">
-            <div className="result-icon">🎉</div>
-            <h2>Team Guessed Correctly!</h2>
+          <div className={`team-game-result ${result.success ? 'success' : 'timeout'}`}>
+            <div className="result-icon">
+              {result.success ? '🎉' : '⏰'}
+            </div>
+            <h2>{result.success ? 'Team Guessed Correctly!' : "Time's Up!"}</h2>
+            {!result.success && (
+              <p className="timeout-message">⏰ You ran out of time!</p>
+            )}
             <div className="character-name">{result.character}</div>
             {result.image && (
               <img src={result.image} alt={result.character} className="result-image" />
             )}
-            <div className="reward-text">🎴 Everyone gets {result.reward || 5} Shards!</div>
-            <div className="players-text">
-              👥 {result.players?.map(p => p.username).join(', ')}
-            </div>
+            {result.success && result.reward && (
+              <div className="reward-text">🎴 Everyone gets {result.reward} Shards!</div>
+            )}
+            {result.success && result.players && (
+              <div className="players-text">
+                👥 {result.players?.map(p => p.username).join(', ')}
+              </div>
+            )}
+            {!result.success && (
+              <div className="timeout-text">
+                <p>The character was <strong>{result.character}</strong></p>
+                <p>Better luck next time! 🍀</p>
+              </div>
+            )}
             <button className="btn btn-primary" onClick={handlePlayAgain}>
               🔄 Play Again
             </button>
@@ -607,9 +853,10 @@ const TeamGamePage = () => {
       <div className="team-game-footer">
         <span>🎴 5 Shards each if correct</span>
         <span>⚡ No streak/leaderboard impact</span>
+        <span className="timer-info">⏱️ {formatTime(timeLeft)} remaining</span>
         {isMicOn && (
-          <span className={`voice-status ${isSpeaking ? 'speaking' : ''}`}>
-            {isSpeaking ? '🔴 Speaking...' : '🎤 Connected'}
+          <span className="voice-status active">
+            🎤 Connected ({voiceParticipants.length} others)
           </span>
         )}
         {micError && (

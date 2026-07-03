@@ -509,7 +509,7 @@ router.get('/public/:username', validateUsername, async (req, res) => {
   }
 });
 
-// ===================== SEARCH USERS =====================
+// ===================== ✅ FIXED: SEARCH USERS (with _id) =====================
 router.get('/search', authMiddleware, validateSearch, async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -531,11 +531,12 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
       });
     }
 
+    // ✅ FIXED: Include _id in search results
     const users = await User.find({
       username: { $regex: sanitizedQuery, $options: 'i' },
       _id: { $ne: req.user._id }
     })
-    .select('username stats equipped.profilePhoto')
+    .select('_id username stats shards equipped.profilePhoto') // ✅ Include _id
     .populate('equipped.profilePhoto', 'imageUrl')
     .limit(10);
 
@@ -544,8 +545,10 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
     res.setHeader('Expires', '0');
 
     const sanitizedUsers = users.map(user => ({
+      _id: user._id, // ✅ Now included
       username: user.username,
       stats: user.stats,
+      shards: user.shards,
       profilePhoto: user.equipped?.profilePhoto || null
     }));
 

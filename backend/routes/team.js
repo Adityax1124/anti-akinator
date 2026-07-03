@@ -355,6 +355,228 @@ router.post('/start', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
+// ✅ FIXED: INVITE FRIEND TO TEAM ROOM
+// ============================================================
+router.post('/invite', authMiddleware, async (req, res) => {
+  try {
+    const { roomCode, friendId } = req.body;
+    const user = req.user;
+
+    console.log(`📨 [INVITE] ${user.username} inviting to room: ${roomCode}`);
+    console.log(`📨 [INVITE] Friend ID: ${friendId}`);
+
+    if (!roomCode || !friendId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Room code and friend ID are required'
+      });
+    }
+
+    // Check if room exists and is waiting
+    const room = await TeamRoom.findOne({ 
+      roomCode: roomCode.toUpperCase().trim(),
+      status: 'waiting'
+    }).populate('host', 'username');
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found or already started'
+      });
+    }
+
+    // Check if user is host
+    if (room.host._id.toString() !== user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the host can invite friends'
+      });
+    }
+
+    // Check if friend exists
+    const friend = await User.findById(friendId);
+    if (!friend) {
+      return res.status(404).json({
+        success: false,
+        message: 'Friend not found'
+      });
+    }
+
+    // Check if friend is already in the room
+    if (room.players.some(p => p.user && p.user.toString() === friendId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Friend is already in the room'
+      });
+    }
+
+    // Check if room is full
+    if (room.players.length >= room.maxPlayers) {
+      return res.status(400).json({
+        success: false,
+        message: 'Room is full'
+      });
+    }
+
+    // ✅ Send invite via socket
+    if (ioInstance) {
+      const inviteData = {
+        roomCode: room.roomCode,
+        from: {
+          id: user._id,
+          username: user.username
+        },
+        room: {
+          id: room._id,
+          code: room.roomCode,
+          players: room.players.length,
+          maxPlayers: room.maxPlayers
+        }
+      };
+
+      console.log(`📨 [INVITE] Sending to user_${friendId}:`, inviteData);
+      
+      // ✅ Emit to the friend's private room
+      ioInstance.to(`user_${friendId}`).emit('team-invite', inviteData);
+      
+      // ✅ Also emit to all sockets with that user ID (fallback)
+      ioInstance.emit('team-invite-global', {
+        ...inviteData,
+        targetUserId: friendId
+      });
+      
+      console.log(`📨 Team invite sent from ${user.username} to ${friend.username}`);
+    } else {
+      console.error('❌ [INVITE] ioInstance is null! Socket not initialized.');
+    }
+
+    res.json({
+      success: true,
+      message: `Invite sent to ${friend.username}!`
+    });
+
+  } catch (error) {
+    console.error('❌ [INVITE] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send invite'
+    });
+  }
+});
+
+// ============================================================
+// ACCEPT TEAM INVITE
+// ============================================================
+router.post('/accept-invite', authMiddleware, async (req, res) => {
+  try {
+    const { roomCode } = req.body;
+    const user = req.user;
+
+    console.log(`📨 [ACCEPT INVITE] ${user.username} accepting invite to room: ${roomCode}`);
+
+    if (!roomCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Room code is required'
+      });
+    }
+
+    const room = await TeamRoom.findOne({ 
+      roomCode: roomCode.toUpperCase().trim(),
+      status: 'waiting'
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found or already started'
+      });
+    }
+
+    if (room.players.length >= room.maxPlayers) {
+      return res.status(400).json({
+        success: false,
+        message: 'Room is full'
+      });
+    }
+
+    if (room.players.some(p => p.user && p.user.toString() === user._id.toString())) {
+      return res.status(400).json({
+        success: false,
+        message: 'You are already in this room'
+      });
+    }
+
+    room.players.push({
+      user: user._id,
+      username: user.username
+    });
+
+    await room.save();
+
+    if (ioInstance) {
+      ioInstance.to(room.roomCode).emit('player-joined', {
+        roomCode: room.roomCode,
+        player: {
+          username: user.username,
+          _id: user._id
+        }
+      });
+      ioInstance.to(room.roomCode).emit('player-update', { 
+        type: 'joined', 
+        player: { username: user.username, _id: user._id } 
+      });
+    }
+
+    const updatedRoom = await TeamRoom.findById(room._id).populate('host', 'username');
+
+    res.json({
+      success: true,
+      message: 'Joined room successfully!',
+      room: {
+        id: updatedRoom._id,
+        roomCode: updatedRoom.roomCode,
+        host: updatedRoom.host,
+        players: updatedRoom.players,
+        maxPlayers: updatedRoom.maxPlayers,
+        status: updatedRoom.status
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Accept invite error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to accept invite'
+    });
+  }
+});
+
+// ============================================================
+// DECLINE TEAM INVITE
+// ============================================================
+router.post('/decline-invite', authMiddleware, async (req, res) => {
+  try {
+    const { roomCode } = req.body;
+    const user = req.user;
+
+    console.log(`📨 ${user.username} declined invite to room: ${roomCode}`);
+
+    res.json({
+      success: true,
+      message: 'Invite declined'
+    });
+
+  } catch (error) {
+    console.error('Decline invite error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to decline invite'
+    });
+  }
+});
+
+// ============================================================
 // TEAM ASK QUESTION
 // ============================================================
 router.post('/question', authMiddleware, validateQuestion, async (req, res) => {
@@ -400,7 +622,6 @@ router.post('/question', authMiddleware, validateQuestion, async (req, res) => {
 
     const character = room.gameData.characterId;
 
-    // ===== ✅ UPDATED CONTEXT (Same as game.js) =====
     const context = `
 Anime: ${character.anime}
 Description: ${character.description.substring(0, 500)}...
@@ -417,7 +638,6 @@ Female: ${character.attributes?.isFemale ? 'Yes' : 'No'}
 
 USER: "${question}"`;
 
-    // ===== ✅ ULTRA STRICT SYSTEM PROMPT - SAME AS GAME.JS =====
     const systemPrompt = `
 You are a STRICT answer machine. You MUST follow these rules EXACTLY. Do NOT think, guess, assume, or infer.
 
@@ -536,17 +756,13 @@ The anime name is in the data. USE IT to answer all anime-related questions. DO 
       answer = 'Maybe';
     }
 
-    // ===== CLEAN UP ANSWER (SUPPORTS ANIME NAMES) =====
     const validAnswers = ['Yes', 'No', 'Maybe', 'Very likely', 'Unlikely'];
-
-    // Check if answer is an anime name (not Yes/No/Maybe)
     const isAnimeName = !validAnswers.some(a => 
       answer.toLowerCase().includes(a.toLowerCase())
     );
 
     let finalAnswer;
     if (isAnimeName) {
-      // If it's not Yes/No/Maybe, treat it as an anime name
       finalAnswer = answer.trim();
     } else {
       const matchedAnswer = validAnswers.find(a => 
@@ -557,7 +773,6 @@ The anime name is in the data. USE IT to answer all anime-related questions. DO 
 
     console.log(`📝 Team final answer: "${finalAnswer}"`);
 
-    // Save question
     room.gameData.questions.push({
       question,
       answer: finalAnswer,
