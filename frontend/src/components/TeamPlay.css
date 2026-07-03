@@ -1,5 +1,5 @@
 /* ============================================================
-   TEAM PLAY - Premium Styles
+   TEAM PLAY - Premium Modern Design
    ============================================================ */
 
 /* ===== MODAL OVERLAY ===== */
@@ -9,13 +9,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(24px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.35s ease;
   padding: 20px;
 }
 
@@ -26,35 +26,23 @@
 
 /* ===== MODAL ===== */
 .team-modal {
-  background: linear-gradient(145deg, rgba(20, 20, 50, 0.95), rgba(10, 10, 30, 0.98));
-  border-radius: 24px;
-  padding: 2rem 2rem 1.8rem;
-  max-width: 520px;
+  background: linear-gradient(165deg, rgba(20, 20, 50, 0.97), rgba(10, 10, 30, 0.99));
+  border-radius: 28px;
+  padding: 2.5rem 2.5rem 2rem;
+  max-width: 540px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 92vh;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  animation: slideUp 0.4s ease;
+  animation: slideUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-}
-
-/* Hide scrollbar but keep functionality */
-.team-modal::-webkit-scrollbar {
-  width: 4px;
-}
-.team-modal::-webkit-scrollbar-track {
-  background: transparent;
-}
-.team-modal::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.3);
-  border-radius: 10px;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(30px) scale(0.95);
+    transform: translateY(40px) scale(0.96);
     opacity: 0;
   }
   to {
@@ -63,23 +51,37 @@
   }
 }
 
+/* Scrollbar */
+.team-modal::-webkit-scrollbar {
+  width: 4px;
+}
+.team-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+.team-modal::-webkit-scrollbar-thumb {
+  background: rgba(108, 99, 255, 0.4);
+  border-radius: 10px;
+}
+
 /* ===== CLOSE BUTTON ===== */
 .team-modal-close {
   position: absolute;
-  top: 16px;
-  right: 18px;
+  top: 18px;
+  right: 20px;
   background: rgba(255, 255, 255, 0.04);
   border: none;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-  width: 36px;
-  height: 36px;
+  color: rgba(255, 255, 255, 0.25);
+  transition: all 0.35s ease;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 300;
+  z-index: 2;
 }
 
 .team-modal-close:hover {
@@ -91,132 +93,193 @@
 /* ===== HEADER ===== */
 .team-modal .modal-header {
   text-align: center;
-  margin-bottom: 1.8rem;
+  margin-bottom: 2rem;
+  padding-top: 4px;
 }
 
-.team-modal .modal-header .icon {
-  font-size: 42px;
-  display: block;
-  margin-bottom: 4px;
+.team-modal .modal-header .icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 184, 148, 0.1));
+  border-radius: 50%;
+  margin-bottom: 12px;
+  border: 1px solid rgba(108, 99, 255, 0.08);
+}
+
+.team-modal .modal-header .icon-wrapper .icon {
+  font-size: 34px;
 }
 
 .team-modal .modal-header h2 {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   color: #fff;
-  margin: 0;
+  margin: 0 0 4px;
   letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #fff 60%, rgba(255, 255, 255, 0.6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .team-modal .modal-header p {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.35);
   font-size: 14px;
-  margin: 4px 0 0;
+  margin: 0;
+  letter-spacing: 0.3px;
 }
 
 /* ===== OPTIONS GRID ===== */
 .team-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 1.2rem;
+  gap: 14px;
+  margin-bottom: 1.4rem;
 }
 
 .team-option {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 1.5rem 1rem;
+  border-radius: 18px;
+  padding: 1.6rem 1.2rem 1.4rem;
   text-align: center;
-  transition: all 0.3s ease;
-  cursor: pointer;
+  transition: all 0.35s ease;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.team-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.03), rgba(0, 184, 148, 0.02));
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.team-option:hover::before {
+  opacity: 1;
 }
 
 .team-option:hover {
-  border-color: rgba(108, 99, 255, 0.3);
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-2px);
+  border-color: rgba(108, 99, 255, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
 .team-option .opt-icon {
-  font-size: 32px;
+  font-size: 28px;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 .team-option h3 {
   color: #fff;
   font-size: 16px;
   font-weight: 700;
-  margin: 0 0 2px;
+  margin: 0 0 3px;
+  position: relative;
+  z-index: 1;
 }
 
-.team-option p {
+.team-option .opt-desc {
   color: rgba(255, 255, 255, 0.35);
   font-size: 12px;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   line-height: 1.4;
+  position: relative;
+  z-index: 1;
 }
 
 .team-option .btn {
   width: 100%;
-  padding: 8px 0;
-  border-radius: 10px;
+  padding: 10px 0;
+  border-radius: 12px;
   font-size: 13px;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.3px;
 }
 
 .team-option .btn-primary {
   background: linear-gradient(135deg, #6c63ff, #5a52d5);
   color: #fff;
+  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.2);
 }
 
 .team-option .btn-primary:hover:not(:disabled) {
-  transform: scale(1.02);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
+  transform: scale(1.03);
+  box-shadow: 0 8px 32px rgba(108, 99, 255, 0.35);
 }
 
 .team-option .btn-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  transform: none !important;
 }
 
-/* ===== JOIN INPUT ===== */
+/* ===== JOIN SECTION ===== */
+.join-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.join-wrapper .join-label {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
 .join-room-input {
   display: flex;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 10px;
+  align-items: center;
 }
 
 .join-room-input input {
   flex: 1;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   min-width: 0;
+  font-family: 'Courier New', monospace;
 }
 
 .join-room-input input:focus {
   border-color: #6c63ff;
   outline: none;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.06);
 }
 
 .join-room-input input::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.15);
   letter-spacing: 0;
   text-transform: none;
   font-weight: 400;
+  font-family: inherit;
 }
 
 .join-room-input input:disabled {
@@ -225,59 +288,101 @@
 }
 
 .join-room-input .btn-secondary {
-  padding: 8px 18px;
+  padding: 10px 22px;
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   white-space: nowrap;
+  letter-spacing: 0.3px;
 }
 
 .join-room-input .btn-secondary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.02);
 }
 
 .join-room-input .btn-secondary:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
+  transform: none !important;
 }
 
 /* ===== ERROR ===== */
 .team-modal .auth-error {
-  background: rgba(255, 107, 107, 0.08);
-  border: 1px solid rgba(255, 107, 107, 0.15);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(255, 107, 107, 0.06);
+  border: 1px solid rgba(255, 107, 107, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
   color: #ff6b6b;
   font-size: 13px;
   text-align: center;
   margin-bottom: 1rem;
+  backdrop-filter: blur(8px);
 }
 
 /* ===== INFO BOX ===== */
 .team-info {
-  background: rgba(108, 99, 255, 0.05);
-  border: 1px solid rgba(108, 99, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-top: 6px;
 }
 
-.team-info p {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 12px;
-  margin: 4px 0;
+.team-info .info-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  padding: 4px 0;
 }
 
-.team-info p strong {
+.team-info .info-row .info-icon {
+  font-size: 14px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.team-info .info-row p {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.team-info .info-row p strong {
   color: #ffd700;
+  font-weight: 600;
+}
+
+/* ===== DIVIDER ===== */
+.team-modal .divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 1.2rem 0;
+}
+
+.team-modal .divider::before,
+.team-modal .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.team-modal .divider span {
+  color: rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* ============================================================
@@ -289,13 +394,14 @@
 
 .team-lobby .lobby-header {
   text-align: center;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.4rem;
 }
 
 .team-lobby .lobby-header h2 {
-  font-size: 22px;
+  font-size: 24px;
   color: #fff;
   margin: 0;
+  font-weight: 700;
 }
 
 .team-lobby .lobby-header p {
@@ -307,95 +413,96 @@
 /* ===== ROOM CODE ===== */
 .room-code-section {
   text-align: center;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.4rem;
 }
 
 .room-code-section .label {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 11px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  font-weight: 600;
+  letter-spacing: 2.5px;
+  font-weight: 700;
 }
 
 .room-code-display {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  background: rgba(255, 215, 0, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.1);
-  border-radius: 12px;
-  padding: 10px 20px;
+  gap: 14px;
+  background: rgba(255, 215, 0, 0.04);
+  border: 1.5px solid rgba(255, 215, 0, 0.08);
+  border-radius: 14px;
+  padding: 12px 24px;
   margin-top: 4px;
   max-width: 100%;
   overflow: hidden;
 }
 
 .room-code-display .code {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: #ffd700;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   font-family: 'Courier New', monospace;
   word-break: break-all;
 }
 
 .room-code-display .copy-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: none;
-  color: rgba(255, 255, 255, 0.4);
-  padding: 4px 14px;
-  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 4px 16px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   white-space: nowrap;
   flex-shrink: 0;
+  font-family: inherit;
 }
 
 .room-code-display .copy-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
 /* ===== PLAYERS LIST ===== */
 .players-list {
-  margin: 0 0 1rem;
+  margin: 0 0 1.2rem;
 }
 
 .players-list .players-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .players-list .players-header h4 {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   margin: 0;
 }
 
 .players-list .players-header .count {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 12px;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 11px;
 }
 
 .player-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 4px;
   border: 1px solid transparent;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .player-item:hover {
@@ -405,16 +512,16 @@
 .player-item .player-name {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
   font-weight: 500;
 }
 
 .player-item .player-name .host-badge {
-  background: rgba(255, 215, 0, 0.15);
+  background: rgba(255, 215, 0, 0.12);
   color: #ffd700;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
   padding: 1px 10px;
   border-radius: 4px;
@@ -423,133 +530,149 @@
 }
 
 .player-item .player-status {
-  font-size: 11px;
-  color: rgba(81, 207, 102, 0.6);
+  font-size: 10px;
+  color: rgba(81, 207, 102, 0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .player-item .player-status.waiting {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.15);
 }
 
 /* ===== SHARE BUTTONS ===== */
 .share-buttons {
   display: flex;
-  gap: 8px;
-  margin-bottom: 1rem;
+  gap: 10px;
+  margin-bottom: 1.2rem;
 }
 
 .share-buttons .share-btn {
   flex: 1;
-  padding: 8px;
-  border-radius: 10px;
+  padding: 10px 8px;
+  border-radius: 12px;
   border: none;
   font-weight: 600;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   text-align: center;
+  letter-spacing: 0.2px;
 }
 
 .share-buttons .share-btn.whatsapp {
-  background: rgba(37, 211, 102, 0.15);
+  background: rgba(37, 211, 102, 0.1);
   color: #25D366;
 }
 
 .share-buttons .share-btn.whatsapp:hover {
-  background: rgba(37, 211, 102, 0.25);
+  background: rgba(37, 211, 102, 0.2);
+  transform: scale(1.02);
 }
 
 .share-buttons .share-btn.copy-link {
-  background: rgba(108, 99, 255, 0.12);
+  background: rgba(108, 99, 255, 0.08);
   color: #6c63ff;
 }
 
 .share-buttons .share-btn.copy-link:hover {
-  background: rgba(108, 99, 255, 0.22);
+  background: rgba(108, 99, 255, 0.18);
+  transform: scale(1.02);
 }
 
 .share-buttons .share-btn.refresh {
-  flex: 0.3;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.3);
+  flex: 0.25;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .share-buttons .share-btn.refresh:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  transform: rotate(45deg);
 }
 
 /* ===== LOBBY ACTIONS ===== */
 .lobby-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .lobby-actions .btn-start {
-  padding: 12px;
-  font-size: 15px;
+  padding: 14px;
+  font-size: 16px;
   font-weight: 700;
   background: linear-gradient(135deg, #00b894, #00a381);
   color: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 20px rgba(0, 184, 148, 0.15);
 }
 
 .lobby-actions .btn-start:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 184, 148, 0.25);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 184, 148, 0.3);
 }
 
 .lobby-actions .btn-start:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
   transform: none !important;
+  box-shadow: none;
 }
 
 .lobby-actions .btn-leave {
-  padding: 10px;
+  padding: 11px;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
+  font-weight: 500;
 }
 
 .lobby-actions .btn-leave:hover {
-  background: rgba(231, 76, 60, 0.08);
-  color: #e74c3c;
-  border-color: rgba(231, 76, 60, 0.15);
+  background: rgba(231, 76, 60, 0.06);
+  color: rgba(231, 76, 60, 0.6);
+  border-color: rgba(231, 76, 60, 0.1);
 }
 
 /* ===== WAITING TEXT ===== */
 .waiting-text {
   text-align: center;
-  color: rgba(255, 255, 255, 0.3);
-  padding: 8px 0;
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.25);
+  padding: 10px 0 6px;
+  font-size: 14px;
 }
 
 .waiting-text strong {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
 }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .team-modal {
-    padding: 1.5rem 1.2rem 1.2rem;
+    padding: 1.8rem 1.5rem 1.5rem;
+    border-radius: 20px;
     max-width: 100%;
-    border-radius: 18px;
   }
 
   .team-options {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 12px;
   }
 
   .team-option {
@@ -560,13 +683,22 @@
     font-size: 22px;
   }
 
+  .team-modal .modal-header .icon-wrapper {
+    width: 56px;
+    height: 56px;
+  }
+
+  .team-modal .modal-header .icon-wrapper .icon {
+    font-size: 28px;
+  }
+
   .room-code-display {
-    padding: 8px 14px;
+    padding: 10px 16px;
   }
 
   .room-code-display .code {
     font-size: 18px;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
   }
 
   .share-buttons {
@@ -574,8 +706,8 @@
   }
 
   .share-buttons .share-btn {
-    flex: 1 1 calc(50% - 4px);
-    min-width: 80px;
+    flex: 1 1 calc(50% - 5px);
+    min-width: 70px;
   }
 
   .share-buttons .share-btn.refresh {
@@ -589,12 +721,20 @@
   .join-room-input .btn-secondary {
     width: 100%;
   }
+
+  .team-info .info-row {
+    gap: 8px;
+  }
+
+  .team-info .info-row p {
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 400px) {
   .team-modal {
-    padding: 1rem 0.8rem 0.8rem;
-    border-radius: 14px;
+    padding: 1.2rem 1rem 1rem;
+    border-radius: 16px;
   }
 
   .team-modal .modal-header h2 {
@@ -605,13 +745,13 @@
     font-size: 14px;
   }
 
-  .team-option p {
+  .team-option .opt-desc {
     font-size: 11px;
   }
 
   .room-code-display .code {
     font-size: 15px;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
   }
 
   .player-item {
@@ -620,11 +760,20 @@
   }
 
   .lobby-actions .btn-start {
-    font-size: 13px;
-    padding: 10px;
+    font-size: 14px;
+    padding: 12px;
   }
 
-  .team-info p {
+  .team-info .info-row p {
     font-size: 11px;
+  }
+
+  .room-code-display {
+    padding: 8px 12px;
+  }
+
+  .room-code-display .copy-btn {
+    font-size: 10px;
+    padding: 3px 10px;
   }
 }

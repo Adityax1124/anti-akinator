@@ -236,7 +236,9 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
         {view === 'main' && (
           <>
             <div className="modal-header">
-              <span className="icon">🤝</span>
+              <div className="icon-wrapper">
+                <span className="icon">🤝</span>
+              </div>
               <h2>Team Play</h2>
               <p>Play with friends as a team!</p>
             </div>
@@ -245,7 +247,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
               <div className="team-option">
                 <span className="opt-icon">👑</span>
                 <h3>Create Room</h3>
-                <p>Host and invite friends</p>
+                <p className="opt-desc">Host and invite friends</p>
                 <button 
                   className="btn btn-primary"
                   onClick={handleCreateRoom}
@@ -258,23 +260,25 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
               <div className="team-option">
                 <span className="opt-icon">🔗</span>
                 <h3>Join Room</h3>
-                <p>Enter a room code</p>
-                <div className="join-room-input">
-                  <input
-                    type="text"
-                    placeholder="ANTI-XXXX"
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    maxLength={12}
-                    disabled={loading}
-                  />
-                  <button 
-                    className="btn-secondary"
-                    onClick={handleJoinRoom}
-                    disabled={loading || !joinCode.trim()}
-                  >
-                    Join
-                  </button>
+                <p className="opt-desc">Enter a room code</p>
+                <div className="join-wrapper">
+                  <div className="join-room-input">
+                    <input
+                      type="text"
+                      placeholder="ANTI-XXXX"
+                      value={joinCode}
+                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                      maxLength={12}
+                      disabled={loading}
+                    />
+                    <button 
+                      className="btn-secondary"
+                      onClick={handleJoinRoom}
+                      disabled={loading || !joinCode.trim()}
+                    >
+                      Join
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -282,10 +286,22 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
             {error && <div className="auth-error">{error}</div>}
 
             <div className="team-info">
-              <p>💡 Work together to guess the character</p>
-              <p>🎴 <strong>5 Shards</strong> each if you guess correctly</p>
-              <p>👥 Max <strong>4</strong> players</p>
-              <p>⚡ No streak or leaderboard impact</p>
+              <div className="info-row">
+                <span className="info-icon">💡</span>
+                <p>Work together to guess the character</p>
+              </div>
+              <div className="info-row">
+                <span className="info-icon">🎴</span>
+                <p><strong>5 Shards</strong> each if you guess correctly</p>
+              </div>
+              <div className="info-row">
+                <span className="info-icon">👥</span>
+                <p>Max <strong>4</strong> players</p>
+              </div>
+              <div className="info-row">
+                <span className="info-icon">⚡</span>
+                <p>No streak or leaderboard impact</p>
+              </div>
             </div>
           </>
         )}
