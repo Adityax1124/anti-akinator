@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import ReferralModal from './ReferralModal';
-import FriendModal from './FriendModal'; // ✅ ADDED
+import FriendModal from './FriendModal';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -15,7 +15,7 @@ const Navbar = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
-  const [isFriendModalOpen, setIsFriendModalOpen] = useState(false); // ✅ ADDED
+  const [isFriendModalOpen, setIsFriendModalOpen] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -49,7 +49,6 @@ const Navbar = () => {
     setIsReferralModalOpen(false);
   };
 
-  // ===== FRIEND MODAL HANDLERS =====
   const openFriendModal = () => {
     closeMobileMenu();
     setIsFriendModalOpen(true);
@@ -152,12 +151,14 @@ const Navbar = () => {
           <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`}>
             {isAuthenticated ? (
               <>
-                <Link to="/game" className="nav-link" onClick={closeMobileMenu}>Play</Link>
+                {/* ✅ Play REMOVED, Battle ADDED */}
+                <Link to="/match" className="nav-link battle-btn" onClick={closeMobileMenu}>
+                  ⚔️ Battle
+                </Link>
                 <Link to="/leaderboard" className="nav-link" onClick={closeMobileMenu}>Leaderboard</Link>
                 <Link to="/season-winners" className="nav-link" onClick={closeMobileMenu}>🏆 Winners</Link>
                 <Link to="/shop" className="nav-link" onClick={closeMobileMenu}>🛒 Shop</Link>
                 
-                {/* ===== FRIENDS BUTTON ===== */}
                 <button className="nav-link friends-btn" onClick={openFriendModal}>
                   👥 Friends
                 </button>
@@ -206,13 +207,11 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ===== REFERRAL MODAL ===== */}
       <ReferralModal 
         isOpen={isReferralModalOpen} 
         onClose={closeReferralModal} 
       />
 
-      {/* ===== FRIEND MODAL ===== */}
       <FriendModal 
         isOpen={isFriendModalOpen} 
         onClose={closeFriendModal} 

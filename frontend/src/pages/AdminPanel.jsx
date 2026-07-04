@@ -23,6 +23,7 @@ const AdminPanel = () => {
     image: '',
     description: '',
     crucialHint: '',
+    powerLevel: 25, // ✅ ADDED - Power Level with default 25
     traits: {
       gender: 'Unknown',
       species: 'Human',
@@ -96,7 +97,6 @@ const AdminPanel = () => {
     isLimited: false,
     startDate: '',
     endDate: '',
-    // ===== NEW FIELDS FOR CREATING ITEMS =====
     newBannerName: '',
     newBannerGifUrl: '',
     newPhotoName: '',
@@ -180,6 +180,12 @@ const AdminPanel = () => {
   const handleCharChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    // ✅ HANDLE POWER LEVEL
+    if (name === 'powerLevel') {
+      setCharForm(prev => ({ ...prev, powerLevel: parseFloat(value) || 25 }));
+      return;
+    }
+    
     if (name === 'crucialHint') {
       setCharForm(prev => ({ ...prev, crucialHint: value }));
       return;
@@ -243,6 +249,7 @@ const AdminPanel = () => {
       image: '',
       description: '',
       crucialHint: '',
+      powerLevel: 25,
       traits: {
         gender: 'Unknown',
         species: 'Human',
@@ -272,6 +279,7 @@ const AdminPanel = () => {
       image: char.image || '',
       description: char.description,
       crucialHint: char.crucialHint || '',
+      powerLevel: char.powerLevel || 25,
       traits: {
         gender: char.traits.gender || 'Unknown',
         species: char.traits.species || 'Human',
@@ -581,28 +589,24 @@ const AdminPanel = () => {
     try {
       let itemId = shopForm.itemId;
 
-// ===== IF CREATING NEW BANNER =====
-if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBannerGifUrl) {
-  const bannerData = {
-    name: shopForm.newBannerName.trim(),
-    gifUrl: shopForm.newBannerGifUrl.trim(),
-    description: `Shop item: ${shopForm.newBannerName}`,
-    unlockType: 'shop',              // ✅ 'shop' instead of 'total_guesses'
-    unlockCondition: { totalGuesses: 99999999 },  // ✅ Impossible to achieve
-    category: 'shop',
-    rarity: 'Rare',
-    isActive: true
-  };
-  
-  console.log('📤 Creating banner:', bannerData);
-  
-  const bannerRes = await api.post('/admin/banners', bannerData);
-  itemId = bannerRes.data.banner._id;
-  
-  console.log('✅ Banner created:', itemId);
-}
+      if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBannerGifUrl) {
+        const bannerData = {
+          name: shopForm.newBannerName.trim(),
+          gifUrl: shopForm.newBannerGifUrl.trim(),
+          description: `Shop item: ${shopForm.newBannerName}`,
+          unlockType: 'shop',
+          unlockCondition: { totalGuesses: 99999999 },
+          category: 'shop',
+          rarity: 'Rare',
+          isActive: true
+        };
+        
+        console.log('📤 Creating banner:', bannerData);
+        const bannerRes = await api.post('/admin/banners', bannerData);
+        itemId = bannerRes.data.banner._id;
+        console.log('✅ Banner created:', itemId);
+      }
 
-      // ===== IF CREATING NEW PROFILE PHOTO =====
       if (shopForm.itemType === 'profilePhoto' && shopForm.newPhotoName && shopForm.newPhotoImageUrl) {
         const photoRes = await api.post('/admin/profile-photos', {
           name: shopForm.newPhotoName,
@@ -748,7 +752,6 @@ if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBann
             <span className="tab-icon">📸</span> Photos
             <span className="tab-badge">{photos.length}</span>
           </button>
-          {/* ===== SHOP TAB ===== */}
           <button 
             className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
             onClick={() => setActiveTab('shop')}
@@ -823,6 +826,26 @@ if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBann
                   />
                 </div>
               </div>
+
+              {/* ✅ POWER LEVEL INPUT - NEW */}
+              <div className="form-group">
+                <label>⚡ Power Level (1-50) *</label>
+                <div className="power-level-input">
+                  <input 
+                    type="range" 
+                    name="powerLevel" 
+                    className="power-slider"
+                    min="0.5" 
+                    max="50" 
+                    step="0.5" 
+                    value={charForm.powerLevel} 
+                    onChange={handleCharChange}
+                  />
+                  <span className="power-value">{charForm.powerLevel}</span>
+                </div>
+                <small className="form-hint">Higher power = more valuable card in battles</small>
+              </div>
+
               <div className="form-group">
                 <label>Image URL</label>
                 <input 
@@ -984,7 +1007,8 @@ if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBann
                     <div className="char-info">
                       <h3>{char.name}</h3>
                       <p className="char-anime">{char.anime}</p>
-                      <p className="char-desc">{char.description.substring(0, 80)}...</p>
+                      <p className="char-power">⚡ Power: {char.powerLevel || 25}</p>
+                      <p className="char-desc">{char.description?.substring(0, 80)}...</p>
                       <div className="char-actions">
                         <button className="btn btn-secondary btn-sm" onClick={() => editCharacter(char)}>✏️ Edit</button>
                         <button className="btn btn-danger btn-sm" onClick={() => deleteCharacter(char._id)}>🗑️</button>
@@ -1486,9 +1510,7 @@ if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBann
                 </div>
               </div>
 
-              {/* ===== DYNAMIC FIELDS BASED ON ITEM TYPE ===== */}
               {shopForm.itemType === 'banner' ? (
-                // ===== BANNER FIELDS =====
                 <>
                   <div className="form-group">
                     <label>Select Existing Banner (OR add new below)</label>
@@ -1529,7 +1551,6 @@ if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBann
                   </div>
                 </>
               ) : (
-                // ===== PROFILE PHOTO FIELDS =====
                 <>
                   <div className="form-group">
                     <label>Select Existing Profile Photo (OR add new below)</label>
@@ -1565,7 +1586,7 @@ if (shopForm.itemType === 'banner' && shopForm.newBannerName && shopForm.newBann
                         onChange={handleShopChange} 
                         placeholder="https://example.com/image.jpg"
                       />
-                      <small className="form-hint">Must be a valid image URL (.jpg, .png, .webp, etc.)</small>
+                      <small className="form-hint">Must be a valid image URL</small>
                     </div>
                   </div>
                 </>

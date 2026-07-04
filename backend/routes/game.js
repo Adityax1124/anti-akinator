@@ -55,7 +55,6 @@ const validateGuess = [
 // ===================== START GAME =====================
 router.post('/start', async (req, res) => {
   try {
-    // Get total characters count
     const characterCount = await Character.countDocuments();
     
     if (characterCount === 0) {
@@ -65,7 +64,6 @@ router.post('/start', async (req, res) => {
       });
     }
 
-    // Randomly select a character
     const randomIndex = Math.floor(Math.random() * characterCount);
     const randomCharacter = await Character.findOne().skip(randomIndex);
 
@@ -76,20 +74,17 @@ router.post('/start', async (req, res) => {
       });
     }
 
-    // Check if user already has an active game
     const activeGame = await GameSession.findOne({
       user: req.user._id,
       status: 'active'
     });
 
-    // If active game exists, end it first (cleanup)
     if (activeGame) {
       activeGame.status = 'abandoned';
       activeGame.endedAt = new Date();
       await activeGame.save();
     }
 
-    // Create new game
     const game = new GameSession({
       user: req.user._id,
       character: randomCharacter._id,
@@ -99,7 +94,6 @@ router.post('/start', async (req, res) => {
 
     await game.save();
 
-    // Log (sanitized)
     console.log(`🎮 Game started: ${game._id} for user ${req.user.username}`);
 
     res.json({
@@ -124,7 +118,6 @@ router.post('/start', async (req, res) => {
 // ===================== ASK QUESTION =====================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -137,7 +130,6 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
     const { gameId, question } = req.body;
     const sanitizedQuestion = sanitizeInput(question);
 
-    // Find game
     const game = await GameSession.findById(gameId).populate('character');
     
     if (!game) {
@@ -154,7 +146,6 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
       });
     }
 
-    // Verify ownership
     if (game.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -162,7 +153,6 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
       });
     }
 
-    // Check question limit
     if (game.totalQuestions >= 10) {
       return res.status(400).json({
         success: false,
@@ -173,7 +163,6 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
 
     const character = game.character;
 
-    // ===== PREPARE CONTEXT FOR AI (Sanitized) =====
     const context = `
 IMPORTANT CHARACTER DATA:
 Anime: ${character.anime}
@@ -191,8 +180,7 @@ Female: ${character.attributes?.isFemale ? 'Yes' : 'No'}
 
 USER QUESTION: "${sanitizedQuestion}"`;
 
-// ===== ULTRA STRICT SYSTEM PROMPT - 100% ACCURATE =====
-const systemPrompt = `
+    const systemPrompt = `
 You are a STRICT answer machine. You MUST follow these rules EXACTLY. Do NOT think, guess, assume, or infer.
 
 ===== YOUR ONLY ALLOWED RESPONSES =====
@@ -300,7 +288,6 @@ The anime name is in the data. USE IT to answer all anime-related questions. DO 
       { role: "user", content: context }
     ];
 
-    // ===== CALL AI WITH AUTO-FAILOVER =====
     let answer = "Maybe";
     let usedProvider = 'none';
 
@@ -317,17 +304,14 @@ The anime name is in the data. USE IT to answer all anime-related questions. DO 
       });
     }
 
-    // ===== CLEAN UP ANSWER (SUPPORTS ANIME NAMES) =====
     const validAnswers = ['Yes', 'No', 'Maybe', 'Very likely', 'Unlikely'];
 
-    // Check if answer is an anime name (not Yes/No/Maybe)
     const isAnimeName = !validAnswers.some(a => 
       answer.toLowerCase().includes(a.toLowerCase())
     );
 
     let finalAnswer;
     if (isAnimeName) {
-      // If it's not Yes/No/Maybe, treat it as an anime name
       finalAnswer = answer.trim();
     } else {
       const matchedAnswer = validAnswers.find(a => 
@@ -338,7 +322,6 @@ The anime name is in the data. USE IT to answer all anime-related questions. DO 
 
     console.log(`📝 Final answer: "${finalAnswer}"`);
 
-    // Save question (sanitized)
     game.questions.push({ 
       question: sanitizedQuestion, 
       answer: finalAnswer, 
@@ -347,7 +330,6 @@ The anime name is in the data. USE IT to answer all anime-related questions. DO 
     game.totalQuestions += 1;
     await game.save();
 
-    // Update user stats
     await User.findByIdAndUpdate(req.user._id, {
       $inc: { 'stats.totalQuestions': 1 }
     });
@@ -376,7 +358,6 @@ The anime name is in the data. USE IT to answer all anime-related questions. DO 
 // ===================== USE HINT =====================
 router.post('/hint', validateGameId, async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -413,7 +394,6 @@ router.post('/hint', validateGameId, async (req, res) => {
 
     const user = await User.findById(req.user._id);
 
-    // Check if hint already used
     if (game.hintUsed) {
       return res.status(400).json({
         success: false,
@@ -421,7 +401,6 @@ router.post('/hint', validateGameId, async (req, res) => {
       });
     }
 
-    // Check shards (50 required)
     if (user.shards < 50) {
       return res.status(400).json({
         success: false,
@@ -430,7 +409,6 @@ router.post('/hint', validateGameId, async (req, res) => {
       });
     }
 
-    // Deduct shards
     user.shards -= 50;
     game.hintUsed = true;
 
@@ -439,7 +417,6 @@ router.post('/hint', validateGameId, async (req, res) => {
 
     const hint = game.character.crucialHint || 'No hint available for this character.';
 
-    // Log (sanitized)
     console.log(`💡 Hint used: ${gameId} by ${user.username}`);
 
     res.json({
@@ -465,7 +442,6 @@ router.post('/hint', validateGameId, async (req, res) => {
 // ===================== MAKE GUESS =====================
 router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -478,7 +454,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
     const { gameId, guess } = req.body;
     const sanitizedGuess = sanitizeInput(guess);
 
-    // Log (sanitized - only gameId, not the guess)
     console.log(`🔍 Guess attempt: gameId=${gameId}`);
 
     const game = await GameSession.findById(gameId).populate('character');
@@ -507,7 +482,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       });
     }
 
-    // Check if game has ended
     const wrongGuesses = game.guesses ? game.guesses.filter(g => !g.isCorrect) : [];
     if (wrongGuesses.length >= 3) {
       return res.status(400).json({
@@ -516,7 +490,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       });
     }
 
-    // Flexible matching (sanitized)
     const normalizedGuess = normalize(sanitizedGuess);
     const normalizedCharName = normalize(game.character.name);
 
@@ -535,7 +508,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       isCorrect = true;
     }
 
-    // Save guess (sanitized)
     game.guesses.push({ guess: sanitizedGuess, isCorrect });
 
     if (isCorrect) {
@@ -547,13 +519,11 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
 
       const user = await User.findById(req.user._id);
       
-      // Update lifetime stats
       user.stats.gamesPlayed += 1;
       user.stats.gamesWon += 1;
       user.stats.winStreak += 1;
       user.totalGuesses += 1;
 
-      // ===== UPDATE SEASON STATS DIRECTLY (no reset call) =====
       const currentSeason = getCurrentSeason();
       
       if (!user.seasonStats) {
@@ -570,19 +540,24 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       user.seasonStats.seasonPlayed += 1;
       user.seasonStats.seasonStreak += 1;
 
-      // Track anime-specific guesses (sanitized)
       const anime = game.character.anime;
       const currentAnimeGuesses = user.animeGuesses?.get(anime) || 0;
       user.animeGuesses.set(anime, currentAnimeGuesses + 1);
 
-      // Shards reward
       user.shards += 10;
 
-      // =============================================
-      // ===== ✅ REFERRAL REWARD CHECK =====
-      // =============================================
-      // Check if this user was referred and this is their first win
-      const isFirstWin = user.stats.gamesWon === 1; // After incrementing above
+      // ✅ NEW: Add character to user's card collection
+      const character = game.character;
+      const cardAdded = user.addCard(character);
+      
+      if (cardAdded) {
+        console.log(`🃏 Card added to ${user.username}'s collection: ${character.name} (Power: ${character.powerLevel})`);
+      } else {
+        console.log(`ℹ️ Card already in collection: ${character.name}`);
+      }
+
+      // ===== REFERRAL REWARD CHECK =====
+      const isFirstWin = user.stats.gamesWon === 1;
 
       if (user.referredBy && isFirstWin) {
         const referral = await Referral.findOne({
@@ -591,20 +566,16 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         });
 
         if (referral && !referral.referrerRewards.firstWin) {
-          // Get the referrer
           const referrer = await User.findById(referral.referrer);
           
           if (referrer) {
-            // Give 50 Shards to referrer
             referrer.shards += 50;
             referrer.referralStats.shardsEarned = (referrer.referralStats?.shardsEarned || 0) + 50;
             referrer.referralStats.completedReferrals = (referrer.referralStats?.completedReferrals || 0) + 1;
             await referrer.save();
 
-            // Give 50 Shards to friend (welcome bonus)
             user.shards += 50;
 
-            // Mark referral as completed
             referral.referrerRewards.firstWin = true;
             referral.referredUserRewards.welcomeBonus = true;
             referral.status = 'completed';
@@ -617,7 +588,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         }
       }
 
-      // Check achievements
       const unlockedAchievements = await checkAndUnlockAchievements(user._id);
       const photoUnlock = await unlockProfilePhoto(user._id, game.character._id);
 
@@ -640,10 +610,13 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         character: game.character.name,
         anime: game.character.anime,
         image: game.character.image || '',
+        powerLevel: game.character.powerLevel || 25,
         message: `🎉 Correct! It was ${game.character.name}!`,
         questionsUsed: game.totalQuestions,
         unlockedItems: allUnlocked,
-        shards: user.shards
+        shards: user.shards,
+        cardAdded: cardAdded,
+        cardCount: user.cards.length
       });
 
     } else {
@@ -679,6 +652,7 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
           character: game.character.name,
           anime: game.character.anime,
           image: game.character.image || '',
+          powerLevel: game.character.powerLevel || 25,
           message: `❌ Game over! The character was ${game.character.name}.`
         });
       } else {
@@ -708,7 +682,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
 // ===================== GIVE UP =====================
 router.post('/giveup', validateGameId, async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -772,6 +745,7 @@ router.post('/giveup', validateGameId, async (req, res) => {
       character: game.character.name,
       anime: game.character.anime,
       image: game.character.image || '',
+      powerLevel: game.character.powerLevel || 25,
       message: `You gave up! The character was ${game.character.name} from ${game.character.anime}.`
     });
 
@@ -792,7 +766,7 @@ router.post('/giveup', validateGameId, async (req, res) => {
 router.get('/history', async (req, res) => {
   try {
     const games = await GameSession.find({ user: req.user._id })
-      .populate('character', 'name anime image')
+      .populate('character', 'name anime image powerLevel')
       .sort({ startedAt: -1 })
       .limit(20);
 
@@ -800,6 +774,7 @@ router.get('/history', async (req, res) => {
       id: game._id,
       character: game.character?.name || 'Unknown',
       anime: game.character?.anime || 'Unknown',
+      powerLevel: game.character?.powerLevel || 25,
       status: game.status,
       questions: game.totalQuestions || game.questions.length,
       startedAt: game.startedAt,

@@ -596,3 +596,41 @@
     font-size: 14px;
   }
 }
+
+/* ===== BATTLE BUTTON ===== */
+.battle-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important;
+  color: #fff !important;
+  border-radius: 10px;
+  padding: 6px 16px;
+  height: 36px;
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.battle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(238, 90, 36, 0.4);
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important;
+}
+
+.battle-btn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .battle-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    height: auto;
+    font-size: 14px;
+  }
+}

@@ -7,7 +7,7 @@ const GameSession = require('../models/GameSession');
 const Banner = require('../models/Banner');
 const Title = require('../models/Title');
 const ProfilePhoto = require('../models/ProfilePhoto');
-const ShopItem = require('../models/ShopItem'); // ✅ ADDED
+const ShopItem = require('../models/ShopItem');
 
 // ===== HELPER: Sanitize input =====
 function sanitizeInput(str) {
@@ -52,7 +52,7 @@ router.post('/reset-season', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// CHARACTER CRUD
+// CHARACTER CRUD (WITH POWER LEVEL)
 // ============================================================
 router.get('/characters', adminMiddleware, async (req, res) => {
   try {
@@ -81,13 +81,14 @@ router.post('/characters', adminMiddleware, async (req, res) => {
       name: sanitizeInput(req.body.name),
       anime: sanitizeInput(req.body.anime),
       description: sanitizeInput(req.body.description),
+      powerLevel: parseFloat(req.body.powerLevel) || 25, // ✅ ADDED
       createdBy: req.user._id
     };
 
     const character = new Character(characterData);
     await character.save();
 
-    console.log(`📝 Admin ${req.user.username} created character: ${character.name}`);
+    console.log(`📝 Admin ${req.user.username} created character: ${character.name} (Power: ${character.powerLevel})`);
 
     res.status(201).json({ 
       success: true, 
@@ -109,6 +110,7 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.anime) updateData.anime = sanitizeInput(updateData.anime);
     if (updateData.description) updateData.description = sanitizeInput(updateData.description);
+    if (updateData.powerLevel) updateData.powerLevel = Number(updateData.powerLevel); // ✅ ADDED
 
     const character = await Character.findByIdAndUpdate(
       req.params.id,
@@ -182,7 +184,6 @@ router.post('/banners', adminMiddleware, async (req, res) => {
   try {
     console.log('📥 Creating banner with data:', JSON.stringify(req.body, null, 2));
 
-    // ===== CHECK FOR DUPLICATE NAME =====
     const existingBanner = await Banner.findOne({ 
       name: { $regex: new RegExp(`^${req.body.name}$`, 'i') } 
     });
@@ -195,10 +196,8 @@ router.post('/banners', adminMiddleware, async (req, res) => {
       });
     }
 
-    // ===== ENSURE UNLOCK CONDITION IS PROPER =====
     let unlockCondition = req.body.unlockCondition || { totalGuesses: 1 };
     
-    // If unlockType is total_guesses, ensure totalGuesses is a number
     if (req.body.unlockType === 'total_guesses') {
       unlockCondition = {
         totalGuesses: Number(unlockCondition.totalGuesses) || 1
@@ -232,7 +231,6 @@ router.post('/banners', adminMiddleware, async (req, res) => {
     console.error('❌ Admin create banner error:', error.message);
     console.error('❌ Full error:', error);
     
-    // ===== SEND DETAILED ERROR =====
     if (error.name === 'ValidationError') {
       const errors = {};
       Object.keys(error.errors).forEach(key => {
@@ -259,6 +257,7 @@ router.post('/banners', adminMiddleware, async (req, res) => {
     });
   }
 });
+
 // ============================================================
 // TITLE CRUD
 // ============================================================
@@ -444,10 +443,8 @@ router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// SHOP ITEMS CRUD (ADMIN ONLY) - ✅ NEW
+// SHOP ITEMS CRUD (ADMIN ONLY)
 // ============================================================
-
-// ===== GET ALL SHOP ITEMS =====
 router.get('/shop-items', adminMiddleware, async (req, res) => {
   try {
     const shopItems = await ShopItem.find()
@@ -467,12 +464,10 @@ router.get('/shop-items', adminMiddleware, async (req, res) => {
   }
 });
 
-// ===== ADD ITEM TO SHOP =====
 router.post('/shop-items', adminMiddleware, async (req, res) => {
   try {
     const { itemType, itemId, price, isActive, isLimited, startDate, endDate } = req.body;
 
-    // Validate
     if (!itemType || !itemId || !price) {
       return res.status(400).json({
         success: false,
@@ -480,7 +475,6 @@ router.post('/shop-items', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Check if item already exists in shop
     const existing = await ShopItem.findOne({ itemId });
     if (existing) {
       return res.status(400).json({
@@ -517,7 +511,6 @@ router.post('/shop-items', adminMiddleware, async (req, res) => {
   }
 });
 
-// ===== UPDATE SHOP ITEM =====
 router.put('/shop-items/:id', adminMiddleware, async (req, res) => {
   try {
     const { price, isActive, isLimited, startDate, endDate } = req.body;
@@ -557,7 +550,6 @@ router.put('/shop-items/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// ===== DELETE SHOP ITEM =====
 router.delete('/shop-items/:id', adminMiddleware, async (req, res) => {
   try {
     const shopItem = await ShopItem.findByIdAndDelete(req.params.id);

@@ -17,6 +17,7 @@ const shopRoutes = require('./routes/shop');
 const referralRoutes = require('./routes/referral');
 const teamRoutes = require('./routes/team');
 const friendRoutes = require('./routes/friend');
+const matchRoutes = require('./routes/match');
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 
@@ -29,9 +30,13 @@ const io = socketIO(server, {
   }
 });
 
-// ✅ CRITICAL FIX: Pass io instance to team routes
+// ✅ Pass io instance to team routes
 teamRoutes.setIO(io);
 console.log('🔌 Socket.io instance passed to team routes');
+
+// ✅ CRITICAL FIX: Pass io instance to match routes
+matchRoutes.setIO(io);
+console.log('🔌 Socket.io instance passed to match routes');
 
 // ============================================================
 // TRUST PROXY (Secure for Railway/Vercel)
@@ -290,7 +295,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE & INVITES
+// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE, INVITES & MATCHES
 // ============================================================
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
@@ -303,19 +308,127 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Join a team room
-  socket.on('join-team-room', (roomCode) => {
-    if (roomCode && roomCode !== 'undefined') {
-      socket.join(roomCode);
-      console.log(`👤 Socket ${socket.id} joined room: ${roomCode}`);
+  // ===== MATCH SOCKET EVENTS =====
+  
+  // ✅ Join match room
+  socket.on('join-match-room', (matchCode) => {
+    if (matchCode && matchCode !== 'undefined') {
+      socket.join(matchCode);
+      console.log(`⚔️ Socket ${socket.id} joined match room: ${matchCode}`);
+      
+      socket.to(matchCode).emit('player-joined-match', {
+        message: 'A player has joined the match',
+        timestamp: new Date().toISOString()
+      });
     }
   });
 
-  // Leave a team room
+  // ✅ Leave match room
+  socket.on('leave-match-room', (matchCode) => {
+    if (matchCode && matchCode !== 'undefined') {
+      socket.leave(matchCode);
+      console.log(`⚔️ Socket ${socket.id} left match room: ${matchCode}`);
+      
+      socket.to(matchCode).emit('player-left-match', {
+        message: 'A player has left the match',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // ✅ Player selected card
+  socket.on('match-card-selected', (data) => {
+    const { matchCode, playerId, cardIndex } = data;
+    if (matchCode && matchCode !== 'undefined') {
+      io.to(matchCode).emit('match-card-selected', {
+        playerId,
+        cardIndex,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`⚔️ Player ${playerId} selected card ${cardIndex} in match ${matchCode}`);
+    }
+  });
+
+  // ✅ Player confirmed card
+  socket.on('match-card-confirmed', (data) => {
+    const { matchCode, playerId, cardIndex } = data;
+    if (matchCode && matchCode !== 'undefined') {
+      io.to(matchCode).emit('match-card-confirmed', {
+        playerId,
+        cardIndex,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`✅ Player ${playerId} confirmed card ${cardIndex} in match ${matchCode}`);
+    }
+  });
+
+  // ✅ Round revealed
+  socket.on('round-revealed', (data) => {
+    const { matchCode, round, winner, player1Card, player2Card } = data;
+    if (matchCode && matchCode !== 'undefined') {
+      io.to(matchCode).emit('round-revealed', {
+        round,
+        winner,
+        player1Card,
+        player2Card,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`🎯 Round ${round} revealed in match ${matchCode}, winner: ${winner}`);
+    }
+  });
+
+  // ✅ Match ended
+  socket.on('match-ended', (data) => {
+    const { matchCode, winner, stolenCard } = data;
+    if (matchCode && matchCode !== 'undefined') {
+      io.to(matchCode).emit('match-ended', {
+        winner,
+        stolenCard,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`🏆 Match ${matchCode} ended, winner: ${winner}`);
+    }
+  });
+
+  // ✅ Chat message
+  socket.on('match-chat-message', (data) => {
+    const { matchCode, username, message, userId } = data;
+    if (matchCode && matchCode !== 'undefined') {
+      io.to(matchCode).emit('match-chat-message', {
+        username,
+        message,
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`💬 Chat in ${matchCode}: ${username}: ${message}`);
+    }
+  });
+
+  // ✅ Selection timeout
+  socket.on('match-selection-timeout', (data) => {
+    const { matchCode, playerId } = data;
+    if (matchCode && matchCode !== 'undefined') {
+      io.to(matchCode).emit('match-selection-timeout', {
+        playerId,
+        message: 'Selection time ran out! Auto-confirming...',
+        timestamp: new Date().toISOString()
+      });
+      console.log(`⏰ Selection timeout for player ${playerId} in match ${matchCode}`);
+    }
+  });
+
+  // ===== TEAM SOCKET EVENTS =====
+  socket.on('join-team-room', (roomCode) => {
+    if (roomCode && roomCode !== 'undefined') {
+      socket.join(roomCode);
+      console.log(`👤 Socket ${socket.id} joined team room: ${roomCode}`);
+    }
+  });
+
   socket.on('leave-team-room', (roomCode) => {
     if (roomCode && roomCode !== 'undefined') {
       socket.leave(roomCode);
-      console.log(`👋 Socket ${socket.id} left room: ${roomCode}`);
+      console.log(`👋 Socket ${socket.id} left team room: ${roomCode}`);
     }
   });
 
@@ -360,7 +473,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Player joined notification
   socket.on('player-joined', (data) => {
     const { roomCode, player } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -369,7 +481,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Game started notification
   socket.on('game-started', (data) => {
     const { roomCode } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -378,7 +489,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Player left notification
   socket.on('player-left', (data) => {
     const { roomCode, player } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -387,7 +497,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Disconnect
   socket.on('disconnect', () => {
     console.log(`🔌 Socket disconnected: ${socket.id}`);
   });
@@ -405,10 +514,11 @@ app.use('/api/shop', authMiddleware, shopRoutes);
 app.use('/api/referral', authMiddleware, referralRoutes);
 app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/friend', authMiddleware, friendRoutes);
+app.use('/api/match', authMiddleware, matchRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 
 // ============================================================
-// AGORA TOKEN GENERATOR (FIXED - Unique UID per user)
+// AGORA TOKEN GENERATOR
 // ============================================================
 app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
@@ -559,4 +669,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`📡 API URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
   console.log(`🔗 Healthcheck: /api/health`);
   console.log(`🔌 Socket.io is ready`);
+  console.log(`⚔️ Match routes loaded with socket events`);
 });

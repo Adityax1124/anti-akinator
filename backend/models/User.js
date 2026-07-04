@@ -16,7 +16,6 @@ function sanitizeInput(str) {
 }
 
 // ===== ✅ FIX: Use static default season =====
-// This ensures all users start with the same season
 const DEFAULT_SEASON = getCurrentSeason();
 
 const userSchema = new mongoose.Schema({
@@ -57,27 +56,26 @@ const userSchema = new mongoose.Schema({
     totalQuestions: { type: Number, default: 0, min: 0 },
     winStreak: { type: Number, default: 0, min: 0 }
   },
-  // ===== SEASON STATS (FIXED) =====
-  // ✅ Use static default instead of dynamic function
+  // ===== SEASON STATS =====
   seasonStats: {
     currentSeason: { 
       type: Number, 
-      default: DEFAULT_SEASON,  // ✅ STATIC default
+      default: DEFAULT_SEASON,
       min: 1 
     },
     seasonWins: { type: Number, default: 0, min: 0 },
     seasonPlayed: { type: Number, default: 0, min: 0 },
     seasonStreak: { type: Number, default: 0, min: 0 }
   },
-  // ===== SEASON HISTORY (FIXED - more detailed) =====
+  // ===== SEASON HISTORY =====
   seasonHistory: [{
     season: { type: Number, required: true, min: 1 },
     wins: { type: Number, default: 0, min: 0 },
     streak: { type: Number, default: 0, min: 0 },
-    played: { type: Number, default: 0, min: 0 },  // ✅ NEW: Track games played that season
+    played: { type: Number, default: 0, min: 0 },
     rank: { type: Number, default: null, min: 1 },
     isWinner: { type: Boolean, default: false },
-    endedAt: { type: Date, default: Date.now }  // ✅ NEW: When season ended
+    endedAt: { type: Date, default: Date.now }
   }],
   // ===== SHARDS =====
   shards: {
@@ -85,7 +83,7 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
-  // ===== PURCHASED ITEMS (SHOP SYSTEM) =====
+  // ===== PURCHASED ITEMS =====
   purchasedItems: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: 'ShopItem',
@@ -178,6 +176,57 @@ const userSchema = new mongoose.Schema({
   },
 
   // =============================================
+  // ===== 🃏 CARD COLLECTION (For Card Battles) =====
+  // =============================================
+  cards: [{
+    characterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Character',
+      required: true
+    },
+    characterName: {
+      type: String,
+      required: true
+    },
+    powerLevel: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 50
+    },
+    image: {
+      type: String,
+      default: ''
+    },
+    unlockedAt: {
+      type: Date,
+      default: Date.now
+    },
+    // Track if this card is from stealing
+    stolenFrom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    stolenAt: {
+      type: Date,
+      default: null
+    }
+  }],
+
+  // =============================================
+  // ===== 🏆 MATCH STATS =====
+  // =============================================
+  matchStats: {
+    matchesPlayed: { type: Number, default: 0 },
+    matchesWon: { type: Number, default: 0 },
+    matchesLost: { type: Number, default: 0 },
+    cardsStolen: { type: Number, default: 0 },
+    cardsLost: { type: Number, default: 0 },
+    totalRoundsWon: { type: Number, default: 0 }
+  },
+
+  // =============================================
   // ===== 🔗 REFERRAL SYSTEM =====
   // =============================================
   referralCode: {
@@ -203,7 +252,7 @@ const userSchema = new mongoose.Schema({
   },
 
   // =============================================
-  // ===== 🛡️ DEVICE FINGERPRINT (Anti-Spam) =====
+  // ===== 🛡️ DEVICE FINGERPRINT =====
   // =============================================
   deviceFingerprint: {
     type: String,
@@ -239,7 +288,6 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  // ===== CACHE BUSTING =====
   updatedAt: {
     type: Date,
     default: Date.now
@@ -279,11 +327,12 @@ userSchema.index({ 'seasonStats.seasonWins': -1 });
 userSchema.index({ 'seasonStats.seasonStreak': -1 });
 userSchema.index({ 'seasonStats.seasonPlayed': -1 });
 userSchema.index({ 'seasonHistory.season': -1 });
-// ===== REFERRAL INDEXES =====
 userSchema.index({ referralCode: 1 });
 userSchema.index({ referredBy: 1 });
-// ===== DEVICE FINGERPRINT INDEX =====
 userSchema.index({ deviceFingerprint: 1 });
+// ✅ NEW: Card indexes
+userSchema.index({ 'cards.characterId': 1 });
+userSchema.index({ 'cards.powerLevel': -1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -308,7 +357,6 @@ userSchema.pre('save', function(next) {
     this.email = this.email.toLowerCase().trim();
   }
   
-  // ===== ✅ FIX: Ensure seasonStats.currentSeason is set =====
   if (!this.seasonStats) {
     this.seasonStats = {
       currentSeason: DEFAULT_SEASON,
@@ -320,7 +368,6 @@ userSchema.pre('save', function(next) {
     this.seasonStats.currentSeason = DEFAULT_SEASON;
   }
   
-  // ===== UPDATE UPDATEDAT =====
   this.updatedAt = new Date();
   next();
 });
@@ -348,6 +395,49 @@ userSchema.methods.resetFailedAttempts = async function() {
   this.lockedUntil = null;
   this.lastLogin = new Date();
   await this.save();
+};
+
+// ===== CARD COLLECTION METHODS =====
+userSchema.methods.addCard = function(character) {
+  // Check if card already exists
+  const exists = this.cards.some(c => 
+    c.characterId.toString() === character._id.toString()
+  );
+  
+  if (exists) return false;
+  
+  this.cards.push({
+    characterId: character._id,
+    characterName: character.name,
+    powerLevel: character.powerLevel || 25,
+    image: character.image || '',
+    unlockedAt: new Date()
+  });
+  
+  return true;
+};
+
+userSchema.methods.removeCard = function(characterId) {
+  const index = this.cards.findIndex(c => 
+    c.characterId.toString() === characterId.toString()
+  );
+  
+  if (index === -1) return false;
+  
+  this.cards.splice(index, 1);
+  return true;
+};
+
+userSchema.methods.getCardById = function(characterId) {
+  return this.cards.find(c => 
+    c.characterId.toString() === characterId.toString()
+  );
+};
+
+userSchema.methods.getTopCards = function(limit = 10) {
+  return this.cards
+    .sort((a, b) => b.powerLevel - a.powerLevel)
+    .slice(0, limit);
 };
 
 // ===== REFERRAL METHODS =====
@@ -379,12 +469,10 @@ userSchema.statics.findByUsernameOrEmail = function(identifier) {
   });
 };
 
-// ===== ✅ NEW: Get users by season =====
 userSchema.statics.findBySeason = function(season) {
   return this.find({ 'seasonStats.currentSeason': season });
 };
 
-// ===== ✅ NEW: Get season leaderboard =====
 userSchema.statics.getSeasonLeaderboard = function(season, limit = 50) {
   return this.find({ 'seasonStats.currentSeason': season })
     .select('username seasonStats shards equipped.profilePhoto purchasedItems')
@@ -397,12 +485,10 @@ userSchema.statics.getSeasonLeaderboard = function(season, limit = 50) {
     .limit(limit);
 };
 
-// ===== ✅ NEW: Find by referral code =====
 userSchema.statics.findByReferralCode = function(code) {
   return this.findOne({ referralCode: code.toUpperCase().trim() });
 };
 
-// ===== ✅ NEW: Get top referrers =====
 userSchema.statics.getTopReferrers = function(limit = 10) {
   return this.find({
     'referralStats.totalReferrals': { $gt: 0 }
@@ -415,12 +501,10 @@ userSchema.statics.getTopReferrers = function(limit = 10) {
   .limit(limit);
 };
 
-// ===== ✅ NEW: Find by device fingerprint =====
 userSchema.statics.findByDeviceFingerprint = function(fingerprint) {
   return this.findOne({ deviceFingerprint: fingerprint });
 };
 
-// ===== ✅ NEW: Check if device is already registered =====
 userSchema.statics.isDeviceRegistered = async function(fingerprint) {
   if (!fingerprint) return false;
   const user = await this.findOne({ deviceFingerprint: fingerprint });

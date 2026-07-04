@@ -536,7 +536,7 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
       username: { $regex: sanitizedQuery, $options: 'i' },
       _id: { $ne: req.user._id }
     })
-    .select('_id username stats shards equipped.profilePhoto') // ✅ Include _id
+    .select('_id username stats shards equipped.profilePhoto')
     .populate('equipped.profilePhoto', 'imageUrl')
     .limit(10);
 
@@ -545,7 +545,7 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
     res.setHeader('Expires', '0');
 
     const sanitizedUsers = users.map(user => ({
-      _id: user._id, // ✅ Now included
+      _id: user._id,
       username: user.username,
       stats: user.stats,
       shards: user.shards,
@@ -562,6 +562,48 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error searching users'
+    });
+  }
+});
+
+// ===================== 🃏 GET USER CARDS =====================
+router.get('/cards', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const cards = user.cards || [];
+    
+    // Sort by power level (highest first)
+    const sortedCards = cards.sort((a, b) => b.powerLevel - a.powerLevel);
+    
+    // Get character details for each card
+    const cardsWithDetails = sortedCards.map(card => ({
+      characterId: card.characterId,
+      characterName: card.characterName,
+      powerLevel: card.powerLevel,
+      image: card.image || '',
+      unlockedAt: card.unlockedAt,
+      stolenFrom: card.stolenFrom,
+      stolenAt: card.stolenAt
+    }));
+
+    res.json({
+      success: true,
+      cards: cardsWithDetails,
+      count: cardsWithDetails.length  // ✅ COUNT ADDED
+    });
+  } catch (error) {
+    console.error('Get cards error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch cards'
     });
   }
 });

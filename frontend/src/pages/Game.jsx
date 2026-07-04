@@ -45,11 +45,11 @@ const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) 
         amount: amount,
         currency: currency,
         name: 'Anti-Akinator',
-        description: `Buy ${selectedPackage.shards} Shards (${selectedPackage.hints} Hints)`,
+        description: `Buy ${selectedPackage.shards} 🎴 Shards (${selectedPackage.hints} Hints)`,
         order_id: orderId,
         handler: async function (paymentResponse) {
           setLoading(false);
-          setSuccess(`✅ Successfully purchased ${selectedPackage.shards} Shards!`);
+          setSuccess(`✅ Successfully purchased ${selectedPackage.shards} 🎴 Shards!`);
 
           try {
             await api.post('/payment/verify', {
@@ -100,7 +100,7 @@ const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
-        <h2>💎 Buy Shards</h2>
+        <h2>🎴 Buy Shards</h2>
         <p className="modal-subtitle">Current Shards: <strong>{currentShards}</strong></p>
         
         <div className="shard-packages">
@@ -126,7 +126,7 @@ const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) 
           onClick={handlePurchase}
           disabled={!selectedPackage || loading}
         >
-          {loading ? 'Processing...' : `Buy ${selectedPackage?.shards || ''} Shards`}
+          {loading ? 'Processing...' : `Buy ${selectedPackage?.shards || ''} 🎴 Shards`}
         </button>
 
         <p className="modal-footer">🔒 Secure payment via Razorpay</p>
@@ -146,6 +146,7 @@ const Game = () => {
     remainingQuestions: 10,
     character: null,
     characterImage: null,
+    powerLevel: null,
     loading: false
   });
   const [question, setQuestion] = useState('');
@@ -157,22 +158,18 @@ const Game = () => {
   const [hintUsed, setHintUsed] = useState(false);
   const [hintText, setHintText] = useState('');
   const [shards, setShards] = useState(0);
-  const messagesEndRef = useRef(null); // ← ADD THIS REF
+  const [cardNotification, setCardNotification] = useState(null);
+  const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   // ===== Buy Shards Modal State =====
   const [isBuyShardsOpen, setIsBuyShardsOpen] = useState(false);
   
-  // Track if game has already ended
   const hasEnded = useRef(false);
-  // Track if user has been warned
   const hasWarned = useRef(false);
-  // Track if user is navigating away
   const isNavigating = useRef(false);
-  // Store previous path to detect navigation
   const prevPathRef = useRef(location.pathname);
-  // Track if payment modal is open
   const isPaymentModalOpen = useRef(false);
 
   // ===== FETCH SHARDS =====
@@ -189,7 +186,6 @@ const Game = () => {
     }
   };
 
-  // ===== SCROLL TO BOTTOM (Only scrolls the chat messages container) =====
   const scrollToBottom = () => {
     const messagesContainer = document.querySelector('.chat-messages');
     if (messagesContainer) {
@@ -197,18 +193,15 @@ const Game = () => {
     }
   };
 
-  // ===== AUTO-SCROLL TO BOTTOM WHEN NEW MESSAGES ARRIVE =====
   useEffect(() => {
     scrollToBottom();
   }, [gameState.questions, gameState.loading]);
 
-  // ===== UPDATE SHARDS AFTER PURCHASE =====
   const handleShardPurchase = (newShards) => {
     setShards(prev => prev + newShards);
     setError('');
   };
 
-  // ===== HANDLE GAME ABANDON =====
   const handleGameAbandon = async () => {
     if (hasEnded.current) return;
     if (!gameState.gameId) return;
@@ -243,7 +236,7 @@ const Game = () => {
     }
   };
 
-  // ===== DETECT NAVIGATION AWAY (with payment modal check) =====
+  // ===== DETECT NAVIGATION AWAY =====
   useEffect(() => {
     if (gameState.status !== 'playing') return;
 
@@ -277,7 +270,7 @@ const Game = () => {
     prevPathRef.current = location.pathname;
   }, [location.pathname, gameState.status]);
 
-  // ===== DETECT PAGE LEAVE (with payment modal check) =====
+  // ===== DETECT PAGE LEAVE =====
   useEffect(() => {
     if (gameState.status !== 'playing') return;
 
@@ -400,6 +393,16 @@ const Game = () => {
     }
   }, [gameState.status]);
 
+  // ===== Auto-dismiss card notification after 5 seconds =====
+  useEffect(() => {
+    if (cardNotification) {
+      const timer = setTimeout(() => {
+        setCardNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [cardNotification]);
+
   // ===== START GAME =====
   const startGame = async () => {
     setError('');
@@ -423,11 +426,13 @@ const Game = () => {
         remainingQuestions: 10,
         character: null,
         characterImage: null,
+        powerLevel: null,
         loading: false
       });
       setHintUsed(false);
       setHintText('');
       setError('');
+      setCardNotification(null);
     } catch (error) {
       setError('Failed to start game. Please try again.');
       setGameState(prev => ({ ...prev, loading: false }));
@@ -556,10 +561,19 @@ const Game = () => {
           status: 'won',
           character: response.data.character,
           characterImage: response.data.image || null,
+          powerLevel: response.data.powerLevel || null,
           loading: false
         }));
         setGuess('');
         setShowGuessInput(false);
+
+        if (response.data.cardAdded) {
+          setCardNotification({
+            character: response.data.character,
+            powerLevel: response.data.powerLevel,
+            cardCount: response.data.cardCount
+          });
+        }
 
         if (response.data.unlockedItems && response.data.unlockedItems.length > 0) {
           setUnlockNotifications(response.data.unlockedItems);
@@ -574,6 +588,7 @@ const Game = () => {
           status: 'lost',
           character: response.data.character,
           characterImage: response.data.image || null,
+          powerLevel: response.data.powerLevel || null,
           loading: false
         }));
         setGuess('');
@@ -618,6 +633,7 @@ const Game = () => {
         status: 'lost',
         character: response.data.character,
         characterImage: response.data.image || null,
+        powerLevel: response.data.powerLevel || null,
         questions: [...prev.questions, {
           type: 'system',
           text: `💔 ${response.data.message}`
@@ -649,6 +665,7 @@ const Game = () => {
       remainingQuestions: 10,
       character: null,
       characterImage: null,
+      powerLevel: null,
       loading: false
     });
     setQuestion('');
@@ -659,6 +676,7 @@ const Game = () => {
     setCurrentUnlockIndex(0);
     setHintUsed(false);
     setHintText('');
+    setCardNotification(null);
     hasEnded.current = false;
     hasWarned.current = false;
     isNavigating.current = false;
@@ -708,6 +726,23 @@ const Game = () => {
         onPurchaseComplete={handleShardPurchase}
         currentShards={shards}
       />
+
+      {/* ===== CARD NOTIFICATION ===== */}
+      {cardNotification && (
+        <div className="card-notification">
+          <div className="card-notification-content">
+            <span className="card-icon">🃏</span>
+            <div className="card-info">
+              <h4>New Card Collected!</h4>
+              <p>
+                <strong>{cardNotification.character}</strong> 
+                <span className="card-power">⚡ Power: {cardNotification.powerLevel}</span>
+              </p>
+              <p className="card-total">Total Cards: {cardNotification.cardCount}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {currentUnlock && (
         <div className="unlock-popup">
@@ -777,7 +812,7 @@ const Game = () => {
               onClick={openBuyShardsModal}
               title="Buy Shards without losing your streak"
             >
-              💎 Buy Shards
+              🎴 Buy Shards
             </button>
           )}
           {gameState.status === 'playing' && (
@@ -854,6 +889,9 @@ const Game = () => {
               </div>
             )}
             <p className="result-character">It was <strong>{gameState.character}</strong>!</p>
+            {gameState.powerLevel && (
+              <p className="result-power">⚡ Power Level: <strong>{gameState.powerLevel}</strong></p>
+            )}
             <p className="result-stats">Solved in {gameState.questionCount} questions!</p>
             <div className="result-buttons">
               <button className="btn btn-primary" onClick={playAgain}>Play Again</button>
@@ -872,6 +910,9 @@ const Game = () => {
               </div>
             )}
             <p className="result-character"><strong>{gameState.character}</strong></p>
+            {gameState.powerLevel && (
+              <p className="result-power">⚡ Power Level: <strong>{gameState.powerLevel}</strong></p>
+            )}
             <p>Better luck next time!</p>
             <div className="result-buttons">
               <button className="btn btn-primary" onClick={playAgain}>Try Again</button>
@@ -932,9 +973,9 @@ const Game = () => {
                     className={`btn btn-warning hint-btn ${hintUsed ? 'used' : ''}`}
                     onClick={useHint}
                     disabled={hintUsed || gameState.loading}
-                    title={hintUsed ? 'Hint already used' : 'Use 50 Shards for a hint'}
+                    title={hintUsed ? 'Hint already used' : 'Use 50 🎴 Shards for a hint'}
                   >
-                    {hintUsed ? '💡 Used' : '💡 Hint (50 Shards)'}
+                    {hintUsed ? '💡 Used' : '💡 Hint (50 🎴)'}
                   </button>
                 </div>
               </form>

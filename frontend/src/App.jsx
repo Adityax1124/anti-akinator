@@ -9,6 +9,8 @@ import io from 'socket.io-client';
 import Home from './pages/Home';
 import Game from './pages/Game';
 import TeamGamePage from './pages/TeamGamePage';
+import Matchmaking from './pages/Matchmaking';
+import MatchBattle from './pages/MatchBattle';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOTP from './pages/VerifyOTP';
@@ -48,7 +50,9 @@ const AppContent = () => {
 
     console.log('🔌 Connecting to socket server...');
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    
+    const socket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling']
     });
@@ -61,19 +65,33 @@ const AppContent = () => {
       console.log(`📤 Registered user ${userId} for private messages`);
     });
 
-    // ✅ Primary invite listener (private room)
+    // ===== TEAM INVITE LISTENERS =====
     socket.on('team-invite', (data) => {
       console.log('📨 Team invite received!', data);
       console.log('📨 From:', data.from?.username);
       console.log('📨 Room:', data.roomCode);
-      setInvite(data);
+      setInvite({ ...data, type: 'team' });
     });
 
-    // ✅ Fallback invite listener (global)
     socket.on('team-invite-global', (data) => {
       console.log('📨 Global team invite received:', data);
       if (data.targetUserId === userId) {
-        setInvite(data);
+        setInvite({ ...data, type: 'team' });
+      }
+    });
+
+    // ===== MATCH INVITE LISTENERS =====
+    socket.on('match-invite', (data) => {
+      console.log('📨 Match invite received!', data);
+      console.log('📨 From:', data.from?.username);
+      console.log('📨 Match Code:', data.matchCode);
+      setInvite({ ...data, type: 'match' });
+    });
+
+    socket.on('match-invite-global', (data) => {
+      console.log('📨 Global match invite received:', data);
+      if (data.targetUserId === userId) {
+        setInvite({ ...data, type: 'match' });
       }
     });
 
@@ -117,6 +135,14 @@ const AppContent = () => {
           
           <Route path="/team-game/:roomCode" element={
             <PrivateRouteWrapper><TeamGamePage /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/match" element={
+            <PrivateRouteWrapper><Matchmaking /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/match/battle/:matchCode" element={
+            <PrivateRouteWrapper><MatchBattle /></PrivateRouteWrapper>
           } />
           
           <Route path="/shop" element={

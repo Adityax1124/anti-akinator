@@ -20,9 +20,17 @@ const characterSchema = new mongoose.Schema({
     type: String,
     maxlength: 6000
   },
-    crucialHint: {                    
+  crucialHint: {
     type: String,
     required: true
+  },
+  // ✅ NEW - Power Level for Card Battles (1-50)
+  powerLevel: {
+    type: Number,
+    required: true,
+    min: 0.5,
+    max: 50,
+    default: 25
   },
   traits: {
     gender: { type: String, enum: ['Male', 'Female', 'Other', 'Unknown'], default: 'Unknown' },
