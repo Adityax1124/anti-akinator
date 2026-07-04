@@ -25,9 +25,9 @@ import ReferralPage from './pages/ReferralPage';
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
-// ✅ NEW: Collection Page Import
+// ✅ Collection Page
 import Collection from './pages/Collection';
-// ✅ NEW: Legal Pages
+// ✅ Legal Pages
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
@@ -160,7 +160,7 @@ const AppContent = () => {
             <PrivateRouteWrapper><MatchBattle /></PrivateRouteWrapper>
           } />
           
-          {/* ✅ NEW: Collection Route */}
+          {/* ✅ Collection Route */}
           <Route path="/collection" element={
             <PrivateRouteWrapper><Collection /></PrivateRouteWrapper>
           } />
