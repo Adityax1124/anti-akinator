@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Contact.css';
+import './LegalPages.css';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -16,16 +16,15 @@ const Contact = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setStatus('Sending...');
+    setStatus('Opening email client...');
     
-    // ✅ Mailto: (Simple - opens email client)
-    const mailtoLink = `mailto:support@anti-akinator.in?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`)}`;
+    const mailtoLink = `mailto:akinator.anti@gmail.com?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`)}`;
     window.location.href = mailtoLink;
-    setStatus('Email client opening...');
+    setStatus('Email client opened!');
   };
 
   return (
-    <div className="contact-container">
+    <div className="legal-container contact-page">
       <h1>📧 Contact Us</h1>
       <p className="contact-subtitle">
         Have questions, feedback, or issues? We'd love to hear from you!
@@ -34,9 +33,9 @@ const Contact = () => {
       <div className="contact-grid">
         <div className="contact-info">
           <h3>📬 Get in Touch</h3>
-          <p><strong>Email:</strong> akinator.anti@gmail.com</p>
-          <p><strong>Discord:</strong> <a href="https://discord.gg/anti-akinator" target="_blank">Join our server</a></p>
+          <p><strong>Email:</strong> <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a></p>
           <p><strong>Response Time:</strong> 24-48 hours</p>
+          <p><strong>Location:</strong> India</p>
         </div>
 
         <form className="contact-form" onSubmit={handleSubmit}>
