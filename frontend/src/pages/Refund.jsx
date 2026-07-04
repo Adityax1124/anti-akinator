@@ -3,88 +3,49 @@ import './LegalPages.css';
 
 const Refund = () => {
   return (
-    <div className="legal-container fade-in">
-      <div className="legal-card">
-        <h1>💰 Refund & Cancellation Policy</h1>
-        <p className="legal-date">Last updated: June 30, 2026</p>
+    <div className="legal-container">
+      <h1>💰 Refund & Cancellation Policy</h1>
+      <p className="legal-date">Last updated: July 2026</p>
 
-        <section>
-          <h2>1. In-Game Currency (Shards)</h2>
-          <p>
-            Shards are virtual in-game currency and are <strong>non-refundable</strong>.
-            Once purchased, shards cannot be exchanged for real money.
-          </p>
-        </section>
+      <section>
+        <h2>1. In-Game Purchases</h2>
+        <p>All in-game purchases, including Shards, Gems, and Card Packs, are <strong>non-refundable</strong> once the transaction is completed.</p>
+      </section>
 
-        <section>
-          <h2>2. Cancellation</h2>
-          <p>
-            You may cancel a purchase before payment is completed. Once payment is
-            successful, the transaction is final and cannot be canceled.
-          </p>
-        </section>
+      <section>
+        <h2>2. Subscription Services</h2>
+        <p>If you have subscribed to a premium service, you may cancel at any time. No refunds will be provided for partial subscription periods.</p>
+      </section>
 
-        <section>
-          <h2>3. Refund Eligibility</h2>
-          <p>
-            Refunds are only provided in the following cases:
-          </p>
-          <ul>
-            <li>
-              <strong>Payment Failure:</strong> If money is deducted but shards are
-              not added to your account.
-            </li>
-            <li>
-              <strong>Duplicate Payment:</strong> If you are charged multiple times
-              for the same transaction.
-            </li>
-            <li>
-              <strong>Technical Error:</strong> If there is a confirmed technical
-              error on our side.
-            </li>
-          </ul>
-        </section>
+      <section>
+        <h2>3. Technical Issues</h2>
+        <p>If you experience technical issues that prevent you from receiving your purchase, please contact us within <strong>7 days</strong> for assistance. We will investigate and may offer a refund or credit at our discretion.</p>
+      </section>
 
-        <section>
-          <h2>4. How to Request a Refund</h2>
-          <p>
-            To request a refund, contact us at <strong>support@anti-akinator.com</strong>
-            with the following details:
-          </p>
-          <ul>
-            <li>Your username</li>
-            <li>Transaction ID</li>
-            <li>Date and time of purchase</li>
-            <li>Reason for refund request</li>
-          </ul>
-          <p>
-            Refund requests will be processed within <strong>5-7 business days</strong>.
-          </p>
-        </section>
+      <section>
+        <h2>4. Unauthorized Transactions</h2>
+        <p>If you believe an unauthorized transaction has been made, please contact us immediately. We will work with you and the payment provider to resolve the issue.</p>
+      </section>
 
-        <section>
-          <h2>5. No Refund for Used Shards</h2>
-          <p>
-            Shards that have already been spent on in-game items (hints, etc.) are
-            <strong> not eligible for refund</strong>.
-          </p>
-        </section>
+      <section>
+        <h2>5. How to Request a Refund</h2>
+        <p>To request a refund or report an issue:</p>
+        <ul>
+          <li>Email us at <a href="mailto:support@anti-akinator.in">support@anti-akinator.in</a></li>
+          <li>Include your username, transaction ID, and a brief description of the issue</li>
+          <li>We will respond within <strong>3-5 business days</strong></li>
+        </ul>
+      </section>
 
-        <section>
-          <h2>6. Chargebacks</h2>
-          <p>
-            In the event of a chargeback, your account will be temporarily suspended
-            until the matter is resolved.
-          </p>
-        </section>
+      <section>
+        <h2>6. Chargebacks</h2>
+        <p>Initiating a chargeback without prior communication may result in account suspension pending investigation.</p>
+      </section>
 
-        <section>
-          <h2>7. Contact Us</h2>
-          <p>
-            <strong>Email:</strong> support@anti-akinator.com
-          </p>
-        </section>
-      </div>
+      <section>
+        <h2>7. Contact Us</h2>
+        <p>Email: <a href="mailto:support@anti-akinator.in">support@anti-akinator.in</a></p>
+      </section>
     </div>
   );
 };

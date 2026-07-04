@@ -27,6 +27,11 @@ import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
 // ✅ NEW: Collection Page Import
 import Collection from './pages/Collection';
+// ✅ NEW: Legal Pages
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Refund from './pages/Refund';
+import Contact from './pages/Contact';
 import './App.css';
 
 const AppContent = () => {
@@ -131,6 +136,12 @@ const AppContent = () => {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/season-winners" element={<SeasonWinners />} />
           <Route path="/2fa-verify" element={<TwoFactorVerify />} />
+          
+          {/* ===== LEGAL PAGES ===== */}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund" element={<Refund />} />
+          <Route path="/contact" element={<Contact />} />
           
           {/* ===== PRIVATE ROUTES ===== */}
           <Route path="/game" element={
