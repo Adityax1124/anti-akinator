@@ -6,6 +6,109 @@ import io from 'socket.io-client';
 import MatchChat from '../components/MatchChat';
 import './MatchBattle.css';
 
+// ============================================================
+// FIGHT ANIMATION COMPONENT
+// ============================================================
+const FightAnimation = ({ playerCard, opponentCard, winner, onComplete, mySide }) => {
+  const [stage, setStage] = useState('fly');
+  const [sparkles, setSparkles] = useState([]);
+  const [showResult, setShowResult] = useState(false);
+  
+  useEffect(() => {
+    const flyTimer = setTimeout(() => setStage('impact'), 800);
+    const impactTimer = setTimeout(() => {
+      setStage('result');
+      setShowResult(true);
+      const newSparkles = [];
+      for (let i = 0; i < 20; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 50 + Math.random() * 150;
+        newSparkles.push({
+          id: i,
+          x: 50 + Math.cos(angle) * distance,
+          y: 50 + Math.sin(angle) * distance,
+          delay: Math.random() * 0.3,
+          size: 5 + Math.random() * 15
+        });
+      }
+      setSparkles(newSparkles);
+    }, 1400);
+    const completeTimer = setTimeout(() => {
+      setStage('complete');
+      if (onComplete) onComplete();
+    }, 3000);
+    return () => {
+      clearTimeout(flyTimer);
+      clearTimeout(impactTimer);
+      clearTimeout(completeTimer);
+    };
+  }, []);
+  
+  const isWinner = winner === mySide;
+  const isDraw = winner === 'draw';
+  
+  return (
+    <div className="battle-arena">
+      <div className="fight-cards-container">
+        {/* Player Card */}
+        <div className={`fight-card player-card ${stage === 'impact' ? 'battle-impact' : ''} ${stage === 'result' ? (isWinner ? 'winner-card' : 'loser-card') : ''}`}>
+          {playerCard?.image ? (
+            <img src={playerCard.image} alt={playerCard.characterName} className="fight-card-image" />
+          ) : (
+            <div className="fight-card-placeholder">{playerCard?.characterName?.charAt(0) || '?'}</div>
+          )}
+          <div className="fight-card-info">
+            <span className="fight-card-name">{playerCard?.characterName || 'Your Card'}</span>
+            <span className="fight-card-power">⚡{playerCard?.powerLevel || '?'}</span>
+          </div>
+        </div>
+        
+        {/* VS Burst */}
+        {stage === 'impact' && <div className="vs-burst">⚡VS⚡</div>}
+        
+        {/* Opponent Card */}
+        <div className={`fight-card opponent-card ${stage === 'impact' ? 'battle-impact' : ''} ${stage === 'result' ? (!isWinner && !isDraw ? 'winner-card' : 'loser-card') : ''}`}>
+          {opponentCard?.image ? (
+            <img src={opponentCard.image} alt={opponentCard.characterName} className="fight-card-image" />
+          ) : (
+            <div className="fight-card-placeholder">{opponentCard?.characterName?.charAt(0) || '?'}</div>
+          )}
+          <div className="fight-card-info">
+            <span className="fight-card-name">{opponentCard?.characterName || 'Opponent'}</span>
+            <span className="fight-card-power">⚡{opponentCard?.powerLevel || '?'}</span>
+          </div>
+        </div>
+        
+        {/* Sparkles */}
+        {sparkles.map(s => (
+          <div 
+            key={s.id}
+            className="sparkle"
+            style={{
+              '--tx': `${s.x - 50}px`,
+              '--ty': `${s.y - 50}px`,
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              width: `${s.size}px`,
+              height: `${s.size}px`,
+              animationDelay: `${s.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Result Announcement */}
+      {showResult && (
+        <div className="fight-result-announcement">
+          <div className={`fight-result-text ${isDraw ? 'draw' : (isWinner ? 'win' : 'lose')}`}>
+            {isDraw ? '⚖️ DRAW!' : (isWinner ? '🎉 YOU WIN!' : '💔 YOU LOSE!')}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MatchBattle = () => {
   const { matchCode } = useParams();
   const { user } = useAuth();
@@ -16,7 +119,7 @@ const MatchBattle = () => {
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [timeLeft, setTimeLeft] = useState(30);
   const [mySide, setMySide] = useState(null);
-  const [showResult, setShowResult] = useState(false);
+  // ✅ showResult REMOVED
   const [stolenCard, setStolenCard] = useState(null);
   const [showStealModal, setShowStealModal] = useState(false);
   const [availableCards, setAvailableCards] = useState([]);
@@ -28,6 +131,10 @@ const MatchBattle = () => {
   const [connectionError, setConnectionError] = useState(false);
   const [isWaiting, setIsWaiting] = useState(true);
   const [startLoading, setStartLoading] = useState(false);
+  
+  // ✅ Fight Animation States
+  const [showFight, setShowFight] = useState(false);
+  const [fightData, setFightData] = useState(null);
 
   useEffect(() => {
     if (!matchCode) return;
@@ -68,8 +175,7 @@ const MatchBattle = () => {
     socket.on('round-revealed', (data) => {
       console.log('🎯 Round revealed:', data);
       fetchMatchState();
-      setShowResult(true);
-      setTimeout(() => setShowResult(false), 3000);
+      // ✅ showResult REMOVED
     });
 
     socket.on('match-ended-waiting-selection', (data) => {
@@ -138,6 +244,20 @@ const MatchBattle = () => {
       setLoading(false);
     }
   };
+
+  // ✅ Trigger fight animation when round result comes
+  useEffect(() => {
+    if (match?.status === 'round_result' && match.roundResult && match.roundResult.revealed) {
+      const playerCard = match.roundResult.player1Card || null;
+      const opponentCard = match.roundResult.player2Card || null;
+      const winner = match.roundResult.winner;
+      
+      if (playerCard && opponentCard) {
+        setFightData({ playerCard, opponentCard, winner });
+        setShowFight(true);
+      }
+    }
+  }, [match?.status, match?.roundResult]);
 
   // Timer countdown
   useEffect(() => {
@@ -319,7 +439,7 @@ const MatchBattle = () => {
 
   const isFinished = match.status === 'finished';
   const canSteal = match.isSelectingReward && match.isWinner;
-  const currentRoundResult = match.roundResult; // ✅ FIXED: Get round result from match
+  const currentRoundResult = match.roundResult;
   const isDraw = currentRoundResult?.winner === 'draw';
 
   let hostUserId = null;
@@ -493,31 +613,6 @@ const MatchBattle = () => {
         </div>
       </div>
 
-      {/* ===== RESULT OVERLAY ===== */}
-      {showResult && currentRoundResult && (
-        <div className="round-result-overlay">
-          <div className={`round-result-card ${isDraw ? 'draw' : currentRoundResult.winner === mySide ? 'win' : 'lose'}`}>
-            <div className="result-icon">
-              {isDraw ? '⚖️' : currentRoundResult.winner === mySide ? '🎉' : '💔'}
-            </div>
-            <h3>
-              {isDraw ? 'Draw!' : currentRoundResult.winner === mySide ? 'You Won!' : 'You Lost!'}
-            </h3>
-            <div className="result-cards">
-              <div className="result-card-preview">
-                <span className="card-name">{currentRoundResult.player1Card?.characterName}</span>
-                <span className="card-power">⚡{currentRoundResult.player1Card?.powerLevel}</span>
-              </div>
-              <span className="result-vs">VS</span>
-              <div className="result-card-preview">
-                <span className="card-name">{currentRoundResult.player2Card?.characterName}</span>
-                <span className="card-power">⚡{currentRoundResult.player2Card?.powerLevel}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ===== STOLEN CARD ===== */}
       {isFinished && stolenCard && (
         <div className="stolen-card-announcement premium-card">
@@ -560,7 +655,7 @@ const MatchBattle = () => {
         </div>
       )}
 
-      {/* ===== CARDS GRID - WITH FLIP ANIMATION ===== */}
+      {/* ===== YOUR TEAM CARDS - ALWAYS FACE-UP ===== */}
       {!isFinished && match && match.myTeam && match.myTeam.length > 0 && (
         <div className="cards-grid-container">
           <div className="cards-section">
@@ -570,23 +665,32 @@ const MatchBattle = () => {
             </h4>
             <div className="cards-grid">
               {match.myTeam.map((card, index) => {
-                // ✅ Check if this card should be revealed
                 let isRevealing = false;
                 let isWinner = false;
                 let isLoser = false;
                 
                 if (currentRoundResult && currentRoundResult.revealed) {
-                  const isPlayer1Card = currentRoundResult.player1CardIndex === index;
-                  const isPlayer2Card = currentRoundResult.player2CardIndex === index;
-                  
-                  if (isPlayer1Card || isPlayer2Card) {
-                    isRevealing = true;
-                    if (currentRoundResult.winner === 'player1' && isPlayer1Card) {
-                      isWinner = true;
-                    } else if (currentRoundResult.winner === 'player2' && isPlayer2Card) {
-                      isWinner = true;
-                    } else if (isPlayer1Card || isPlayer2Card) {
-                      isLoser = true;
+                  // ✅ SIRF USED CARD PE CHECK KARO
+                  if (card.used) {
+                    // ✅ Get MY card index based on my side
+                    let myCardIndex = null;
+                    if (mySide === 'player1') {
+                      myCardIndex = currentRoundResult.player1CardIndex;
+                    } else if (mySide === 'player2') {
+                      myCardIndex = currentRoundResult.player2CardIndex;
+                    }
+                    
+                    // ✅ Check if THIS used card is MY card
+                    const isMyCard = myCardIndex === index;
+                    
+                    if (isMyCard) {
+                      isRevealing = true;
+                      // ✅ Winner check
+                      if (currentRoundResult.winner === mySide) {
+                        isWinner = true;
+                      } else if (currentRoundResult.winner !== 'draw') {
+                        isLoser = true;
+                      }
                     }
                   }
                 }
@@ -612,13 +716,14 @@ const MatchBattle = () => {
                     }}
                   >
                     <div className="card-flip-container">
-                      <div className={`card-flip-inner ${isRevealing ? 'flipped' : ''}`}>
-                        {/* ✅ Card Front (Face Down) */}
+                      {/* ✅ YOUR CARDS ARE ALWAYS FLIPPED (FACE-UP) */}
+                      <div className="card-flip-inner flipped">
+                        {/* Card Front (Face Down) - NEVER SHOWN FOR YOUR CARDS */}
                         <div className="card-front">
                           <span className="card-question-mark">❓</span>
                         </div>
                         
-                        {/* ✅ Card Back (Face Up) */}
+                        {/* Card Back (Face Up) - ALWAYS VISIBLE FOR YOUR CARDS */}
                         <div className="card-back">
                           {card.image ? (
                             <img 
@@ -650,7 +755,7 @@ const MatchBattle = () => {
                             {card.characterName?.charAt(0) || '?'}
                           </div>
                           
-                          {/* ✅ Winner/Loser Badge */}
+                          {/* ✅ Winner/Loser Badge - ONLY on USED card */}
                           {isRevealing && isWinner && (
                             <div className="card-result-badge">✅</div>
                           )}
@@ -712,6 +817,31 @@ const MatchBattle = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* ===== FIGHT ARENA (Between Teams) ===== */}
+      {showFight && fightData ? (
+        <FightAnimation 
+          playerCard={fightData.playerCard}
+          opponentCard={fightData.opponentCard}
+          winner={fightData.winner}
+          mySide={mySide}
+          onComplete={() => {
+            setTimeout(() => {
+              setShowFight(false);
+              setFightData(null);
+            }, 500);
+          }}
+        />
+      ) : (
+        // ✅ VS Separator when no fight is happening
+        !isFinished && match?.status !== 'finished' && (
+          <div className="battle-vs-separator">
+            <div className="vs-line"></div>
+            <div className="vs-center">⚔️ VS ⚔️</div>
+            <div className="vs-line"></div>
+          </div>
+        )
       )}
 
       {/* ===== EMPTY STATE ===== */}
