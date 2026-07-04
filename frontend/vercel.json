@@ -5,6 +5,7 @@
     { "src": "/favicon.svg", "dest": "/favicon.svg" },
     { "src": "/anime-bg.jpg", "dest": "/anime-bg.jpg" },
     { "src": "/_redirects", "dest": "/_redirects" },
+    { "src": "/ads.txt", "dest": "/ads.txt" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
