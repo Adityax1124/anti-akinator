@@ -1726,6 +1726,89 @@
 }
 
 /* ============================================================
+   BATTLE VS SEPARATOR (Between Teams)
+   ============================================================ */
+.battle-vs-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 30px 0;
+  margin: 10px 0;
+  position: relative;
+}
+
+.vs-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+  max-width: 200px;
+}
+
+.vs-center {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: rgba(255, 215, 0, 0.2);
+  text-shadow: 0 0 40px rgba(255, 215, 0, 0.05);
+  padding: 0 20px;
+  letter-spacing: 3px;
+  animation: vsPulse 2s ease-in-out infinite;
+}
+
+@keyframes vsPulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* ============================================================
+   FIGHT MODAL - NEW
+   ============================================================ */
+.fight-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fight-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+}
+
+.fight-modal-arena {
+  width: 100%;
+  min-height: 450px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+  background: radial-gradient(ellipse at center, rgba(108, 99, 255, 0.05), transparent 70%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 215, 0, 0.06);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 
@@ -1801,6 +1884,10 @@
   .fight-result-text {
     font-size: 3rem;
     padding: 18px 30px;
+  }
+
+  .fight-modal-arena {
+    min-height: 350px;
   }
 }
 
@@ -1986,6 +2073,15 @@
       opacity: 1;
     }
   }
+
+  .fight-modal-content {
+    padding: 10px;
+  }
+
+  .fight-modal-arena {
+    min-height: 320px;
+    padding: 10px 0;
+  }
 }
 
 @media (max-width: 400px) {
@@ -2077,38 +2173,9 @@
     padding: 10px 15px;
     border-radius: 12px;
   }
-}
-/* ============================================================
-   BATTLE VS SEPARATOR (Between Teams)
-   ============================================================ */
-.battle-vs-separator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: 30px 0;
-  margin: 10px 0;
-  position: relative;
-}
 
-.vs-line {
-  flex: 1;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
-  max-width: 200px;
-}
-
-.vs-center {
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: rgba(255, 215, 0, 0.2);
-  text-shadow: 0 0 40px rgba(255, 215, 0, 0.05);
-  padding: 0 20px;
-  letter-spacing: 3px;
-  animation: vsPulse 2s ease-in-out infinite;
-}
-
-@keyframes vsPulse {
-  0%, 100% { transform: scale(1); opacity: 0.3; }
-  50% { transform: scale(1.2); opacity: 1; }
+  .fight-modal-arena {
+    min-height: 280px;
+    padding: 8px 0;
+  }
 }

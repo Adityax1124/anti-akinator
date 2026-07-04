@@ -25,7 +25,7 @@ function generateMatchCode() {
 }
 
 // ============================================================
-// CREATE MATCH
+// CREATE MATCH - FIXED POWER LEVEL
 // ============================================================
 router.post('/create', authMiddleware, async (req, res) => {
   try {
@@ -48,26 +48,28 @@ router.post('/create', authMiddleware, async (req, res) => {
     let teamCards = [];
     
     if (team && Array.isArray(team) && team.length === 10) {
+      // ✅ FIX: Use currentPower or powerLevel from card
       teamCards = team.map(card => {
         const id = card.characterId || card._id || card.id;
+        const power = card.currentPower || card.powerLevel || 25;
         return {
           characterId: id,
           characterName: card.characterName || 'Unknown',
-          powerLevel: card.powerLevel || 25,
+          powerLevel: power,
           image: card.image || '',
           cardId: id?.toString() || 'unknown',
           used: false,
           won: null,
           roundUsed: null,
-          // ✅ NEW: Card level & element for battle
           level: card.level || 1,
           element: card.element || 'Fire',
           rarity: card.rarity || 'Common'
         };
       });
     } else {
+      // ✅ FIX: Use currentPower from user's cards
       teamCards = userData.cards
-        .sort((a, b) => b.currentPower - a.currentPower)
+        .sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0))
         .slice(0, 10)
         .map(card => ({
           characterId: card.characterId,
@@ -78,7 +80,6 @@ router.post('/create', authMiddleware, async (req, res) => {
           used: false,
           won: null,
           roundUsed: null,
-          // ✅ NEW: Card level & element from user's card
           level: card.level || 1,
           element: card.element || 'Fire',
           rarity: card.rarity || 'Common'
@@ -137,7 +138,6 @@ router.post('/create', authMiddleware, async (req, res) => {
       winnerSide: null,
       loserSide: null,
       availableCardsToSteal: [],
-      // ✅ NEW: Gem rewards
       gemRewards: {
         winner: 20,
         loser: 5,
@@ -183,7 +183,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// JOIN MATCH
+// JOIN MATCH - FIXED POWER LEVEL
 // ============================================================
 router.post('/join', authMiddleware, async (req, res) => {
   try {
@@ -233,8 +233,9 @@ router.post('/join', authMiddleware, async (req, res) => {
       });
     }
 
+    // ✅ FIX: Use currentPower from user's cards
     const topCards = userData.cards
-      .sort((a, b) => b.currentPower - a.currentPower)
+      .sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0))
       .slice(0, 10);
 
     const team = topCards.map(card => ({
@@ -246,7 +247,6 @@ router.post('/join', authMiddleware, async (req, res) => {
       used: false,
       won: null,
       roundUsed: null,
-      // ✅ NEW: Card level & element
       level: card.level || 1,
       element: card.element || 'Fire',
       rarity: card.rarity || 'Common'
@@ -363,7 +363,7 @@ router.post('/start', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// GET MATCH STATE - WITH ROUND RESULT (FULLY FIXED)
+// GET MATCH STATE
 // ============================================================
 router.get('/:matchCode', authMiddleware, async (req, res) => {
   try {
@@ -419,7 +419,6 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
       isSelected: index === playerData.selectedCardIndex,
       isConfirmed: index === playerData.confirmedCardIndex,
       roundUsed: card.roundUsed,
-      // ✅ NEW: Show level & element
       level: card.level || 1,
       element: card.element || 'Fire',
       rarity: card.rarity || 'Common'
@@ -435,7 +434,6 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
       roundUsed: card.roundUsed,
       isSelected: false,
       isConfirmed: false,
-      // ✅ NEW: Show level & element
       level: card.level || 1,
       element: card.element || 'Fire',
       rarity: card.rarity || 'Common'
@@ -460,10 +458,8 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
       match.player1.confirmedCardIndex !== null : 
       match.player2.confirmedCardIndex !== null;
 
-    // ✅ BUILD ROUND RESULT - FIXED
     let roundResult = null;
 
-    // ✅ Method 1: From roundStates (after reveal)
     if (match.roundStates && match.roundStates.length > 0) {
       const lastRound = match.roundStates[match.roundStates.length - 1];
       if (lastRound && lastRound.revealed) {
@@ -476,14 +472,12 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
             match.player1.team[lastRound.player1CardIndex] : null,
           player2Card: lastRound.player2CardIndex !== undefined && lastRound.player2CardIndex !== null ?
             match.player2.team[lastRound.player2CardIndex] : null,
-          // ✅ NEW: Include element info
           player1Element: lastRound.player1Element || null,
           player2Element: lastRound.player2Element || null
         };
       }
     }
 
-    // ✅ Method 2: If both confirmed but no roundStates yet (before reveal)
     if (!roundResult && bothConfirmed) {
       const p1Index = match.player1.confirmedCardIndex;
       const p2Index = match.player2.confirmedCardIndex;
@@ -494,7 +488,6 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
         let winner = null;
         
         if (p1Card && p2Card) {
-          // ✅ Use element advantage in power calculation
           const p1Power = calculateEffectivePower(p1Card, p2Card);
           const p2Power = calculateEffectivePower(p2Card, p1Card);
           
@@ -538,6 +531,8 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
         isSelectingReward,
         isConfirmed,
         availableCardsToSteal,
+        forfeit: match.forfeit || false,
+        forfeitBy: match.forfeitBy || null,
         player1: {
           username: match.player1.username,
           user: player1Id,
@@ -569,7 +564,6 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
         winner: match.winnerUsername,
         stolenCard: match.stolenCard,
         finalScore: match.finalScore,
-        // ✅ NEW: Gem rewards info
         gemRewards: match.gemRewards || { winner: 20, loser: 5, draw: 10, duplicateBonus: 20 }
       }
     });
@@ -757,7 +751,6 @@ router.post('/confirm', authMiddleware, async (req, res) => {
       });
     }
 
-    // ✅ Check if both confirmed
     if (match.isBothConfirmed()) {
       console.log('🎯 [CONFIRM] Both confirmed! Revealing round...');
       await revealRound(match);
@@ -807,7 +800,7 @@ function getPlayerSide(match, userId) {
 }
 
 // ============================================================
-// ✅ HELPER: Calculate Effective Power with Element
+// HELPER: Calculate Effective Power with Element
 // ============================================================
 function getElementAdvantage(element1, element2) {
   const advantages = {
@@ -819,9 +812,9 @@ function getElementAdvantage(element1, element2) {
   
   if (!element1 || !element2) return 1.0;
   
-  if (advantages[element1] === element2) return 1.2; // 20% bonus
-  if (advantages[element2] === element1) return 0.8; // 20% penalty
-  return 1.0; // Neutral
+  if (advantages[element1] === element2) return 1.2;
+  if (advantages[element2] === element1) return 0.8;
+  return 1.0;
 }
 
 function calculateEffectivePower(card, opponentCard) {
@@ -833,7 +826,7 @@ function calculateEffectivePower(card, opponentCard) {
 }
 
 // ============================================================
-// REVEAL ROUND (UPDATED WITH ELEMENT)
+// REVEAL ROUND
 // ============================================================
 async function revealRound(match) {
   console.log('🎯 [REVEAL] Revealing round...');
@@ -846,11 +839,9 @@ async function revealRound(match) {
   const p1Card = match.player1.team[p1Index];
   const p2Card = match.player2.team[p2Index];
 
-  // ✅ Get elements
   const p1Element = p1Card.element || 'Fire';
   const p2Element = p2Card.element || 'Fire';
 
-  // ✅ Calculate effective powers with element advantage
   const p1EffectivePower = calculateEffectivePower(p1Card, p2Card);
   const p2EffectivePower = calculateEffectivePower(p2Card, p1Card);
 
@@ -887,7 +878,6 @@ async function revealRound(match) {
     player1Power: p1EffectivePower,
     player2Power: p2EffectivePower,
     revealed: true,
-    // ✅ NEW: Store elements used
     player1Element: p1Element,
     player2Element: p2Element
   });
@@ -896,13 +886,11 @@ async function revealRound(match) {
                      winner === 'player2' ? match.player2.username : 'Draw';
   match.addLog('info', `Round ${match.currentRound}: ${winnerName} won! (${p1Card.characterName} ${p1Element} vs ${p2Card.characterName} ${p2Element})`);
 
-  // ✅ Clear confirmations
   match.player1.confirmedCardIndex = null;
   match.player1.selectedCardIndex = null;
   match.player2.confirmedCardIndex = null;
   match.player2.selectedCardIndex = null;
 
-  // ✅ Check if game over
   if (match.currentRound >= match.maxRounds) {
     await endMatch(match);
     return;
@@ -911,7 +899,6 @@ async function revealRound(match) {
   match.currentRound += 1;
   match.status = 'round_result';
 
-  // ✅ Save immediately
   await match.save();
 
   if (ioInstance) {
@@ -928,7 +915,6 @@ async function revealRound(match) {
     });
   }
 
-  // ✅ Schedule next round
   setTimeout(async () => {
     try {
       const freshMatch = await Match.findById(match._id);
@@ -956,7 +942,7 @@ async function revealRound(match) {
 }
 
 // ============================================================
-// END MATCH (UPDATED WITH GEM REWARDS)
+// END MATCH
 // ============================================================
 async function endMatch(match) {
   const p1Score = match.player1.currentScore;
@@ -969,7 +955,6 @@ async function endMatch(match) {
 
   console.log('🏆 [END MATCH] Scores:', p1Score, '-', p2Score);
 
-  // ✅ Get gem rewards
   const gemRewards = match.gemRewards || { winner: 20, loser: 5, draw: 10, duplicateBonus: 20 };
 
   if (p1Score > p2Score) {
@@ -990,7 +975,6 @@ async function endMatch(match) {
     match.status = 'finished';
     await match.save();
 
-    // ✅ Give gems to both players for draw
     const drawGems = gemRewards.draw || 10;
     const [user1, user2] = await Promise.all([
       User.findById(match.player1.user),
@@ -1017,7 +1001,6 @@ async function endMatch(match) {
     return;
   }
 
-  // ✅ Set winner fields
   match.winner = winner;
   match.winnerUsername = winnerUsername;
   match.winnerSide = winnerSide;
@@ -1067,7 +1050,139 @@ async function endMatch(match) {
 }
 
 // ============================================================
-// STEAL CARD (UPDATED WITH GEM REWARDS)
+// PLAYER LEAVES MATCH (FORFEIT)
+// ============================================================
+router.post('/leave', authMiddleware, async (req, res) => {
+  try {
+    const { matchCode } = req.body;
+    const user = req.user;
+
+    if (!matchCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Match code is required'
+      });
+    }
+
+    const match = await Match.findOne({
+      matchCode: matchCode.toUpperCase().trim()
+    });
+
+    if (!match) {
+      return res.status(404).json({
+        success: false,
+        message: 'Match not found'
+      });
+    }
+
+    if (match.status === 'finished') {
+      return res.status(400).json({
+        success: false,
+        message: 'Match already finished'
+      });
+    }
+
+    if (match.status === 'waiting') {
+      return res.status(400).json({
+        success: false,
+        message: 'Match not started yet'
+      });
+    }
+
+    const side = getPlayerSide(match, user._id);
+    if (!side) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not part of this match'
+      });
+    }
+
+    const winnerSide = side === 'player1' ? 'player2' : 'player1';
+    const loserSide = side;
+
+    const winnerData = winnerSide === 'player1' ? match.player1 : match.player2;
+    const loserData = loserSide === 'player1' ? match.player1 : match.player2;
+
+    match.winner = winnerData.user;
+    match.winnerUsername = winnerData.username;
+    match.winnerSide = winnerSide;
+    match.loserSide = loserSide;
+    match.forfeit = true;
+    match.forfeitBy = side;
+
+    const remainingRounds = match.maxRounds - match.currentRound + 1;
+    if (winnerSide === 'player1') {
+      match.player1.currentScore += remainingRounds;
+    } else {
+      match.player2.currentScore += remainingRounds;
+    }
+
+    match.finalScore = {
+      player1: match.player1.currentScore,
+      player2: match.player2.currentScore
+    };
+
+    const availableCards = loserData.team.map((card, index) => ({
+      index: index,
+      characterId: card.characterId,
+      characterName: card.characterName,
+      powerLevel: card.powerLevel,
+      image: card.image,
+      used: card.used,
+      roundUsed: card.roundUsed,
+      level: card.level || 1,
+      element: card.element || 'Fire',
+      rarity: card.rarity || 'Common'
+    }));
+
+    match.availableCardsToSteal = availableCards;
+    match.status = 'selecting_reward';
+
+    match.addLog('info', `${loserData.username} left the match! ${winnerData.username} wins by forfeit.`);
+
+    await match.save();
+
+    if (ioInstance) {
+      ioInstance.to(match.matchCode).emit('opponent-left', {
+        matchCode: match.matchCode,
+        winner: winnerData.username,
+        loser: loserData.username,
+        message: `${loserData.username} left the match! You win by forfeit.`
+      });
+
+      ioInstance.to(match.matchCode).emit('match-ended-waiting-selection', {
+        matchCode: match.matchCode,
+        winner: winnerData.username,
+        winnerId: winnerData.user,
+        availableCards: availableCards,
+        finalScore: match.finalScore,
+        forfeit: true,
+        message: `${winnerData.username} wins by forfeit! Select a card to steal.`
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `You left the match. ${winnerData.username} wins by forfeit!`,
+      winner: winnerData.username,
+      winnerSide: winnerSide,
+      finalScore: match.finalScore,
+      canSteal: true,
+      availableCards: availableCards,
+      forfeit: true
+    });
+
+  } catch (error) {
+    console.error('Player leave error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process leave'
+    });
+  }
+});
+
+// ============================================================
+// STEAL CARD
 // ============================================================
 router.post('/steal', authMiddleware, async (req, res) => {
   try {
@@ -1147,15 +1262,12 @@ router.post('/steal', authMiddleware, async (req, res) => {
       stolenAt: new Date()
     };
 
-    // ✅ Get both users for gem updates
     const winnerUser = await User.findById(winnerData.user);
     const loserUser = await User.findById(loserData.user);
 
-    // ✅ Give gems to winner
     const winnerGems = gemRewards.winner || 20;
     if (winnerUser) {
       winnerUser.gems = (winnerUser.gems || 0) + winnerGems;
-      // ✅ Add card to winner if not duplicate
       const alreadyHas = winnerUser.cards.some(c =>
         c.characterId.toString() === stolenCard.characterId.toString()
       );
@@ -1176,7 +1288,6 @@ router.post('/steal', authMiddleware, async (req, res) => {
           stolenAt: new Date()
         });
       } else {
-        // ✅ Duplicate card = bonus gems
         const bonusGems = gemRewards.duplicateBonus || 20;
         winnerUser.gems = (winnerUser.gems || 0) + bonusGems;
         winnerUser.matchStats.cardsStolen = (winnerUser.matchStats.cardsStolen || 0) + 1;
@@ -1185,11 +1296,9 @@ router.post('/steal', authMiddleware, async (req, res) => {
       await winnerUser.save();
     }
 
-    // ✅ Give consolation gems to loser
     const loserGems = gemRewards.loser || 5;
     if (loserUser) {
       loserUser.gems = (loserUser.gems || 0) + loserGems;
-      // ✅ Remove card from loser's collection
       const cardIndexInCollection = loserUser.cards.findIndex(c =>
         c.characterId.toString() === stolenCard.characterId.toString()
       );
@@ -1215,6 +1324,7 @@ router.post('/steal', authMiddleware, async (req, res) => {
           loser: loserGems,
           duplicateBonus: gemRewards.duplicateBonus
         },
+        forfeit: match.forfeit || false,
         message: `${winnerData.username} stole ${stolenCard.characterName} and earned ${winnerGems} gems!`
       });
     }
@@ -1225,6 +1335,7 @@ router.post('/steal', authMiddleware, async (req, res) => {
       stolenCard: match.stolenCard,
       winner: match.winnerUsername,
       finalScore: match.finalScore,
+      forfeit: match.forfeit || false,
       gems: {
         winner: winnerGems,
         loser: loserGems,
@@ -1259,7 +1370,7 @@ router.get('/history', authMiddleware, async (req, res) => {
     })
     .sort({ createdAt: -1 })
     .limit(20)
-    .select('matchCode player1 player2 winnerUsername finalScore stolenCard gemRewards createdAt');
+    .select('matchCode player1 player2 winnerUsername finalScore stolenCard gemRewards forfeit forfeitBy createdAt');
 
     const history = matches.map(match => ({
       matchCode: match.matchCode,
@@ -1272,6 +1383,8 @@ router.get('/history', authMiddleware, async (req, res) => {
         match.finalScore.player2 : match.finalScore.player1,
       stolenCard: match.stolenCard,
       gemRewards: match.gemRewards || { winner: 20, loser: 5, draw: 10 },
+      forfeit: match.forfeit || false,
+      forfeitBy: match.forfeitBy || null,
       createdAt: match.createdAt
     }));
 
@@ -1431,7 +1544,7 @@ router.post('/accept-invite', authMiddleware, async (req, res) => {
     }
 
     const topCards = userData.cards
-      .sort((a, b) => b.currentPower - a.currentPower)
+      .sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0))
       .slice(0, 10);
 
     const team = topCards.map(card => ({
