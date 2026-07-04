@@ -1,7 +1,10 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "routes": [
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/anime-logo.jpg", "dest": "/anime-logo.jpg" },
+    { "src": "/favicon.svg", "dest": "/favicon.svg" },
+    { "src": "/anime-bg.jpg", "dest": "/anime-bg.jpg" },
+    { "src": "/_redirects", "dest": "/_redirects" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
