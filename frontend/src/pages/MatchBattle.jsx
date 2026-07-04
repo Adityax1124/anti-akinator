@@ -116,12 +116,12 @@ const MatchBattle = () => {
         setMySide(matchData.mySide);
         setTimeLeft(matchData.timeLeft || 0);
         
-        // ✅ Update confirmation status from backend
         setIsConfirmed(matchData.isConfirmed || false);
         setIsWaiting(matchData.isWaiting || false);
 
         console.log('🔍 [FETCH] matchData.myTeam length:', matchData.myTeam?.length || 0);
         console.log('🔍 [FETCH] isConfirmed:', matchData.isConfirmed);
+        console.log('🔍 [FETCH] matchData.roundResult:', matchData.roundResult);
 
         if (matchData.isSelectingReward && matchData.isWinner) {
           setAvailableCards(matchData.availableCardsToSteal || []);
@@ -319,7 +319,7 @@ const MatchBattle = () => {
 
   const isFinished = match.status === 'finished';
   const canSteal = match.isSelectingReward && match.isWinner;
-  const currentRoundResult = match.roundResult;
+  const currentRoundResult = match.roundResult; // ✅ FIXED: Get round result from match
   const isDraw = currentRoundResult?.winner === 'draw';
 
   let hostUserId = null;
@@ -336,6 +336,7 @@ const MatchBattle = () => {
   console.log('🔍 [RENDER] mySide:', mySide);
   console.log('🔍 [RENDER] match.myTeam length:', match.myTeam?.length || 0);
   console.log('🔍 [RENDER] isConfirmed:', isConfirmed);
+  console.log('🔍 [RENDER] currentRoundResult:', currentRoundResult);
 
   // ✅ LOBBY
   if (isWaiting) {
@@ -559,7 +560,7 @@ const MatchBattle = () => {
         </div>
       )}
 
-      {/* ===== CARDS GRID - YOUR TEAM ===== */}
+      {/* ===== CARDS GRID - WITH FLIP ANIMATION ===== */}
       {!isFinished && match && match.myTeam && match.myTeam.length > 0 && (
         <div className="cards-grid-container">
           <div className="cards-section">
@@ -568,69 +569,107 @@ const MatchBattle = () => {
               <span className="cards-used">{match.myTeam?.filter(c => c.used).length || 0}/10 used</span>
             </h4>
             <div className="cards-grid">
-              {match.myTeam.map((card, index) => (
-                <div
-                  key={index}
-                  className={`battle-card ${card.used ? 'used' : ''}
-                    ${selectedIndex === index ? 'selected' : ''}
-                    ${isConfirmed ? 'confirmed' : ''}
-                    ${card.won === true ? 'won' : ''}
-                    ${card.won === false ? 'lost' : ''}
-                    ${match.status === 'selecting' && !card.used && !isConfirmed ? 'clickable' : ''}`}
-                  onClick={() => {
-                    if (match.status === 'selecting' && !card.used && !isConfirmed) {
-                      handleSelectForRound(index);
+              {match.myTeam.map((card, index) => {
+                // ✅ Check if this card should be revealed
+                let isRevealing = false;
+                let isWinner = false;
+                let isLoser = false;
+                
+                if (currentRoundResult && currentRoundResult.revealed) {
+                  const isPlayer1Card = currentRoundResult.player1CardIndex === index;
+                  const isPlayer2Card = currentRoundResult.player2CardIndex === index;
+                  
+                  if (isPlayer1Card || isPlayer2Card) {
+                    isRevealing = true;
+                    if (currentRoundResult.winner === 'player1' && isPlayer1Card) {
+                      isWinner = true;
+                    } else if (currentRoundResult.winner === 'player2' && isPlayer2Card) {
+                      isWinner = true;
+                    } else if (isPlayer1Card || isPlayer2Card) {
+                      isLoser = true;
                     }
-                  }}
-                >
-                  <div className="card-image-wrapper">
-                    {card.image ? (
-                      <img 
-                        src={card.image} 
-                        alt={card.characterName} 
-                        className="card-image"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          const fallback = e.target.parentElement?.querySelector('.card-placeholder-fallback');
-                          if (fallback) fallback.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div 
-                      className="card-placeholder-fallback" 
-                      style={{ 
-                        display: card.image ? 'none' : 'flex',
-                        width: '100%',
-                        height: '100%',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '2rem',
-                        fontWeight: '700',
-                        color: 'rgba(255,255,255,0.05)',
-                        background: 'linear-gradient(135deg, #1a1a3e, #2d2d5e)',
-                        minHeight: '80px'
-                      }}
-                    >
-                      {card.characterName?.charAt(0) || '?'}
-                    </div>
-                    {card.used && (
-                      <div className="card-used-overlay">
-                        <span>{card.won === true ? '✅' : card.won === false ? '❌' : '⚡'}</span>
+                  }
+                }
+                
+                const delayClass = `delay-${(index % 3) + 1}`;
+
+                return (
+                  <div
+                    key={index}
+                    className={`battle-card ${card.used ? 'used' : ''}
+                      ${selectedIndex === index ? 'selected' : ''}
+                      ${isConfirmed ? 'confirmed' : ''}
+                      ${isRevealing ? `revealing ${delayClass}` : ''}
+                      ${isWinner ? 'winner' : ''}
+                      ${isLoser ? 'loser' : ''}
+                      ${card.won === true ? 'won' : ''}
+                      ${card.won === false ? 'lost' : ''}
+                      ${match.status === 'selecting' && !card.used && !isConfirmed ? 'clickable' : ''}`}
+                    onClick={() => {
+                      if (match.status === 'selecting' && !card.used && !isConfirmed) {
+                        handleSelectForRound(index);
+                      }
+                    }}
+                  >
+                    <div className="card-flip-container">
+                      <div className={`card-flip-inner ${isRevealing ? 'flipped' : ''}`}>
+                        {/* ✅ Card Front (Face Down) */}
+                        <div className="card-front">
+                          <span className="card-question-mark">❓</span>
+                        </div>
+                        
+                        {/* ✅ Card Back (Face Up) */}
+                        <div className="card-back">
+                          {card.image ? (
+                            <img 
+                              src={card.image} 
+                              alt={card.characterName} 
+                              className="card-image"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                const fallback = e.target.parentElement?.querySelector('.card-placeholder-fallback');
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className="card-placeholder-fallback" 
+                            style={{ 
+                              display: card.image ? 'none' : 'flex',
+                              width: '100%',
+                              height: '100%',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '2rem',
+                              fontWeight: '700',
+                              color: 'rgba(255,255,255,0.05)',
+                              background: 'linear-gradient(135deg, #1a1a3e, #2d2d5e)',
+                              minHeight: '80px'
+                            }}
+                          >
+                            {card.characterName?.charAt(0) || '?'}
+                          </div>
+                          
+                          {/* ✅ Winner/Loser Badge */}
+                          {isRevealing && isWinner && (
+                            <div className="card-result-badge">✅</div>
+                          )}
+                          {isRevealing && isLoser && (
+                            <div className="card-result-badge">❌</div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {selectedIndex === index && (
-                      <div className="card-selected-glow"></div>
+                    </div>
+                    <div className="card-info">
+                      <span className="card-name">{card.characterName}</span>
+                      <span className="card-power">⚡{card.powerLevel}</span>
+                    </div>
+                    {card.used && card.roundUsed && (
+                      <div className="card-round-badge">R{card.roundUsed}</div>
                     )}
                   </div>
-                  <div className="card-info">
-                    <span className="card-name">{card.characterName}</span>
-                    <span className="card-power">⚡{card.powerLevel}</span>
-                  </div>
-                  {card.used && card.roundUsed && (
-                    <div className="card-round-badge">R{card.roundUsed}</div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* ===== ACTION AREA ===== */}
