@@ -81,7 +81,9 @@ app.use(helmet({
         "'self'", 
         process.env.CLIENT_URL || 'http://localhost:5173',
         'https://anti-akinator-silk.vercel.app',
-        'https://anti-akinator.vercel.app'
+        'https://anti-akinator.vercel.app',
+  'https://anti-akinator.in',      // ✅ NEW
+  'https://www.anti-akinator.in' 
       ],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
@@ -123,6 +125,8 @@ const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
   'https://anti-akinator-silk.vercel.app',
   'https://anti-akinator.vercel.app',
+  'https://anti-akinator.in',        // ✅ NEW
+  'https://www.anti-akinator.in',    // ✅ NEW
   'https://anti-akinator-production.up.railway.app'
 ];
 
