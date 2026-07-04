@@ -46,8 +46,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.warn('⚠️ No token found in localStorage');
     }
 
     // ===== Add CSRF token =====
@@ -69,9 +67,9 @@ api.interceptors.request.use(
       };
     }
 
-    // ===== Sanitized logging =====
+    // ===== ✅ FIX: Log request data for debugging =====
     const sanitizedUrl = config.url?.replace(/\/[0-9a-f]{24}\b/g, '/:id');
-    console.log(`📤 ${config.method?.toUpperCase()} ${sanitizedUrl || config.url}`);
+    console.log(`📤 ${config.method?.toUpperCase()} ${sanitizedUrl || config.url}`, config.data || '');
 
     return config;
   },
@@ -106,16 +104,20 @@ api.interceptors.response.use(
       });
     }
 
-    // ===== 401 Unauthorized - FIXED =====
+    // ===== ✅ FIX: Better error logging =====
+    console.error('💥 Server error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url
+    });
+
+    // ===== 401 Unauthorized =====
     if (error.response?.status === 401) {
       console.warn('🔑 Unauthorized - Token may be expired');
-      
-      // Only redirect if not already on login page
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         delete api.defaults.headers.common['Authorization'];
-        // Don't redirect immediately - let the component handle it
       }
     }
 

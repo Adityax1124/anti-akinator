@@ -83,6 +83,7 @@ router.get('/me', authMiddleware, async (req, res) => {
       stats: user.stats,
       seasonStats: user.seasonStats,
       shards: user.shards,
+      gems: user.gems || 0,
       totalGuesses: user.totalGuesses,
       equipped: {
         banner: user.equipped?.banner || null,
@@ -482,6 +483,7 @@ router.get('/public/:username', validateUsername, async (req, res) => {
       stats: user.stats,
       totalGuesses: user.totalGuesses || 0,
       shards: user.shards || 0,
+      gems: user.gems || 0,
       role: user.role,
       equipped: {
         banner: user.equipped?.banner || null,
@@ -536,7 +538,7 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
       username: { $regex: sanitizedQuery, $options: 'i' },
       _id: { $ne: req.user._id }
     })
-    .select('_id username stats shards equipped.profilePhoto')
+    .select('_id username stats shards gems equipped.profilePhoto')
     .populate('equipped.profilePhoto', 'imageUrl')
     .limit(10);
 
@@ -549,6 +551,7 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
       username: user.username,
       stats: user.stats,
       shards: user.shards,
+      gems: user.gems || 0,
       profilePhoto: user.equipped?.profilePhoto || null
     }));
 
@@ -566,7 +569,7 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
   }
 });
 
-// ===================== 🃏 GET USER CARDS =====================
+// ===================== ✅ UPDATED: GET USER CARDS (WITH POWER LEVEL, CURRENT POWER, LEVEL, ELEMENT, RARITY) =====================
 router.get('/cards', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -580,24 +583,32 @@ router.get('/cards', authMiddleware, async (req, res) => {
 
     const cards = user.cards || [];
     
-    // Sort by power level (highest first)
-    const sortedCards = cards.sort((a, b) => b.powerLevel - a.powerLevel);
+    // Sort by currentPower (highest first)
+    const sortedCards = cards.sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0));
     
-    // Get character details for each card
+    // ✅ Get full card details with all fields
     const cardsWithDetails = sortedCards.map(card => ({
       characterId: card.characterId,
-      characterName: card.characterName,
-      powerLevel: card.powerLevel,
+      characterName: card.characterName || 'Unknown',
+      powerLevel: card.powerLevel || 25,
+      currentPower: card.currentPower || card.powerLevel || 25,
+      basePower: card.basePower || card.powerLevel || 25,
+      level: card.level || 1,
+      element: card.element || 'Fire',
+      rarity: card.rarity || 'Common',
       image: card.image || '',
       unlockedAt: card.unlockedAt,
       stolenFrom: card.stolenFrom,
-      stolenAt: card.stolenAt
+      stolenAt: card.stolenAt,
+      used: card.used || false,
+      won: card.won || null,
+      roundUsed: card.roundUsed || null
     }));
 
     res.json({
       success: true,
       cards: cardsWithDetails,
-      count: cardsWithDetails.length  // ✅ COUNT ADDED
+      count: cardsWithDetails.length
     });
   } catch (error) {
     console.error('Get cards error:', error.message);

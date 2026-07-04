@@ -121,7 +121,8 @@ const Matchmaking = () => {
       setError(`You need at least 10 cards! (${allCards.length}/10)`);
       return;
     }
-    const top10 = [...allCards].sort((a, b) => b.powerLevel - a.powerLevel).slice(0, 10);
+    // ✅ Use currentPower for sorting
+    const top10 = [...allCards].sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0)).slice(0, 10);
     setSelectedTeam(top10);
     setSuccess('✅ Top 10 cards selected! Confirm your team.');
     setTimeout(() => setSuccess(''), 3000);
@@ -308,6 +309,16 @@ const Matchmaking = () => {
             <div className="team-cards-grid">
               {allCards.map((card) => {
                 const selected = isCardSelected(card.characterId);
+                // ✅ Get current power (upgraded power)
+                const currentPower = card.currentPower || card.powerLevel || 0;
+                const cardLevel = card.level || 1;
+                const elementEmoji = {
+                  'Fire': '🔥',
+                  'Water': '💧',
+                  'Wind': '🌪️',
+                  'Earth': '🌍'
+                }[card.element] || '❓';
+
                 return (
                   <div
                     key={card.characterId}
@@ -323,10 +334,16 @@ const Matchmaking = () => {
                         </div>
                       )}
                       {selected && <div className="team-card-check">✅</div>}
+                      {/* ✅ Show card level and element badges */}
+                      <div className="team-card-badges">
+                        <span className="team-card-element">{elementEmoji}</span>
+                        <span className="team-card-level">Lv.{cardLevel}</span>
+                      </div>
                     </div>
                     <div className="team-card-info">
                       <span className="team-card-name">{card.characterName}</span>
-                      <span className="team-card-power">⚡{card.powerLevel}</span>
+                      {/* ✅ Show CURRENT POWER (upgraded) */}
+                      <span className="team-card-power">⚡{currentPower}</span>
                     </div>
                   </div>
                 );

@@ -37,20 +37,25 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
     setSuccess('');
 
     try {
+      // ✅ Debug log
+      console.log('🔍 [UPGRADE] Sending characterId:', card.characterId);
+      
       const response = await api.post('/cards/upgrade', {
         characterId: card.characterId
       });
+
+      console.log('🔍 [UPGRADE] Response:', response.data);
 
       if (response.data.success) {
         setSuccess(response.data.message);
         const updatedCard = response.data.card;
         onUpgradeSuccess(updatedCard);
-        // Close modal after delay
         setTimeout(() => {
           onClose();
         }, 1500);
       }
     } catch (err) {
+      console.error('❌ [UPGRADE] Error:', err);
       setError(err.response?.data?.message || 'Failed to upgrade card');
     } finally {
       setLoading(false);

@@ -45,6 +45,23 @@ console.log('🔌 Socket.io instance passed to match routes');
 app.set('trust proxy', 1);
 
 // ============================================================
+// ✅ CRITICAL: BODY PARSER - MUST BE BEFORE ROUTES
+// ============================================================
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    try { 
+      if (buf.length > 0) {
+        JSON.parse(buf); 
+      }
+    } catch (e) { 
+      throw new Error('Invalid JSON payload'); 
+    }
+  }
+}));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ============================================================
 // SECURITY: HELMET (Security Headers)
 // ============================================================
 app.use(helmet({
@@ -245,17 +262,6 @@ app.use('/api/season', profileLimiter);
 app.use('/api/admin', adminLimiter);
 app.use('/api/shop', profileLimiter);
 app.use('/api/referral', profileLimiter);
-app.use('/api/cards', cardRoutes);
-// ============================================================
-// REQUEST SIZE LIMIT
-// ============================================================
-app.use(express.json({ 
-  limit: '10mb',
-  verify: (req, res, buf) => {
-    try { JSON.parse(buf); } catch (e) { throw new Error('Invalid JSON payload'); }
-  }
-}));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================================
 // HTTPS REDIRECT
@@ -310,13 +316,10 @@ io.on('connection', (socket) => {
   });
 
   // ===== MATCH SOCKET EVENTS =====
-  
-  // ✅ Join match room
   socket.on('join-match-room', (matchCode) => {
     if (matchCode && matchCode !== 'undefined') {
       socket.join(matchCode);
       console.log(`⚔️ Socket ${socket.id} joined match room: ${matchCode}`);
-      
       socket.to(matchCode).emit('player-joined-match', {
         message: 'A player has joined the match',
         timestamp: new Date().toISOString()
@@ -324,12 +327,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Leave match room
   socket.on('leave-match-room', (matchCode) => {
     if (matchCode && matchCode !== 'undefined') {
       socket.leave(matchCode);
       console.log(`⚔️ Socket ${socket.id} left match room: ${matchCode}`);
-      
       socket.to(matchCode).emit('player-left-match', {
         message: 'A player has left the match',
         timestamp: new Date().toISOString()
@@ -337,7 +338,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Player selected card
   socket.on('match-card-selected', (data) => {
     const { matchCode, playerId, cardIndex } = data;
     if (matchCode && matchCode !== 'undefined') {
@@ -350,7 +350,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Player confirmed card
   socket.on('match-card-confirmed', (data) => {
     const { matchCode, playerId, cardIndex } = data;
     if (matchCode && matchCode !== 'undefined') {
@@ -363,7 +362,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Round revealed
   socket.on('round-revealed', (data) => {
     const { matchCode, round, winner, player1Card, player2Card } = data;
     if (matchCode && matchCode !== 'undefined') {
@@ -378,7 +376,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Match ended
   socket.on('match-ended', (data) => {
     const { matchCode, winner, stolenCard } = data;
     if (matchCode && matchCode !== 'undefined') {
@@ -391,7 +388,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Chat message
   socket.on('match-chat-message', (data) => {
     const { matchCode, username, message, userId } = data;
     if (matchCode && matchCode !== 'undefined') {
@@ -405,7 +401,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Selection timeout
   socket.on('match-selection-timeout', (data) => {
     const { matchCode, playerId } = data;
     if (matchCode && matchCode !== 'undefined') {
@@ -433,7 +428,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ===== VOICE CHAT EVENTS =====
   socket.on('user-joined-voice', (data) => {
     const { roomCode, username } = data;
     if (roomCode && roomCode !== 'undefined') {
@@ -517,6 +511,7 @@ app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/friend', authMiddleware, friendRoutes);
 app.use('/api/match', authMiddleware, matchRoutes);
 app.use('/api/2fa', twoFactorRoutes);
+app.use('/api/cards', authMiddleware, cardRoutes); // ✅ FIXED: authMiddleware applied
 
 // ============================================================
 // AGORA TOKEN GENERATOR
@@ -524,11 +519,8 @@ app.use('/api/2fa', twoFactorRoutes);
 app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
     const channelName = req.query.channel || 'default';
-    
     const uid = req.user._id.toString();
-    
     console.log(`👤 User: ${req.user.username}, UID: ${uid}`);
-    
     const role = RtcRole.PUBLISHER;
     const expireTime = 3600;
     const currentTimestamp = Math.floor(Date.now() / 1000);

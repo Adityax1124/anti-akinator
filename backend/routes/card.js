@@ -5,6 +5,56 @@ const User = require('../models/User');
 const Character = require('../models/Character');
 
 // ============================================================
+// ✅ HELPER: Get Upgrade Info (DEFINED FIRST)
+// ============================================================
+function getUpgradeInfo(level) {
+  const upgradeData = {
+    1: { cost: 10, powerIncrease: 1, nextLevel: 2 },
+    2: { cost: 15, powerIncrease: 1, nextLevel: 3 },
+    3: { cost: 20, powerIncrease: 2, nextLevel: 4 },
+    4: { cost: 30, powerIncrease: 2, nextLevel: 5 },
+    5: { cost: 40, powerIncrease: 2, nextLevel: 6 },
+    6: { cost: 55, powerIncrease: 3, nextLevel: 7 },
+    7: { cost: 70, powerIncrease: 3, nextLevel: 8 },
+    8: { cost: 90, powerIncrease: 4, nextLevel: 9 },
+    9: { cost: 120, powerIncrease: 4, nextLevel: 10 },
+    10: { cost: 0, powerIncrease: 0, nextLevel: null, isMax: true }
+  };
+
+  const info = upgradeData[level] || upgradeData[1];
+  return {
+    cost: info.cost,
+    powerIncrease: info.powerIncrease,
+    nextLevel: info.nextLevel,
+    isMax: info.isMax || false,
+    totalCostToMax: calculateTotalCostToMax(level)
+  };
+}
+
+// ============================================================
+// ✅ HELPER: Calculate Total Cost to Max
+// ============================================================
+function calculateTotalCostToMax(currentLevel) {
+  const costs = {
+    1: 10,
+    2: 15,
+    3: 20,
+    4: 30,
+    5: 40,
+    6: 55,
+    7: 70,
+    8: 90,
+    9: 120
+  };
+
+  let total = 0;
+  for (let i = currentLevel; i < 10; i++) {
+    total += costs[i] || 0;
+  }
+  return total;
+}
+
+// ============================================================
 // ✅ GET USER'S CARD COLLECTION
 // ============================================================
 router.get('/collection', authMiddleware, async (req, res) => {
@@ -19,10 +69,8 @@ router.get('/collection', authMiddleware, async (req, res) => {
       });
     }
 
-    // Sort cards by power (highest first)
     const cards = user.cards.sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0));
 
-    // Get total cards and stats
     const totalCards = cards.length;
     const totalPower = cards.reduce((sum, card) => sum + (card.currentPower || card.powerLevel || 0), 0);
     const avgPower = totalCards > 0 ? Math.round(totalPower / totalCards) : 0;
@@ -73,7 +121,6 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
       });
     }
 
-    // Get upgrade info
     const currentLevel = card.level || 1;
     const upgradeInfo = getUpgradeInfo(currentLevel);
     const canUpgrade = currentLevel < 10 && (user.gems || 0) >= upgradeInfo.cost;
@@ -106,6 +153,8 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
 // ============================================================
 router.post('/upgrade', authMiddleware, async (req, res) => {
   try {
+    console.log('🔍 [UPGRADE] Request body:', req.body);
+    
     const { characterId } = req.body;
 
     if (!characterId) {
@@ -124,7 +173,6 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
       });
     }
 
-    // Find the card in user's collection
     const cardIndex = user.cards.findIndex(c => 
       c.characterId && c.characterId.toString() === characterId
     );
@@ -139,7 +187,6 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
     const card = user.cards[cardIndex];
     const currentLevel = card.level || 1;
 
-    // Check if already at max level
     if (currentLevel >= 10) {
       return res.status(400).json({
         success: false,
@@ -148,11 +195,9 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
       });
     }
 
-    // Calculate upgrade cost
     const upgradeInfo = getUpgradeInfo(currentLevel);
-    
-    // Check if user has enough gems
     const userGems = user.gems || 0;
+    
     if (userGems < upgradeInfo.cost) {
       return res.status(400).json({
         success: false,
@@ -163,19 +208,14 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
       });
     }
 
-    // Deduct gems
     user.gems = userGems - upgradeInfo.cost;
-
-    // Upgrade card
     const oldLevel = currentLevel;
     const oldPower = card.currentPower || card.powerLevel || 0;
     card.level = oldLevel + 1;
-    card.currentPower = oldPower + upgradeInfo.powerIncrease;
+    card.currentPower = Number((oldPower + upgradeInfo.powerIncrease).toFixed(1));
 
-    // Save user
     await user.save();
 
-    // Log the upgrade
     console.log(`⬆️ ${user.username} upgraded ${card.characterName} from Level ${oldLevel} to Level ${card.level} (${oldPower} → ${card.currentPower})`);
 
     res.json({
@@ -195,10 +235,10 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Upgrade card error:', error);
+    console.error('❌ Upgrade card error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to upgrade card'
+      message: 'Failed to upgrade card: ' + error.message
     });
   }
 });
@@ -251,7 +291,7 @@ router.post('/upgrade-bulk', authMiddleware, async (req, res) => {
       
       const oldPower = card.currentPower || card.powerLevel || 0;
       card.level = currentLevel + 1;
-      card.currentPower = oldPower + upgradeInfo.powerIncrease;
+      card.currentPower = Number((oldPower + upgradeInfo.powerIncrease).toFixed(1));
       
       upgradedCount++;
       results.push({
@@ -350,55 +390,5 @@ router.get('/rarity-colors', authMiddleware, async (req, res) => {
     });
   }
 });
-
-// ============================================================
-// ✅ HELPER: Get Upgrade Info
-// ============================================================
-function getUpgradeInfo(level) {
-  const upgradeData = {
-    1: { cost: 10, powerIncrease: 1, nextLevel: 2 },
-    2: { cost: 15, powerIncrease: 1, nextLevel: 3 },
-    3: { cost: 20, powerIncrease: 2, nextLevel: 4 },
-    4: { cost: 30, powerIncrease: 2, nextLevel: 5 },
-    5: { cost: 40, powerIncrease: 2, nextLevel: 6 },
-    6: { cost: 55, powerIncrease: 3, nextLevel: 7 },
-    7: { cost: 70, powerIncrease: 3, nextLevel: 8 },
-    8: { cost: 90, powerIncrease: 4, nextLevel: 9 },
-    9: { cost: 120, powerIncrease: 4, nextLevel: 10 },
-    10: { cost: 0, powerIncrease: 0, nextLevel: null, isMax: true }
-  };
-
-  const info = upgradeData[level] || upgradeData[1];
-  return {
-    cost: info.cost,
-    powerIncrease: info.powerIncrease,
-    nextLevel: info.nextLevel,
-    isMax: info.isMax || false,
-    totalCostToMax: calculateTotalCostToMax(level)
-  };
-}
-
-// ============================================================
-// ✅ HELPER: Calculate Total Cost to Max
-// ============================================================
-function calculateTotalCostToMax(currentLevel) {
-  const costs = {
-    1: 10,
-    2: 15,
-    3: 20,
-    4: 30,
-    5: 40,
-    6: 55,
-    7: 70,
-    8: 90,
-    9: 120
-  };
-
-  let total = 0;
-  for (let i = currentLevel; i < 10; i++) {
-    total += costs[i] || 0;
-  }
-  return total;
-}
 
 module.exports = router;
