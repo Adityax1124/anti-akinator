@@ -344,7 +344,7 @@ router.post('/start', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// GET MATCH STATE
+// GET MATCH STATE - WITH ROUND RESULT (FULLY FIXED)
 // ============================================================
 router.get('/:matchCode', authMiddleware, async (req, res) => {
   try {
@@ -429,10 +429,59 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
       availableCardsToSteal = match.availableCardsToSteal || [];
     }
 
-    // ✅ Get confirmation status for current user
     const isConfirmed = side === 'player1' ? 
       match.player1.confirmedCardIndex !== null : 
       match.player2.confirmedCardIndex !== null;
+
+    // ✅ BUILD ROUND RESULT - FIXED
+    let roundResult = null;
+
+    // ✅ Method 1: From roundStates (after reveal)
+    if (match.roundStates && match.roundStates.length > 0) {
+      const lastRound = match.roundStates[match.roundStates.length - 1];
+      if (lastRound && lastRound.revealed) {
+        roundResult = {
+          player1CardIndex: lastRound.player1CardIndex,
+          player2CardIndex: lastRound.player2CardIndex,
+          winner: lastRound.winner,
+          revealed: true,
+          player1Card: lastRound.player1CardIndex !== undefined && lastRound.player1CardIndex !== null ? 
+            match.player1.team[lastRound.player1CardIndex] : null,
+          player2Card: lastRound.player2CardIndex !== undefined && lastRound.player2CardIndex !== null ?
+            match.player2.team[lastRound.player2CardIndex] : null,
+        };
+      }
+    }
+
+    // ✅ Method 2: If both confirmed but no roundStates yet (before reveal)
+    if (!roundResult && bothConfirmed) {
+      const p1Index = match.player1.confirmedCardIndex;
+      const p2Index = match.player2.confirmedCardIndex;
+      
+      if (p1Index !== null && p2Index !== null) {
+        const p1Card = match.player1.team[p1Index];
+        const p2Card = match.player2.team[p2Index];
+        let winner = null;
+        
+        if (p1Card && p2Card) {
+          if (p1Card.powerLevel > p2Card.powerLevel) winner = 'player1';
+          else if (p2Card.powerLevel > p1Card.powerLevel) winner = 'player2';
+          else winner = 'draw';
+        }
+        
+        roundResult = {
+          player1CardIndex: p1Index,
+          player2CardIndex: p2Index,
+          winner: winner,
+          revealed: true,
+          player1Card: p1Card || null,
+          player2Card: p2Card || null,
+        };
+      }
+    }
+
+    console.log('🔍 [GET MATCH] bothConfirmed:', bothConfirmed);
+    console.log('🔍 [GET MATCH] roundResult:', roundResult);
 
     res.json({
       success: true,
@@ -467,6 +516,7 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
         },
         myTeam: myTeam,
         opponentTeam: opponentTeam,
+        roundResult: roundResult,
         roundHistory: match.roundStates.map(round => ({
           round: round.round,
           winner: round.winner,
@@ -477,13 +527,6 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
         gameLog: match.gameLog.slice(-20),
         cardsWon: playerData.cardsWon || [],
         cardsLost: playerData.cardsLost || [],
-        roundResult: bothConfirmed && match.roundStates.length > 0 ? {
-          player1Card: match.roundStates[match.roundStates.length - 1]?.player1CardIndex !== undefined ?
-            match.player1.team[match.roundStates[match.roundStates.length - 1].player1CardIndex] : null,
-          player2Card: match.roundStates[match.roundStates.length - 1]?.player2CardIndex !== undefined ?
-            match.player2.team[match.roundStates[match.roundStates.length - 1].player2CardIndex] : null,
-          winner: match.roundStates[match.roundStates.length - 1]?.winner
-        } : null,
         isFinished: match.status === 'finished',
         winner: match.winnerUsername,
         stolenCard: match.stolenCard,
@@ -596,7 +639,7 @@ router.post('/select', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// CONFIRM CARD (FIXED)
+// CONFIRM CARD
 // ============================================================
 router.post('/confirm', authMiddleware, async (req, res) => {
   try {
@@ -722,7 +765,7 @@ function getPlayerSide(match, userId) {
 }
 
 // ============================================================
-// REVEAL ROUND (FIXED)
+// REVEAL ROUND
 // ============================================================
 async function revealRound(match) {
   console.log('🎯 [REVEAL] Revealing round...');
@@ -830,7 +873,7 @@ async function revealRound(match) {
 }
 
 // ============================================================
-// END MATCH (FIXED - winnerUsername set properly)
+// END MATCH
 // ============================================================
 async function endMatch(match) {
   const p1Score = match.player1.currentScore;
@@ -912,6 +955,7 @@ async function endMatch(match) {
     });
   }
 }
+
 // ============================================================
 // STEAL CARD
 // ============================================================
