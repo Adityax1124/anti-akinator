@@ -49,6 +49,7 @@ const userSchema = new mongoose.Schema({
     default: 'player',
     set: (v) => v === 'admin' ? 'admin' : 'player'
   },
+  
   // ===== LIFETIME STATS =====
   stats: {
     gamesPlayed: { type: Number, default: 0, min: 0 },
@@ -56,6 +57,7 @@ const userSchema = new mongoose.Schema({
     totalQuestions: { type: Number, default: 0, min: 0 },
     winStreak: { type: Number, default: 0, min: 0 }
   },
+  
   // ===== SEASON STATS =====
   seasonStats: {
     currentSeason: { 
@@ -67,6 +69,7 @@ const userSchema = new mongoose.Schema({
     seasonPlayed: { type: Number, default: 0, min: 0 },
     seasonStreak: { type: Number, default: 0, min: 0 }
   },
+  
   // ===== SEASON HISTORY =====
   seasonHistory: [{
     season: { type: Number, required: true, min: 1 },
@@ -77,18 +80,30 @@ const userSchema = new mongoose.Schema({
     isWinner: { type: Boolean, default: false },
     endedAt: { type: Date, default: Date.now }
   }],
+  
+  // ============================================================
+  // ✅ NEW - GEMS (Currency for Card Upgrades)
+  // ============================================================
+  gems: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  
   // ===== SHARDS =====
   shards: {
     type: Number,
     default: 0,
     min: 0
   },
+  
   // ===== PURCHASED ITEMS =====
   purchasedItems: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: 'ShopItem',
     default: []
   },
+  
   // ===== ACHIEVEMENTS =====
   totalGuesses: { 
     type: Number, 
@@ -175,9 +190,9 @@ const userSchema = new mongoose.Schema({
     }
   },
 
-  // =============================================
+  // ============================================================
   // ===== 🃏 CARD COLLECTION (For Card Battles) =====
-  // =============================================
+  // ============================================================
   cards: [{
     characterId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -188,11 +203,38 @@ const userSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    powerLevel: {
+    // ✅ Base Power (from character)
+    basePower: {
       type: Number,
       required: true,
-      min: 1,
+      min: 0.5,
       max: 50
+    },
+    // ✅ Current Power (after upgrades)
+    currentPower: {
+      type: Number,
+      required: true,
+      min: 0.5,
+      max: 50
+    },
+    // ✅ Card Level (1-10)
+    level: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 10
+    },
+    // ✅ Element (Fire/Water/Wind/Earth)
+    element: {
+      type: String,
+      enum: ['Fire', 'Water', 'Wind', 'Earth'],
+      default: 'Fire'
+    },
+    // ✅ Rarity
+    rarity: {
+      type: String,
+      enum: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'],
+      default: 'Common'
     },
     image: {
       type: String,
@@ -214,21 +256,23 @@ const userSchema = new mongoose.Schema({
     }
   }],
 
-  // =============================================
+  // ============================================================
   // ===== 🏆 MATCH STATS =====
-  // =============================================
+  // ============================================================
   matchStats: {
     matchesPlayed: { type: Number, default: 0 },
     matchesWon: { type: Number, default: 0 },
     matchesLost: { type: Number, default: 0 },
     cardsStolen: { type: Number, default: 0 },
     cardsLost: { type: Number, default: 0 },
-    totalRoundsWon: { type: Number, default: 0 }
+    totalRoundsWon: { type: Number, default: 0 },
+    // ✅ Gems earned from matches
+    gemsEarned: { type: Number, default: 0 }
   },
 
-  // =============================================
+  // ============================================================
   // ===== 🔗 REFERRAL SYSTEM =====
-  // =============================================
+  // ============================================================
   referralCode: {
     type: String,
     unique: true,
@@ -251,9 +295,9 @@ const userSchema = new mongoose.Schema({
     completedReferrals: { type: Number, default: 0, min: 0 }
   },
 
-  // =============================================
+  // ============================================================
   // ===== 🛡️ DEVICE FINGERPRINT =====
-  // =============================================
+  // ============================================================
   deviceFingerprint: {
     type: String,
     unique: true,
@@ -332,7 +376,8 @@ userSchema.index({ referredBy: 1 });
 userSchema.index({ deviceFingerprint: 1 });
 // ✅ NEW: Card indexes
 userSchema.index({ 'cards.characterId': 1 });
-userSchema.index({ 'cards.powerLevel': -1 });
+userSchema.index({ 'cards.currentPower': -1 });
+userSchema.index({ 'cards.level': -1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -397,7 +442,9 @@ userSchema.methods.resetFailedAttempts = async function() {
   await this.save();
 };
 
-// ===== CARD COLLECTION METHODS =====
+// ============================================================
+// ✅ CARD COLLECTION METHODS (UPDATED)
+// ============================================================
 userSchema.methods.addCard = function(character) {
   // Check if card already exists
   const exists = this.cards.some(c => 
@@ -409,7 +456,11 @@ userSchema.methods.addCard = function(character) {
   this.cards.push({
     characterId: character._id,
     characterName: character.name,
-    powerLevel: character.powerLevel || 25,
+    basePower: character.basePower || character.powerLevel || 25,
+    currentPower: character.basePower || character.powerLevel || 25,
+    level: 1,
+    element: character.element || 'Fire',
+    rarity: character.rarity || 'Common',
     image: character.image || '',
     unlockedAt: new Date()
   });
@@ -434,10 +485,98 @@ userSchema.methods.getCardById = function(characterId) {
   );
 };
 
+userSchema.methods.getCardByIndex = function(index) {
+  if (index < 0 || index >= this.cards.length) return null;
+  return this.cards[index];
+};
+
 userSchema.methods.getTopCards = function(limit = 10) {
   return this.cards
-    .sort((a, b) => b.powerLevel - a.powerLevel)
+    .sort((a, b) => b.currentPower - a.currentPower)
     .slice(0, limit);
+};
+
+// ✅ NEW: Upgrade Card
+userSchema.methods.upgradeCard = function(characterId) {
+  const card = this.cards.find(c => 
+    c.characterId.toString() === characterId.toString()
+  );
+  
+  if (!card) return { success: false, message: 'Card not found' };
+  if (card.level >= 10) return { success: false, message: 'Card already at max level' };
+  
+  // Calculate upgrade cost based on level
+  const upgradeCost = getUpgradeCost(card.level);
+  
+  if (this.gems < upgradeCost) {
+    return { success: false, message: `Need ${upgradeCost} gems, have ${this.gems}` };
+  }
+  
+  // Deduct gems
+  this.gems -= upgradeCost;
+  
+  // Increase level
+  card.level += 1;
+  
+  // Calculate new power (based on level)
+  const powerIncrease = getPowerIncrease(card.level);
+  card.currentPower += powerIncrease;
+  
+  return { 
+    success: true, 
+    message: `Card upgraded to level ${card.level}!`,
+    newLevel: card.level,
+    newPower: card.currentPower,
+    gemsRemaining: this.gems
+  };
+};
+
+// ✅ NEW: Get Upgrade Cost
+function getUpgradeCost(level) {
+  const costs = {
+    1: 10,
+    2: 15,
+    3: 20,
+    4: 30,
+    5: 40,
+    6: 55,
+    7: 70,
+    8: 90,
+    9: 120
+  };
+  return costs[level] || 120;
+}
+
+// ✅ NEW: Get Power Increase
+function getPowerIncrease(level) {
+  const increases = {
+    1: 1,
+    2: 1,
+    3: 2,
+    4: 2,
+    5: 2,
+    6: 3,
+    7: 3,
+    8: 4,
+    9: 4,
+    10: 5
+  };
+  return increases[level] || 5;
+}
+
+// ============================================================
+// ✅ GEMS METHODS
+// ============================================================
+userSchema.methods.addGems = function(amount) {
+  if (amount < 0) return false;
+  this.gems += amount;
+  return true;
+};
+
+userSchema.methods.removeGems = function(amount) {
+  if (amount < 0 || this.gems < amount) return false;
+  this.gems -= amount;
+  return true;
 };
 
 // ===== REFERRAL METHODS =====
@@ -475,7 +614,7 @@ userSchema.statics.findBySeason = function(season) {
 
 userSchema.statics.getSeasonLeaderboard = function(season, limit = 50) {
   return this.find({ 'seasonStats.currentSeason': season })
-    .select('username seasonStats shards equipped.profilePhoto purchasedItems')
+    .select('username seasonStats shards gems equipped.profilePhoto purchasedItems')
     .populate('equipped.profilePhoto', 'imageUrl')
     .sort({ 
       'seasonStats.seasonStreak': -1,

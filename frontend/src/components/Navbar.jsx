@@ -16,10 +16,17 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isFriendModalOpen, setIsFriendModalOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const searchRef = useRef(null);
+
+  // Dropdown refs
+  const leaderboardRef = useRef(null);
+  const communityRef = useRef(null);
+  const profileRef = useRef(null);
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setOpenDropdown(null);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -27,17 +34,33 @@ const Navbar = () => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearch(false);
       }
+      // Close dropdowns on outside click
+      if (leaderboardRef.current && !leaderboardRef.current.contains(event.target)) {
+        if (openDropdown === 'leaderboard') setOpenDropdown(null);
+      }
+      if (communityRef.current && !communityRef.current.contains(event.target)) {
+        if (openDropdown === 'community') setOpenDropdown(null);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        if (openDropdown === 'profile') setOpenDropdown(null);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [openDropdown]);
+
+  const toggleDropdown = (dropdown) => {
+    setOpenDropdown(openDropdown === dropdown ? null : dropdown);
+  };
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
+    setOpenDropdown(null);
   };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+    if (!mobileMenuOpen) setOpenDropdown(null);
   };
 
   const openReferralModal = () => {
@@ -91,15 +114,18 @@ const Navbar = () => {
   };
 
   const profilePhotoUrl = user?.equipped?.profilePhoto?.imageUrl;
+  const userGems = user?.gems || 0;
 
   return (
     <>
       <nav className="navbar">
         <div className="navbar-container">
+          {/* Logo */}
           <Link to="/" className="navbar-brand" onClick={closeMobileMenu}>
             <span>Anti-Akinator</span>
           </Link>
 
+          {/* Search */}
           <div className="search-wrapper" ref={searchRef}>
             <div className="search-container">
               <input
@@ -148,46 +174,102 @@ const Navbar = () => {
             )}
           </div>
 
+          {/* Nav Links */}
           <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`}>
             {isAuthenticated ? (
               <>
-                {/* ✅ Play REMOVED, Battle ADDED */}
+                {/* Game Group */}
+                <Link to="/collection" className="nav-link" onClick={closeMobileMenu}>
+                  📁 Collection
+                </Link>
                 <Link to="/match" className="nav-link battle-btn" onClick={closeMobileMenu}>
                   ⚔️ Battle
                 </Link>
-                <Link to="/leaderboard" className="nav-link" onClick={closeMobileMenu}>Leaderboard</Link>
-                <Link to="/season-winners" className="nav-link" onClick={closeMobileMenu}>🏆 Winners</Link>
-                <Link to="/shop" className="nav-link" onClick={closeMobileMenu}>🛒 Shop</Link>
-                
-                <button className="nav-link friends-btn" onClick={openFriendModal}>
-                  👥 Friends
-                </button>
-                
-                <button className="nav-link referral-btn" onClick={openReferralModal}>
-                  🤝 Refer & Earn
-                </button>
-                
-                {user?.role === 'admin' && (
-                  <Link to="/admin" className="nav-link admin-link" onClick={closeMobileMenu}>Admin</Link>
-                )}
-                <Link to="/buy-shards" className="nav-link" onClick={closeMobileMenu}>🎴 Buy Shards</Link>
-                <Link to="/profile" className="nav-link" onClick={closeMobileMenu}>
-                  <span className="user-avatar">
-                    {profilePhotoUrl ? (
-                      <img src={profilePhotoUrl} alt={user.username} className="navbar-avatar-img" />
-                    ) : (
-                      user?.username?.charAt(0).toUpperCase() || 'U'
-                    )}
-                  </span>
-                  <span className="username">{user?.username}</span>
-                  <span className="shards-display">
-                    <span className="shard-icon">🎴</span>
-                    <span className="shard-number">{user?.shards || 0}</span>
-                  </span>
+
+                {/* Shop Group */}
+                <Link to="/shop" className="nav-link" onClick={closeMobileMenu}>
+                  🛒 Shop
                 </Link>
-                <button onClick={() => { closeMobileMenu(); handleLogout(); }} className="nav-link logout-btn">
-                  Logout
-                </button>
+                <Link to="/buy-shards" className="nav-link" onClick={closeMobileMenu}>
+                  🎴 Buy Shards
+                </Link>
+
+                {/* Leaderboard Dropdown */}
+                <div className="dropdown-wrapper" ref={leaderboardRef}>
+                  <button 
+                    className={`nav-link dropdown-btn ${openDropdown === 'leaderboard' ? 'active' : ''}`}
+                    onClick={() => toggleDropdown('leaderboard')}
+                  >
+                    🏆 Leaderboard <span className="dropdown-arrow">▾</span>
+                  </button>
+                  {openDropdown === 'leaderboard' && (
+                    <div className="dropdown-menu">
+                      <Link to="/leaderboard" className="dropdown-item" onClick={closeMobileMenu}>
+                        📊 Global Leaderboard
+                      </Link>
+                      <Link to="/season-winners" className="dropdown-item" onClick={closeMobileMenu}>
+                        🏅 Season Winners
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* Community Dropdown */}
+                <div className="dropdown-wrapper" ref={communityRef}>
+                  <button 
+                    className={`nav-link dropdown-btn ${openDropdown === 'community' ? 'active' : ''}`}
+                    onClick={() => toggleDropdown('community')}
+                  >
+                    👥 Community <span className="dropdown-arrow">▾</span>
+                  </button>
+                  {openDropdown === 'community' && (
+                    <div className="dropdown-menu">
+                      <button className="dropdown-item" onClick={() => { closeMobileMenu(); openFriendModal(); }}>
+                        👥 Friends
+                      </button>
+                      <button className="dropdown-item" onClick={() => { closeMobileMenu(); openReferralModal(); }}>
+                        🤝 Refer & Earn
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Admin Link */}
+                {user?.role === 'admin' && (
+                  <Link to="/admin" className="nav-link admin-link" onClick={closeMobileMenu}>
+                    ⚙️ Admin
+                  </Link>
+                )}
+
+                {/* Profile Dropdown */}
+                <div className="dropdown-wrapper" ref={profileRef}>
+                  <button 
+                    className={`nav-link dropdown-btn profile-btn ${openDropdown === 'profile' ? 'active' : ''}`}
+                    onClick={() => toggleDropdown('profile')}
+                  >
+                    <span className="user-avatar">
+                      {profilePhotoUrl ? (
+                        <img src={profilePhotoUrl} alt={user.username} className="navbar-avatar-img" />
+                      ) : (
+                        user?.username?.charAt(0).toUpperCase() || 'U'
+                      )}
+                    </span>
+                    <span className="username">{user?.username}</span>
+                    <span className="gems-badge">💎{userGems}</span>
+                    <span className="dropdown-arrow">▾</span>
+                  </button>
+                  {openDropdown === 'profile' && (
+                    <div className="dropdown-menu profile-dropdown">
+                      <Link to="/profile" className="dropdown-item" onClick={closeMobileMenu}>
+                        👤 My Profile
+                      </Link>
+                      <hr className="dropdown-divider" />
+                      <button className="dropdown-item logout-item" onClick={() => { closeMobileMenu(); handleLogout(); }}>
+                        🚪 Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -197,6 +279,7 @@ const Navbar = () => {
             )}
           </div>
 
+          {/* Mobile Menu Toggle */}
           <button 
             className="mobile-menu-btn" 
             onClick={toggleMobileMenu}

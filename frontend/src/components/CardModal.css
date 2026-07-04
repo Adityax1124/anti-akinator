@@ -1,0 +1,471 @@
+/* ============================================================
+   CARD MODAL
+   ============================================================ */
+
+.card-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.card-modal {
+  background: linear-gradient(145deg, rgba(20, 20, 50, 0.98), rgba(10, 10, 30, 0.99));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.card-modal::-webkit-scrollbar {
+  width: 4px;
+}
+
+.card-modal::-webkit-scrollbar-thumb {
+  background: rgba(108, 99, 255, 0.3);
+  border-radius: 10px;
+}
+
+/* ===== CLOSE BUTTON ===== */
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+}
+
+/* ===== CARD IMAGE ===== */
+.modal-card-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modal-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, #1a1a3e, #2d2d5e);
+}
+
+.modal-card-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.modal-element-badge {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-level-badge {
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffd700;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+/* ===== CARD INFO ===== */
+.modal-card-info {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-card-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.modal-card-rarity {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.modal-card-element {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.element-label {
+  margin-right: 6px;
+}
+
+.element-value {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== STATS ===== */
+.modal-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.modal-stat {
+  text-align: center;
+}
+
+.modal-stat .stat-label {
+  display: block;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.modal-stat .stat-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.modal-stat .stat-value.gems {
+  color: #ffd700;
+}
+
+/* ===== PROGRESS ===== */
+.modal-progress {
+  margin-bottom: 1.5rem;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.2);
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6c63ff, #ffd700);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* ===== UPGRADE SECTION ===== */
+.modal-upgrade {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  margin-bottom: 1rem;
+}
+
+.upgrade-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.upgrade-detail {
+  text-align: center;
+}
+
+.upgrade-label {
+  display: block;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.upgrade-value {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.upgrade-value.affordable {
+  color: #51cf66;
+}
+
+.upgrade-value.expensive {
+  color: #ff6b6b;
+}
+
+/* ===== UPGRADE BUTTON ===== */
+.upgrade-btn {
+  width: 100%;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upgrade-btn.active {
+  background: linear-gradient(135deg, #ffd700, #f59e0b);
+  color: #1a1a2e;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.15);
+}
+
+.upgrade-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(255, 215, 0, 0.25);
+}
+
+.upgrade-btn.disabled {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+}
+
+.upgrade-btn:disabled {
+  opacity: 0.6;
+}
+
+.upgrade-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #ff6b6b;
+  margin-top: 0.5rem;
+}
+
+.upgrade-error {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #ff6b6b;
+  margin-top: 0.5rem;
+}
+
+.upgrade-success {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #51cf66;
+  margin-top: 0.5rem;
+}
+
+/* ===== MAX LEVEL ===== */
+.modal-max-level {
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(255, 215, 0, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.08);
+  margin-bottom: 1rem;
+}
+
+.max-level-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.modal-max-level h3 {
+  color: #ffd700;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.modal-max-level p {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.9rem;
+}
+
+.modal-max-level .max-power {
+  color: #ffd700;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+/* ===== FOOTER ===== */
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.modal-close-btn {
+  padding: 0.7rem 2.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .card-modal {
+    padding: 1.2rem;
+    max-height: 95vh;
+  }
+
+  .modal-card-image {
+    max-height: 200px;
+  }
+
+  .modal-card-name {
+    font-size: 1.4rem;
+  }
+
+  .modal-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 0.8rem;
+  }
+
+  .upgrade-info {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .upgrade-value {
+    font-size: 1rem;
+  }
+
+  .modal-card-placeholder {
+    font-size: 3.5rem;
+  }
+
+  .modal-close {
+    top: 8px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .card-modal {
+    padding: 1rem;
+  }
+
+  .modal-card-image {
+    max-height: 150px;
+  }
+
+  .modal-card-name {
+    font-size: 1.2rem;
+  }
+
+  .modal-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.3rem;
+    padding: 0.5rem;
+  }
+
+  .modal-stat .stat-value {
+    font-size: 0.9rem;
+  }
+
+  .upgrade-info {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.3rem;
+  }
+
+  .upgrade-value {
+    font-size: 0.9rem;
+  }
+
+  .upgrade-btn {
+    font-size: 0.85rem;
+    padding: 0.7rem;
+  }
+}

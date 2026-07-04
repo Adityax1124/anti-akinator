@@ -58,22 +58,30 @@ router.post('/create', authMiddleware, async (req, res) => {
           cardId: id?.toString() || 'unknown',
           used: false,
           won: null,
-          roundUsed: null
+          roundUsed: null,
+          // ✅ NEW: Card level & element for battle
+          level: card.level || 1,
+          element: card.element || 'Fire',
+          rarity: card.rarity || 'Common'
         };
       });
     } else {
       teamCards = userData.cards
-        .sort((a, b) => b.powerLevel - a.powerLevel)
+        .sort((a, b) => b.currentPower - a.currentPower)
         .slice(0, 10)
         .map(card => ({
           characterId: card.characterId,
           characterName: card.characterName,
-          powerLevel: card.powerLevel,
+          powerLevel: card.currentPower || card.powerLevel || 25,
           image: card.image || '',
           cardId: card._id?.toString() || card.characterId?.toString() || 'unknown',
           used: false,
           won: null,
-          roundUsed: null
+          roundUsed: null,
+          // ✅ NEW: Card level & element from user's card
+          level: card.level || 1,
+          element: card.element || 'Fire',
+          rarity: card.rarity || 'Common'
         }));
     }
 
@@ -128,7 +136,14 @@ router.post('/create', authMiddleware, async (req, res) => {
       roundStates: [],
       winnerSide: null,
       loserSide: null,
-      availableCardsToSteal: []
+      availableCardsToSteal: [],
+      // ✅ NEW: Gem rewards
+      gemRewards: {
+        winner: 20,
+        loser: 5,
+        draw: 10,
+        duplicateBonus: 20
+      }
     });
 
     await match.save();
@@ -219,18 +234,22 @@ router.post('/join', authMiddleware, async (req, res) => {
     }
 
     const topCards = userData.cards
-      .sort((a, b) => b.powerLevel - a.powerLevel)
+      .sort((a, b) => b.currentPower - a.currentPower)
       .slice(0, 10);
 
     const team = topCards.map(card => ({
       characterId: card.characterId,
       characterName: card.characterName,
-      powerLevel: card.powerLevel,
+      powerLevel: card.currentPower || card.powerLevel || 25,
       image: card.image || '',
       cardId: card._id.toString(),
       used: false,
       won: null,
-      roundUsed: null
+      roundUsed: null,
+      // ✅ NEW: Card level & element
+      level: card.level || 1,
+      element: card.element || 'Fire',
+      rarity: card.rarity || 'Common'
     }));
 
     match.player2.user = user._id;
@@ -399,7 +418,11 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
       won: card.won,
       isSelected: index === playerData.selectedCardIndex,
       isConfirmed: index === playerData.confirmedCardIndex,
-      roundUsed: card.roundUsed
+      roundUsed: card.roundUsed,
+      // ✅ NEW: Show level & element
+      level: card.level || 1,
+      element: card.element || 'Fire',
+      rarity: card.rarity || 'Common'
     }));
 
     const opponentTeam = (opponentData.team || []).map((card, index) => ({
@@ -411,7 +434,11 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
       won: card.won,
       roundUsed: card.roundUsed,
       isSelected: false,
-      isConfirmed: false
+      isConfirmed: false,
+      // ✅ NEW: Show level & element
+      level: card.level || 1,
+      element: card.element || 'Fire',
+      rarity: card.rarity || 'Common'
     }));
 
     const now = new Date();
@@ -449,6 +476,9 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
             match.player1.team[lastRound.player1CardIndex] : null,
           player2Card: lastRound.player2CardIndex !== undefined && lastRound.player2CardIndex !== null ?
             match.player2.team[lastRound.player2CardIndex] : null,
+          // ✅ NEW: Include element info
+          player1Element: lastRound.player1Element || null,
+          player2Element: lastRound.player2Element || null
         };
       }
     }
@@ -464,8 +494,12 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
         let winner = null;
         
         if (p1Card && p2Card) {
-          if (p1Card.powerLevel > p2Card.powerLevel) winner = 'player1';
-          else if (p2Card.powerLevel > p1Card.powerLevel) winner = 'player2';
+          // ✅ Use element advantage in power calculation
+          const p1Power = calculateEffectivePower(p1Card, p2Card);
+          const p2Power = calculateEffectivePower(p2Card, p1Card);
+          
+          if (p1Power > p2Power) winner = 'player1';
+          else if (p2Power > p1Power) winner = 'player2';
           else winner = 'draw';
         }
         
@@ -476,6 +510,8 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
           revealed: true,
           player1Card: p1Card || null,
           player2Card: p2Card || null,
+          player1Element: p1Card?.element || 'Fire',
+          player2Element: p2Card?.element || 'Fire'
         };
       }
     }
@@ -522,7 +558,9 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
           winner: round.winner,
           player1Power: round.player1Power,
           player2Power: round.player2Power,
-          revealed: round.revealed
+          revealed: round.revealed,
+          player1Element: round.player1Element || null,
+          player2Element: round.player2Element || null
         })),
         gameLog: match.gameLog.slice(-20),
         cardsWon: playerData.cardsWon || [],
@@ -530,7 +568,9 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
         isFinished: match.status === 'finished',
         winner: match.winnerUsername,
         stolenCard: match.stolenCard,
-        finalScore: match.finalScore
+        finalScore: match.finalScore,
+        // ✅ NEW: Gem rewards info
+        gemRewards: match.gemRewards || { winner: 20, loser: 5, draw: 10, duplicateBonus: 20 }
       }
     });
 
@@ -625,7 +665,8 @@ router.post('/select', authMiddleware, async (req, res) => {
       selectedCard: {
         index: cardIndex,
         name: card.characterName,
-        power: card.powerLevel
+        power: card.powerLevel,
+        element: card.element || 'Fire'
       }
     });
 
@@ -730,7 +771,8 @@ router.post('/confirm', authMiddleware, async (req, res) => {
       confirmedCard: {
         index: cardIndex,
         name: card.characterName,
-        power: card.powerLevel
+        power: card.powerLevel,
+        element: card.element || 'Fire'
       }
     });
 
@@ -765,7 +807,33 @@ function getPlayerSide(match, userId) {
 }
 
 // ============================================================
-// REVEAL ROUND
+// ✅ HELPER: Calculate Effective Power with Element
+// ============================================================
+function getElementAdvantage(element1, element2) {
+  const advantages = {
+    'Fire': 'Wind',
+    'Wind': 'Earth',
+    'Earth': 'Water',
+    'Water': 'Fire'
+  };
+  
+  if (!element1 || !element2) return 1.0;
+  
+  if (advantages[element1] === element2) return 1.2; // 20% bonus
+  if (advantages[element2] === element1) return 0.8; // 20% penalty
+  return 1.0; // Neutral
+}
+
+function calculateEffectivePower(card, opponentCard) {
+  const basePower = card.powerLevel || 25;
+  const element = card.element || 'Fire';
+  const opponentElement = opponentCard?.element || 'Fire';
+  const advantage = getElementAdvantage(element, opponentElement);
+  return Math.round(basePower * advantage * 10) / 10;
+}
+
+// ============================================================
+// REVEAL ROUND (UPDATED WITH ELEMENT)
 // ============================================================
 async function revealRound(match) {
   console.log('🎯 [REVEAL] Revealing round...');
@@ -778,8 +846,16 @@ async function revealRound(match) {
   const p1Card = match.player1.team[p1Index];
   const p2Card = match.player2.team[p2Index];
 
-  console.log('🎯 [REVEAL] Player1 card:', p1Card.characterName, 'Power:', p1Card.powerLevel);
-  console.log('🎯 [REVEAL] Player2 card:', p2Card.characterName, 'Power:', p2Card.powerLevel);
+  // ✅ Get elements
+  const p1Element = p1Card.element || 'Fire';
+  const p2Element = p2Card.element || 'Fire';
+
+  // ✅ Calculate effective powers with element advantage
+  const p1EffectivePower = calculateEffectivePower(p1Card, p2Card);
+  const p2EffectivePower = calculateEffectivePower(p2Card, p1Card);
+
+  console.log('🎯 [REVEAL] Player1 card:', p1Card.characterName, 'Power:', p1Card.powerLevel, 'Element:', p1Element, 'Effective:', p1EffectivePower);
+  console.log('🎯 [REVEAL] Player2 card:', p2Card.characterName, 'Power:', p2Card.powerLevel, 'Element:', p2Element, 'Effective:', p2EffectivePower);
 
   p1Card.used = true;
   p1Card.roundUsed = match.currentRound;
@@ -787,12 +863,12 @@ async function revealRound(match) {
   p2Card.roundUsed = match.currentRound;
 
   let winner = null;
-  if (p1Card.powerLevel > p2Card.powerLevel) {
+  if (p1EffectivePower > p2EffectivePower) {
     winner = 'player1';
     match.player1.currentScore += 1;
     p1Card.won = true;
     p2Card.won = false;
-  } else if (p2Card.powerLevel > p1Card.powerLevel) {
+  } else if (p2EffectivePower > p1EffectivePower) {
     winner = 'player2';
     match.player2.currentScore += 1;
     p2Card.won = true;
@@ -808,14 +884,17 @@ async function revealRound(match) {
     player1CardIndex: p1Index,
     player2CardIndex: p2Index,
     winner: winner,
-    player1Power: p1Card.powerLevel,
-    player2Power: p2Card.powerLevel,
-    revealed: true
+    player1Power: p1EffectivePower,
+    player2Power: p2EffectivePower,
+    revealed: true,
+    // ✅ NEW: Store elements used
+    player1Element: p1Element,
+    player2Element: p2Element
   });
 
   const winnerName = winner === 'player1' ? match.player1.username :
                      winner === 'player2' ? match.player2.username : 'Draw';
-  match.addLog('info', `Round ${match.currentRound}: ${winnerName} won!`);
+  match.addLog('info', `Round ${match.currentRound}: ${winnerName} won! (${p1Card.characterName} ${p1Element} vs ${p2Card.characterName} ${p2Element})`);
 
   // ✅ Clear confirmations
   match.player1.confirmedCardIndex = null;
@@ -841,7 +920,11 @@ async function revealRound(match) {
       round: match.currentRound - 1,
       winner: winner,
       player1Card: p1Card,
-      player2Card: p2Card
+      player2Card: p2Card,
+      player1Power: p1EffectivePower,
+      player2Power: p2EffectivePower,
+      player1Element: p1Element,
+      player2Element: p2Element
     });
   }
 
@@ -873,7 +956,7 @@ async function revealRound(match) {
 }
 
 // ============================================================
-// END MATCH
+// END MATCH (UPDATED WITH GEM REWARDS)
 // ============================================================
 async function endMatch(match) {
   const p1Score = match.player1.currentScore;
@@ -885,6 +968,9 @@ async function endMatch(match) {
   let winnerUsername = null;
 
   console.log('🏆 [END MATCH] Scores:', p1Score, '-', p2Score);
+
+  // ✅ Get gem rewards
+  const gemRewards = match.gemRewards || { winner: 20, loser: 5, draw: 10, duplicateBonus: 20 };
 
   if (p1Score > p2Score) {
     winner = match.player1.user;
@@ -904,11 +990,28 @@ async function endMatch(match) {
     match.status = 'finished';
     await match.save();
 
+    // ✅ Give gems to both players for draw
+    const drawGems = gemRewards.draw || 10;
+    const [user1, user2] = await Promise.all([
+      User.findById(match.player1.user),
+      User.findById(match.player2.user)
+    ]);
+    
+    if (user1) {
+      user1.gems = (user1.gems || 0) + drawGems;
+      await user1.save();
+    }
+    if (user2) {
+      user2.gems = (user2.gems || 0) + drawGems;
+      await user2.save();
+    }
+
     if (ioInstance) {
       ioInstance.to(match.matchCode).emit('match-ended', {
         matchCode: match.matchCode,
         winner: 'Draw',
-        message: 'The battle ended in a draw!'
+        gemRewards: { each: drawGems },
+        message: 'The battle ended in a draw! Both players get ' + drawGems + ' gems.'
       });
     }
     return;
@@ -930,7 +1033,10 @@ async function endMatch(match) {
     powerLevel: card.powerLevel,
     image: card.image,
     used: card.used,
-    roundUsed: card.roundUsed
+    roundUsed: card.roundUsed,
+    level: card.level || 1,
+    element: card.element || 'Fire',
+    rarity: card.rarity || 'Common'
   }));
 
   match.availableCardsToSteal = availableCards;
@@ -951,13 +1057,17 @@ async function endMatch(match) {
       winnerId: winner,
       availableCards: availableCards,
       finalScore: match.finalScore,
+      gemRewards: {
+        winner: gemRewards.winner,
+        loser: gemRewards.loser
+      },
       message: `${winnerUsername} won! Select a card to steal from opponent.`
     });
   }
 }
 
 // ============================================================
-// STEAL CARD
+// STEAL CARD (UPDATED WITH GEM REWARDS)
 // ============================================================
 router.post('/steal', authMiddleware, async (req, res) => {
   try {
@@ -1003,6 +1113,7 @@ router.post('/steal', authMiddleware, async (req, res) => {
     }
 
     const stolenCard = loserData.team[cardIndex];
+    const gemRewards = match.gemRewards || { winner: 20, loser: 5, draw: 10, duplicateBonus: 20 };
 
     winnerData.cardsWon.push({
       characterId: stolenCard.characterId,
@@ -1036,19 +1147,15 @@ router.post('/steal', authMiddleware, async (req, res) => {
       stolenAt: new Date()
     };
 
-    const loserUser = await User.findById(loserData.user);
-    if (loserUser) {
-      const cardIndexInCollection = loserUser.cards.findIndex(c =>
-        c.characterId.toString() === stolenCard.characterId.toString()
-      );
-      if (cardIndexInCollection !== -1) {
-        loserUser.cards.splice(cardIndexInCollection, 1);
-        await loserUser.save();
-      }
-    }
-
+    // ✅ Get both users for gem updates
     const winnerUser = await User.findById(winnerData.user);
+    const loserUser = await User.findById(loserData.user);
+
+    // ✅ Give gems to winner
+    const winnerGems = gemRewards.winner || 20;
     if (winnerUser) {
+      winnerUser.gems = (winnerUser.gems || 0) + winnerGems;
+      // ✅ Add card to winner if not duplicate
       const alreadyHas = winnerUser.cards.some(c =>
         c.characterId.toString() === stolenCard.characterId.toString()
       );
@@ -1058,20 +1165,43 @@ router.post('/steal', authMiddleware, async (req, res) => {
           characterId: stolenCard.characterId,
           characterName: stolenCard.characterName,
           powerLevel: stolenCard.powerLevel,
+          basePower: stolenCard.powerLevel,
+          currentPower: stolenCard.powerLevel,
+          level: 1,
+          element: stolenCard.element || 'Fire',
+          rarity: stolenCard.rarity || 'Common',
           image: stolenCard.image,
           unlockedAt: new Date(),
           stolenFrom: loserData.user,
           stolenAt: new Date()
         });
-        await winnerUser.save();
       } else {
-        winnerUser.shards += 25;
-        await winnerUser.save();
+        // ✅ Duplicate card = bonus gems
+        const bonusGems = gemRewards.duplicateBonus || 20;
+        winnerUser.gems = (winnerUser.gems || 0) + bonusGems;
+        winnerUser.matchStats.cardsStolen = (winnerUser.matchStats.cardsStolen || 0) + 1;
+        console.log(`💰 Duplicate card! ${winnerUser.username} gets ${bonusGems} bonus gems`);
       }
+      await winnerUser.save();
+    }
+
+    // ✅ Give consolation gems to loser
+    const loserGems = gemRewards.loser || 5;
+    if (loserUser) {
+      loserUser.gems = (loserUser.gems || 0) + loserGems;
+      // ✅ Remove card from loser's collection
+      const cardIndexInCollection = loserUser.cards.findIndex(c =>
+        c.characterId.toString() === stolenCard.characterId.toString()
+      );
+      if (cardIndexInCollection !== -1) {
+        loserUser.cards.splice(cardIndexInCollection, 1);
+      }
+      await loserUser.save();
     }
 
     match.status = 'finished';
     match.addLog('info', `🎯 ${winnerData.username} stole ${stolenCard.characterName} from ${loserData.username}!`);
+    match.addLog('gem', `💰 ${winnerData.username} earned ${winnerGems} gems, ${loserData.username} earned ${loserGems} gems`);
     await match.save();
 
     if (ioInstance) {
@@ -1080,7 +1210,12 @@ router.post('/steal', authMiddleware, async (req, res) => {
         winner: match.winnerUsername,
         stolenCard: match.stolenCard,
         finalScore: match.finalScore,
-        message: `${winnerData.username} stole ${stolenCard.characterName}!`
+        gemRewards: {
+          winner: winnerGems,
+          loser: loserGems,
+          duplicateBonus: gemRewards.duplicateBonus
+        },
+        message: `${winnerData.username} stole ${stolenCard.characterName} and earned ${winnerGems} gems!`
       });
     }
 
@@ -1089,7 +1224,14 @@ router.post('/steal', authMiddleware, async (req, res) => {
       message: `🎯 ${winnerData.username} stole ${stolenCard.characterName}!`,
       stolenCard: match.stolenCard,
       winner: match.winnerUsername,
-      finalScore: match.finalScore
+      finalScore: match.finalScore,
+      gems: {
+        winner: winnerGems,
+        loser: loserGems,
+        duplicateBonus: winnerUser && winnerUser.cards.some(c =>
+          c.characterId.toString() === stolenCard.characterId.toString()
+        ) ? gemRewards.duplicateBonus : 0
+      }
     });
 
   } catch (error) {
@@ -1117,7 +1259,7 @@ router.get('/history', authMiddleware, async (req, res) => {
     })
     .sort({ createdAt: -1 })
     .limit(20)
-    .select('matchCode player1 player2 winnerUsername finalScore stolenCard createdAt');
+    .select('matchCode player1 player2 winnerUsername finalScore stolenCard gemRewards createdAt');
 
     const history = matches.map(match => ({
       matchCode: match.matchCode,
@@ -1129,6 +1271,7 @@ router.get('/history', authMiddleware, async (req, res) => {
       opponentScore: match.player1.user.toString() === user._id.toString() ?
         match.finalScore.player2 : match.finalScore.player1,
       stolenCard: match.stolenCard,
+      gemRewards: match.gemRewards || { winner: 20, loser: 5, draw: 10 },
       createdAt: match.createdAt
     }));
 
@@ -1288,18 +1431,21 @@ router.post('/accept-invite', authMiddleware, async (req, res) => {
     }
 
     const topCards = userData.cards
-      .sort((a, b) => b.powerLevel - a.powerLevel)
+      .sort((a, b) => b.currentPower - a.currentPower)
       .slice(0, 10);
 
     const team = topCards.map(card => ({
       characterId: card.characterId,
       characterName: card.characterName,
-      powerLevel: card.powerLevel,
+      powerLevel: card.currentPower || card.powerLevel || 25,
       image: card.image || '',
       cardId: card._id.toString(),
       used: false,
       won: null,
-      roundUsed: null
+      roundUsed: null,
+      level: card.level || 1,
+      element: card.element || 'Fire',
+      rarity: card.rarity || 'Common'
     }));
 
     match.player2.user = user._id;

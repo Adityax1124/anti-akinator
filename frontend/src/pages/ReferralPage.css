@@ -1,0 +1,50 @@
+.referral-page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 80vh;
+}
+
+.referral-page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.referral-page-header h1 {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #ffd700, #f7971e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.referral-page-header p {
+  color: #aaa;
+  font-size: 1.1rem;
+}
+
+.referral-page-header p strong {
+  color: #ffd700;
+  -webkit-text-fill-color: #ffd700;
+}
+
+.referral-page-content {
+  background: rgba(16, 16, 32, 0.7);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.referral-error {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+/* Reuse same styles from ReferralModal.css for the rest */
+/* The modal styles above work for the page too */

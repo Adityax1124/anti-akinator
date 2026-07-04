@@ -23,7 +23,11 @@ const matchSchema = new mongoose.Schema({
       cardId: { type: String, required: true }, // Unique card identifier
       used: { type: Boolean, default: false },
       won: { type: Boolean, default: null }, // true = won that round, false = lost
-      roundUsed: { type: Number, default: null }
+      roundUsed: { type: Number, default: null },
+      // ✅ NEW: Card level & element for battle
+      level: { type: Number, default: 1 },
+      element: { type: String, enum: ['Fire', 'Water', 'Wind', 'Earth'], default: 'Fire' },
+      rarity: { type: String, enum: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'], default: 'Common' }
     }],
     currentScore: { type: Number, default: 0 },
     selectedCardIndex: { type: Number, default: null }, // Index of card selected this round
@@ -60,7 +64,11 @@ const matchSchema = new mongoose.Schema({
       cardId: { type: String, required: true },
       used: { type: Boolean, default: false },
       won: { type: Boolean, default: null },
-      roundUsed: { type: Number, default: null }
+      roundUsed: { type: Number, default: null },
+      // ✅ NEW: Card level & element for battle
+      level: { type: Number, default: 1 },
+      element: { type: String, enum: ['Fire', 'Water', 'Wind', 'Earth'], default: 'Fire' },
+      rarity: { type: String, enum: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'], default: 'Common' }
     }],
     currentScore: { type: Number, default: 0 },
     selectedCardIndex: { type: Number, default: null },
@@ -103,7 +111,10 @@ const matchSchema = new mongoose.Schema({
     winner: { type: String, enum: ['player1', 'player2', 'draw'], default: null },
     player1Power: { type: Number, default: null },
     player2Power: { type: Number, default: null },
-    revealed: { type: Boolean, default: false }
+    revealed: { type: Boolean, default: false },
+    // ✅ NEW: Element used in battle
+    player1Element: { type: String, enum: ['Fire', 'Water', 'Wind', 'Earth'], default: null },
+    player2Element: { type: String, enum: ['Fire', 'Water', 'Wind', 'Earth'], default: null }
   }],
 
   // Winner
@@ -119,6 +130,14 @@ const matchSchema = new mongoose.Schema({
   finalScore: {
     player1: { type: Number, default: 0 },
     player2: { type: Number, default: 0 }
+  },
+
+  // ✅ NEW: Gem Rewards for match
+  gemRewards: {
+    winner: { type: Number, default: 20 },
+    loser: { type: Number, default: 5 },
+    draw: { type: Number, default: 10 },
+    duplicateBonus: { type: Number, default: 20 }
   },
 
   // Stolen card info
@@ -145,7 +164,7 @@ const matchSchema = new mongoose.Schema({
   
   // Game log for history
   gameLog: [{
-    type: { type: String, enum: ['info', 'selection', 'reveal', 'winner', 'stolen'] },
+    type: { type: String, enum: ['info', 'selection', 'reveal', 'winner', 'stolen', 'gem'] },
     message: String,
     timestamp: { type: Date, default: Date.now }
   }],
@@ -161,7 +180,9 @@ matchSchema.index({ 'player1.user': 1 });
 matchSchema.index({ 'player2.user': 1 });
 matchSchema.index({ createdAt: -1 });
 
-// ===== METHODS =====
+// ============================================================
+// ✅ METHODS
+// ============================================================
 matchSchema.methods.addLog = function(type, message) {
   this.gameLog.push({ type, message, timestamp: new Date() });
   return this;
@@ -197,6 +218,38 @@ matchSchema.methods.isPlayerConfirmed = function(userId) {
   return side === 'player1' ? 
     this.player1.confirmedCardIndex !== null : 
     this.player2.confirmedCardIndex !== null;
+};
+
+// ✅ NEW: Get Element Advantage
+matchSchema.methods.getElementAdvantage = function(element1, element2) {
+  const advantages = {
+    'Fire': 'Wind',
+    'Wind': 'Earth',
+    'Earth': 'Water',
+    'Water': 'Fire'
+  };
+  
+  if (advantages[element1] === element2) return 1.2; // 20% bonus
+  if (advantages[element2] === element1) return 0.8; // 20% penalty
+  return 1.0; // Neutral
+};
+
+// ✅ NEW: Calculate Effective Power with Element
+matchSchema.methods.calculateEffectivePower = function(card, opponentElement) {
+  const basePower = card.powerLevel || 25;
+  const element = card.element || 'Fire';
+  const advantage = this.getElementAdvantage(element, opponentElement);
+  return Math.round(basePower * advantage * 10) / 10;
+};
+
+// ✅ NEW: Get Gem Rewards for winner/loser
+matchSchema.methods.getGemRewards = function(side) {
+  const rewards = this.gemRewards || { winner: 20, loser: 5, draw: 10 };
+  
+  if (side === 'winner') return rewards.winner;
+  if (side === 'loser') return rewards.loser;
+  if (side === 'draw') return rewards.draw;
+  return 0;
 };
 
 module.exports = mongoose.model('Match', matchSchema);

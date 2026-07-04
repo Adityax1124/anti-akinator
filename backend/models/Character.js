@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
 const characterSchema = new mongoose.Schema({
+  // ============================================================
+  // ✅ AI QUIZ DATA (Ye data AI ko jayega)
+  // ============================================================
   name: {
     type: String,
     required: true,
@@ -24,7 +27,10 @@ const characterSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // ✅ NEW - Power Level for Card Battles (1-50)
+
+  // ============================================================
+  // ✅ BATTLE DATA (Ye data AI ko nahi jayega)
+  // ============================================================
   powerLevel: {
     type: Number,
     required: true,
@@ -32,6 +38,32 @@ const characterSchema = new mongoose.Schema({
     max: 50,
     default: 25
   },
+  
+  // 🔥 NEW - Element for Battle Advantage
+  element: {
+    type: String,
+    enum: ['Fire', 'Water', 'Wind', 'Earth'],
+    default: 'Fire'
+  },
+  
+  // ⭐ NEW - Rarity for Collection & Upgrades
+  rarity: {
+    type: String,
+    enum: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'],
+    default: 'Common'
+  },
+  
+  // 📊 NEW - Base Power (same as powerLevel initially, but can be upgraded)
+  basePower: {
+    type: Number,
+    min: 0.5,
+    max: 50,
+    default: 25
+  },
+
+  // ============================================================
+  // ✅ TRAITS (AI Quiz ke liye)
+  // ============================================================
   traits: {
     gender: { type: String, enum: ['Male', 'Female', 'Other', 'Unknown'], default: 'Unknown' },
     species: { type: String, default: 'Human' },
@@ -50,6 +82,10 @@ const characterSchema = new mongoose.Schema({
     hasPowers: { type: Boolean, default: false },
     isFromAnime: { type: Boolean, default: true }
   },
+  
+  // ============================================================
+  // ✅ ADMIN FIELDS
+  // ============================================================
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

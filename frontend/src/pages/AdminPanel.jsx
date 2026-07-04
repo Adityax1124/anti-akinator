@@ -23,7 +23,11 @@ const AdminPanel = () => {
     image: '',
     description: '',
     crucialHint: '',
-    powerLevel: 25, // ✅ ADDED - Power Level with default 25
+    powerLevel: 25,
+    // ✅ NEW: Element, Rarity, BasePower
+    element: 'Fire',
+    rarity: 'Common',
+    basePower: 25,
     traits: {
       gender: 'Unknown',
       species: 'Human',
@@ -186,6 +190,24 @@ const AdminPanel = () => {
       return;
     }
     
+    // ✅ HANDLE ELEMENT
+    if (name === 'element') {
+      setCharForm(prev => ({ ...prev, element: value }));
+      return;
+    }
+    
+    // ✅ HANDLE RARITY
+    if (name === 'rarity') {
+      setCharForm(prev => ({ ...prev, rarity: value }));
+      return;
+    }
+    
+    // ✅ HANDLE BASE POWER
+    if (name === 'basePower') {
+      setCharForm(prev => ({ ...prev, basePower: parseFloat(value) || 25 }));
+      return;
+    }
+    
     if (name === 'crucialHint') {
       setCharForm(prev => ({ ...prev, crucialHint: value }));
       return;
@@ -228,11 +250,19 @@ const AdminPanel = () => {
     setSuccess('');
 
     try {
+      // ✅ Include element, rarity, basePower in payload
+      const payload = {
+        ...charForm,
+        element: charForm.element || 'Fire',
+        rarity: charForm.rarity || 'Common',
+        basePower: charForm.basePower || charForm.powerLevel || 25
+      };
+
       if (editingCharId) {
-        await api.put(`/admin/characters/${editingCharId}`, charForm);
+        await api.put(`/admin/characters/${editingCharId}`, payload);
         setSuccess('✅ Character updated successfully!');
       } else {
-        await api.post('/admin/characters', charForm);
+        await api.post('/admin/characters', payload);
         setSuccess('✅ Character added successfully!');
       }
       resetCharForm();
@@ -250,6 +280,9 @@ const AdminPanel = () => {
       description: '',
       crucialHint: '',
       powerLevel: 25,
+      element: 'Fire',
+      rarity: 'Common',
+      basePower: 25,
       traits: {
         gender: 'Unknown',
         species: 'Human',
@@ -280,6 +313,9 @@ const AdminPanel = () => {
       description: char.description,
       crucialHint: char.crucialHint || '',
       powerLevel: char.powerLevel || 25,
+      element: char.element || 'Fire',
+      rarity: char.rarity || 'Common',
+      basePower: char.basePower || char.powerLevel || 25,
       traits: {
         gender: char.traits.gender || 'Unknown',
         species: char.traits.species || 'Human',
@@ -827,7 +863,7 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              {/* ✅ POWER LEVEL INPUT - NEW */}
+              {/* ✅ POWER LEVEL INPUT */}
               <div className="form-group">
                 <label>⚡ Power Level (1-50) *</label>
                 <div className="power-level-input">
@@ -844,6 +880,61 @@ const AdminPanel = () => {
                   <span className="power-value">{charForm.powerLevel}</span>
                 </div>
                 <small className="form-hint">Higher power = more valuable card in battles</small>
+              </div>
+
+              {/* ✅ ELEMENT DROPDOWN - NEW */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>🔥 Element</label>
+                  <select 
+                    name="element" 
+                    className="form-control" 
+                    value={charForm.element} 
+                    onChange={handleCharChange}
+                    required
+                  >
+                    <option value="Fire">🔥 Fire</option>
+                    <option value="Water">💧 Water</option>
+                    <option value="Wind">🌪️ Wind</option>
+                    <option value="Earth">🌍 Earth</option>
+                  </select>
+                  <small className="form-hint">Determines battle advantage</small>
+                </div>
+                
+                <div className="form-group">
+                  <label>⭐ Rarity</label>
+                  <select 
+                    name="rarity" 
+                    className="form-control" 
+                    value={charForm.rarity} 
+                    onChange={handleCharChange}
+                    required
+                  >
+                    <option value="Common">⭐ Common</option>
+                    <option value="Uncommon">⭐⭐ Uncommon</option>
+                    <option value="Rare">⭐⭐⭐ Rare</option>
+                    <option value="Epic">⭐⭐⭐⭐ Epic</option>
+                    <option value="Legendary">⭐⭐⭐⭐⭐ Legendary</option>
+                  </select>
+                  <small className="form-hint">Higher rarity = better base stats</small>
+                </div>
+              </div>
+
+              {/* ✅ BASE POWER (auto-calculated) */}
+              <div className="form-group">
+                <label>📊 Base Power (for upgrades)</label>
+                <input 
+                  type="number" 
+                  name="basePower" 
+                  className="form-control" 
+                  value={charForm.basePower} 
+                  onChange={handleCharChange}
+                  min="0.5"
+                  max="50"
+                  step="0.5"
+                  placeholder="Same as Power Level by default"
+                />
+                <small className="form-hint">Base power for card upgrades (starts same as power level)</small>
               </div>
 
               <div className="form-group">
@@ -1008,6 +1099,19 @@ const AdminPanel = () => {
                       <h3>{char.name}</h3>
                       <p className="char-anime">{char.anime}</p>
                       <p className="char-power">⚡ Power: {char.powerLevel || 25}</p>
+                      
+                      {/* ✅ SHOW ELEMENT & RARITY */}
+                      <div className="char-badges">
+                        <span className={`element-badge ${char.element?.toLowerCase()}`}>
+                          {char.element === 'Fire' ? '🔥' : 
+                           char.element === 'Water' ? '💧' : 
+                           char.element === 'Wind' ? '🌪️' : '🌍'} {char.element || 'Fire'}
+                        </span>
+                        <span className={`rarity-badge ${char.rarity?.toLowerCase()}`}>
+                          {char.rarity || 'Common'}
+                        </span>
+                      </div>
+                      
                       <p className="char-desc">{char.description?.substring(0, 80)}...</p>
                       <div className="char-actions">
                         <button className="btn btn-secondary btn-sm" onClick={() => editCharacter(char)}>✏️ Edit</button>
@@ -1702,6 +1806,7 @@ const AdminPanel = () => {
                       <th>Games</th>
                       <th>Wins</th>
                       <th>Streak</th>
+                      <th>Gems</th>
                       <th>Joined</th>
                     </tr>
                   </thead>
@@ -1711,9 +1816,10 @@ const AdminPanel = () => {
                         <td><strong>{u.username}</strong></td>
                         <td>{u.email}</td>
                         <td><span className={`role-badge ${u.role}`}>{u.role}</span></td>
-                        <td>{u.stats.gamesPlayed || 0}</td>
-                        <td>{u.stats.gamesWon || 0}</td>
-                        <td>{u.stats.winStreak || 0}</td>
+                        <td>{u.stats?.gamesPlayed || 0}</td>
+                        <td>{u.stats?.gamesWon || 0}</td>
+                        <td>{u.stats?.winStreak || 0}</td>
+                        <td><span className="gems-badge">{u.gems || 0} 💎</span></td>
                         <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))}
@@ -1759,8 +1865,9 @@ const AdminPanel = () => {
                   <div key={player._id} className="top-player-item">
                     <span className="rank">{index + 1}</span>
                     <span className="name">{player.username}</span>
-                    <span className="wins">{player.stats.gamesWon} wins</span>
-                    <span className="best">Streak: {player.stats.winStreak || 0}</span>
+                    <span className="wins">{player.stats?.gamesWon || 0} wins</span>
+                    <span className="best">Streak: {player.stats?.winStreak || 0}</span>
+                    {player.gems > 0 && <span className="gems">💎 {player.gems}</span>}
                   </div>
                 ))}
               </div>

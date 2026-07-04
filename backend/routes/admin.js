@@ -52,7 +52,7 @@ router.post('/reset-season', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// CHARACTER CRUD (WITH POWER LEVEL)
+// CHARACTER CRUD (WITH POWER LEVEL + ELEMENT + RARITY)
 // ============================================================
 router.get('/characters', adminMiddleware, async (req, res) => {
   try {
@@ -81,14 +81,18 @@ router.post('/characters', adminMiddleware, async (req, res) => {
       name: sanitizeInput(req.body.name),
       anime: sanitizeInput(req.body.anime),
       description: sanitizeInput(req.body.description),
-      powerLevel: parseFloat(req.body.powerLevel) || 25, // ✅ ADDED
+      powerLevel: parseFloat(req.body.powerLevel) || 25,
+      // ✅ NEW: Element, Rarity, BasePower
+      element: req.body.element || 'Fire',
+      rarity: req.body.rarity || 'Common',
+      basePower: parseFloat(req.body.basePower) || parseFloat(req.body.powerLevel) || 25,
       createdBy: req.user._id
     };
 
     const character = new Character(characterData);
     await character.save();
 
-    console.log(`📝 Admin ${req.user.username} created character: ${character.name} (Power: ${character.powerLevel})`);
+    console.log(`📝 Admin ${req.user.username} created character: ${character.name} (Power: ${character.powerLevel}, Element: ${character.element}, Rarity: ${character.rarity})`);
 
     res.status(201).json({ 
       success: true, 
@@ -110,7 +114,11 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.anime) updateData.anime = sanitizeInput(updateData.anime);
     if (updateData.description) updateData.description = sanitizeInput(updateData.description);
-    if (updateData.powerLevel) updateData.powerLevel = Number(updateData.powerLevel); // ✅ ADDED
+    if (updateData.powerLevel) updateData.powerLevel = Number(updateData.powerLevel);
+    // ✅ NEW: Element, Rarity, BasePower update
+    if (updateData.element) updateData.element = updateData.element;
+    if (updateData.rarity) updateData.rarity = updateData.rarity;
+    if (updateData.basePower) updateData.basePower = Number(updateData.basePower);
 
     const character = await Character.findByIdAndUpdate(
       req.params.id,
@@ -592,6 +600,8 @@ router.get('/users', adminMiddleware, async (req, res) => {
       role: user.role,
       stats: user.stats,
       shards: user.shards,
+      // ✅ NEW: Show gems
+      gems: user.gems || 0,
       createdAt: user.createdAt,
       equipped: user.equipped
     }));
@@ -622,7 +632,7 @@ router.get('/stats', adminMiddleware, async (req, res) => {
     const winRate = totalGames > 0 ? ((wonGames / totalGames) * 100).toFixed(1) : 0;
 
     const topPlayers = await User.find()
-      .select('username stats equipped.profilePhoto')
+      .select('username stats equipped.profilePhoto gems')
       .populate('equipped.profilePhoto', 'imageUrl')
       .sort({ 'stats.winStreak': -1 })
       .limit(10);
@@ -630,6 +640,8 @@ router.get('/stats', adminMiddleware, async (req, res) => {
     const sanitizedTopPlayers = topPlayers.map(player => ({
       username: player.username,
       stats: player.stats,
+      // ✅ NEW: Show gems
+      gems: player.gems || 0,
       profilePhoto: player.equipped?.profilePhoto || null
     }));
 

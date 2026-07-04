@@ -20,6 +20,7 @@ const friendRoutes = require('./routes/friend');
 const matchRoutes = require('./routes/match');
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
+const cardRoutes = require('./routes/card');
 
 const app = express();
 const server = http.createServer(app);
@@ -244,7 +245,7 @@ app.use('/api/season', profileLimiter);
 app.use('/api/admin', adminLimiter);
 app.use('/api/shop', profileLimiter);
 app.use('/api/referral', profileLimiter);
-
+app.use('/api/cards', cardRoutes);
 // ============================================================
 // REQUEST SIZE LIMIT
 // ============================================================

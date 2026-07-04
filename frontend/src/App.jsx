@@ -25,6 +25,8 @@ import ReferralPage from './pages/ReferralPage';
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
+// ✅ NEW: Collection Page Import
+import Collection from './pages/Collection';
 import './App.css';
 
 const AppContent = () => {
@@ -121,6 +123,7 @@ const AppContent = () => {
       <Stars />
       <main className="main-content">
         <Routes>
+          {/* ===== PUBLIC ROUTES ===== */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -129,6 +132,7 @@ const AppContent = () => {
           <Route path="/season-winners" element={<SeasonWinners />} />
           <Route path="/2fa-verify" element={<TwoFactorVerify />} />
           
+          {/* ===== PRIVATE ROUTES ===== */}
           <Route path="/game" element={
             <PrivateRouteWrapper><Game /></PrivateRouteWrapper>
           } />
@@ -143,6 +147,11 @@ const AppContent = () => {
           
           <Route path="/match/battle/:matchCode" element={
             <PrivateRouteWrapper><MatchBattle /></PrivateRouteWrapper>
+          } />
+          
+          {/* ✅ NEW: Collection Route */}
+          <Route path="/collection" element={
+            <PrivateRouteWrapper><Collection /></PrivateRouteWrapper>
           } />
           
           <Route path="/shop" element={
