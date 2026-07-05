@@ -50,7 +50,7 @@ const Privacy = () => {
 
       <section>
         <h2>6. Your Rights</h2>
-        <p>You may request access, correction, or deletion of your personal data by contacting us at <a href="mailto:support@anti-akinator.in">support@anti-akinator.in</a>.</p>
+        <p>You may request access, correction, or deletion of your personal data by contacting us at <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a>.</p>
       </section>
 
       <section>
@@ -65,7 +65,7 @@ const Privacy = () => {
 
       <section>
         <h2>9. Contact Us</h2>
-        <p>Email: <a href="mailto:support@anti-akinator.in">support@anti-akinator.in</a></p>
+        <p>Email: <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a></p>
       </section>
     </div>
   );

@@ -11,6 +11,14 @@
   margin: 0 auto;
 }
 
+/* ===== BODY SCROLL LOCK WHEN MODAL OPEN ===== */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
 /* ===== HEADER ===== */
 .collection-header {
   display: flex;

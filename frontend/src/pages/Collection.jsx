@@ -11,8 +11,8 @@ const Collection = () => {
   const [stats, setStats] = useState({ totalCards: 0, totalPower: 0, avgPower: 0, gems: 0 });
   const [selectedCard, setSelectedCard] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, fire, water, wind, earth
-  const [sortBy, setSortBy] = useState('power'); // power, level, rarity, name
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('power');
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -37,7 +37,14 @@ const Collection = () => {
     }
   };
 
+  // ===== FIX: Scroll to top AND prevent body scroll when modal opens =====
   const handleCardClick = (card) => {
+    // Scroll to top of page immediately
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Lock body scroll
+    document.body.classList.add('modal-open');
+    
     setSelectedCard(card);
     setShowModal(true);
   };
@@ -45,26 +52,23 @@ const Collection = () => {
   const handleModalClose = () => {
     setShowModal(false);
     setSelectedCard(null);
+    document.body.classList.remove('modal-open');
   };
 
   const handleUpgradeSuccess = (updatedCard) => {
-    // Update the card in the list
     setCards(prevCards => 
       prevCards.map(c => 
         c.characterId === updatedCard.characterId ? updatedCard : c
       )
     );
-    // Update stats
     fetchCollection();
     setSuccess(`✅ ${updatedCard.characterName} upgraded to Level ${updatedCard.level}!`);
     setTimeout(() => setSuccess(''), 3000);
   };
 
-  // Filter cards
   const getFilteredCards = () => {
     let filtered = [...cards];
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(card => 
@@ -72,14 +76,12 @@ const Collection = () => {
       );
     }
 
-    // Element filter
     if (filter !== 'all') {
       filtered = filtered.filter(card => 
         card.element?.toLowerCase() === filter.toLowerCase()
       );
     }
 
-    // Sort
     switch (sortBy) {
       case 'power':
         filtered.sort((a, b) => b.currentPower - a.currentPower);
@@ -103,7 +105,6 @@ const Collection = () => {
 
   const filteredCards = getFilteredCards();
 
-  // Get rarity color
   const getRarityColor = (rarity) => {
     const colors = {
       'Common': '#a0a0a0',
@@ -115,7 +116,6 @@ const Collection = () => {
     return colors[rarity] || '#a0a0a0';
   };
 
-  // Get element emoji
   const getElementEmoji = (element) => {
     const emojis = {
       'Fire': '🔥',
@@ -126,7 +126,6 @@ const Collection = () => {
     return emojis[element] || '❓';
   };
 
-  // Get rarity stars
   const getRarityStars = (rarity) => {
     const stars = {
       'Common': '⭐',
@@ -151,7 +150,6 @@ const Collection = () => {
 
   return (
     <div className="collection-container">
-      {/* Header */}
       <div className="collection-header">
         <h1>📁 My Collection</h1>
         <div className="collection-stats">
@@ -174,11 +172,9 @@ const Collection = () => {
         </div>
       </div>
 
-      {/* Success/Error Messages */}
       {error && <div className="collection-alert error">{error}</div>}
       {success && <div className="collection-alert success">{success}</div>}
 
-      {/* Filters */}
       <div className="collection-controls">
         <div className="search-box">
           <input
@@ -214,7 +210,6 @@ const Collection = () => {
         </div>
       </div>
 
-      {/* Cards Grid */}
       {filteredCards.length === 0 ? (
         <div className="collection-empty">
           <div className="empty-icon">🃏</div>
@@ -269,7 +264,6 @@ const Collection = () => {
         </div>
       )}
 
-      {/* Card Modal */}
       {showModal && selectedCard && (
         <CardModal
           card={selectedCard}
@@ -279,7 +273,6 @@ const Collection = () => {
         />
       )}
 
-      {/* Footer Stats */}
       <div className="collection-footer">
         <p>Showing {filteredCards.length} of {cards.length} cards</p>
         {filteredCards.length > 0 && (

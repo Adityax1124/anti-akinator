@@ -100,7 +100,7 @@ const Home = () => {
               <span className="offer-icon">🃏</span>
             </div>
             <h3>Card Collection</h3>
-            <p>Collect 100+ anime cards with unique power levels and elements</p>
+            <p>Collect 500+ anime cards with unique power levels and elements</p>
             <div className="offer-tag">Collect & Earn</div>
           </div>
           <div className="offer-card">

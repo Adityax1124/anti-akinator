@@ -31,7 +31,7 @@ const Refund = () => {
         <h2>5. How to Request a Refund</h2>
         <p>To request a refund or report an issue:</p>
         <ul>
-          <li>Email us at <a href="mailto:support@anti-akinator.in">support@anti-akinator.in</a></li>
+          <li>Email us at <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a></li>
           <li>Include your username, transaction ID, and a brief description of the issue</li>
           <li>We will respond within <strong>3-5 business days</strong></li>
         </ul>
@@ -44,7 +44,7 @@ const Refund = () => {
 
       <section>
         <h2>7. Contact Us</h2>
-        <p>Email: <a href="mailto:support@anti-akinator.in">support@anti-akinator.in</a></p>
+        <p>Email: <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a></p>
       </section>
     </div>
   );

@@ -49,7 +49,7 @@ const Terms = () => {
 
       <section>
         <h2>9. Contact Us</h2>
-        <p>For any questions, please email us at: <a href="mailto:support@anti-akinator.in">support@anti-akinator.in</a></p>
+        <p>For any questions, please email us at: <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a></p>
       </section>
     </div>
   );

@@ -1,51 +1,75 @@
 /* ============================================================
-   CARD MODAL
+   CARD MODAL - CENTER OF SCREEN (VIEWPORT)
    ============================================================ */
 
 .card-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(20px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999999 !important;
+  padding: 20px !important;
+  margin: 0 !important;
   animation: modalFadeIn 0.3s ease;
+  pointer-events: auto !important;
+  box-sizing: border-box !important;
+  overflow: auto !important;
+  position: fixed !important;
 }
 
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
 .card-modal {
-  background: linear-gradient(145deg, rgba(20, 20, 50, 0.98), rgba(10, 10, 30, 0.99));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 24px;
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 2rem;
-  position: relative;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(165deg, rgba(10, 10, 30, 0.97), rgba(20, 20, 50, 0.98)) !important;
+  border: 1px solid rgba(108, 99, 255, 0.08) !important;
+  border-radius: 28px !important;
+  max-width: 500px !important;
+  width: 100% !important;
+  max-height: 85vh !important;
+  overflow-y: auto !important;
+  padding: 2rem !important;
+  position: relative !important;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6) !important;
+  animation: modalSlideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  margin: auto !important;
+  pointer-events: auto !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .card-modal::-webkit-scrollbar {
   width: 4px;
 }
-
+.card-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
 .card-modal::-webkit-scrollbar-thumb {
   background: rgba(108, 99, 255, 0.3);
   border-radius: 10px;
@@ -53,419 +77,425 @@
 
 /* ===== CLOSE BUTTON ===== */
 .modal-close {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
+  position: absolute !important;
+  top: 14px !important;
+  right: 16px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 50% !important;
+  width: 38px !important;
+  height: 38px !important;
+  color: rgba(255, 255, 255, 0.25) !important;
+  font-size: 1.2rem !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10 !important;
 }
 
 .modal-close:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.2);
-  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1) !important;
+  border-color: rgba(255, 107, 107, 0.2) !important;
+  color: #ff6b6b !important;
+  transform: rotate(90deg) !important;
 }
 
 /* ===== CARD IMAGE ===== */
 .modal-card-image {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  max-height: 280px;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1 !important;
+  max-height: 280px !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  border: 2px solid rgba(108, 99, 255, 0.1) !important;
+  margin-bottom: 1.5rem !important;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .modal-card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
 }
 
 .modal-card-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 5rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.05);
-  background: linear-gradient(135deg, #1a1a3e, #2d2d5e);
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 5rem !important;
+  font-weight: 700 !important;
+  color: rgba(255, 255, 255, 0.05) !important;
+  background: linear-gradient(135deg, #1a1a3e, #2d2d5e) !important;
 }
 
 .modal-card-badges {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  pointer-events: none !important;
 }
 
 .modal-element-badge {
-  background: rgba(0, 0, 0, 0.6);
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 1.2rem;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  padding: 6px 12px !important;
+  border-radius: 12px !important;
+  font-size: 1.2rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
 .modal-level-badge {
-  background: rgba(0, 0, 0, 0.6);
-  color: #ffd700;
-  padding: 6px 14px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  color: #ffd700 !important;
+  padding: 6px 14px !important;
+  border-radius: 12px !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 215, 0, 0.1) !important;
 }
 
 /* ===== CARD INFO ===== */
 .modal-card-info {
-  text-align: center;
-  margin-bottom: 1.5rem;
+  text-align: center !important;
+  margin-bottom: 1.5rem !important;
 }
 
 .modal-card-name {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 2px;
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  margin-bottom: 2px !important;
 }
 
 .modal-card-rarity {
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
 }
 
 .modal-card-element {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.9rem !important;
+  color: rgba(255, 255, 255, 0.3) !important;
 }
 
 .element-label {
-  margin-right: 6px;
+  margin-right: 6px !important;
 }
 
 .element-value {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 /* ===== STATS ===== */
 .modal-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.8rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0.8rem !important;
+  margin-bottom: 1.5rem !important;
+  padding: 1rem !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(108, 99, 255, 0.04) !important;
 }
 
 .modal-stat {
-  text-align: center;
+  text-align: center !important;
 }
 
 .modal-stat .stat-label {
-  display: block;
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  display: block !important;
+  font-size: 0.65rem !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 2px !important;
 }
 
 .modal-stat .stat-value {
-  display: block;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #fff;
+  display: block !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
 }
 
 .modal-stat .stat-value.gems {
-  color: #ffd700;
+  color: #ffd700 !important;
 }
 
 /* ===== PROGRESS ===== */
 .modal-progress {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem !important;
+  padding: 0.8rem 1rem !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 .progress-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.2);
-  margin-bottom: 4px;
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  margin-bottom: 4px !important;
 }
 
 .progress-bar {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
-  overflow: hidden;
+  width: 100% !important;
+  height: 6px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
 }
 
 .progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #6c63ff, #ffd700);
-  border-radius: 4px;
-  transition: width 0.5s ease;
+  height: 100% !important;
+  background: linear-gradient(90deg, #6c63ff, #ffd700) !important;
+  border-radius: 4px !important;
+  transition: width 0.5s ease !important;
 }
 
 /* ===== UPGRADE SECTION ===== */
 .modal-upgrade {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  padding: 1.2rem;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 12px !important;
+  padding: 1.2rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  margin-bottom: 1rem !important;
 }
 
 .upgrade-info {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.8rem;
-  margin-bottom: 1rem;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.8rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .upgrade-detail {
-  text-align: center;
+  text-align: center !important;
 }
 
 .upgrade-label {
-  display: block;
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  display: block !important;
+  font-size: 0.65rem !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 2px !important;
 }
 
 .upgrade-value {
-  display: block;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #fff;
+  display: block !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
 }
 
 .upgrade-value.affordable {
-  color: #51cf66;
+  color: #51cf66 !important;
 }
 
 .upgrade-value.expensive {
-  color: #ff6b6b;
+  color: #ff6b6b !important;
 }
 
 /* ===== UPGRADE BUTTON ===== */
 .upgrade-btn {
-  width: 100%;
-  padding: 0.9rem;
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  width: 100% !important;
+  padding: 0.9rem !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease !important;
 }
 
 .upgrade-btn.active {
-  background: linear-gradient(135deg, #ffd700, #f59e0b);
-  color: #1a1a2e;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.15);
+  background: linear-gradient(135deg, #6c63ff, #4f46e5) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.15) !important;
 }
 
 .upgrade-btn.active:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 40px rgba(255, 215, 0, 0.25);
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.25) !important;
 }
 
 .upgrade-btn.disabled {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.2);
-  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  cursor: not-allowed !important;
 }
 
 .upgrade-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.6 !important;
 }
 
 .upgrade-hint {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #ff6b6b;
-  margin-top: 0.5rem;
+  text-align: center !important;
+  font-size: 0.85rem !important;
+  color: #ff6b6b !important;
+  margin-top: 0.5rem !important;
 }
 
 .upgrade-error {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #ff6b6b;
-  margin-top: 0.5rem;
+  text-align: center !important;
+  font-size: 0.85rem !important;
+  color: #ff6b6b !important;
+  margin-top: 0.5rem !important;
 }
 
 .upgrade-success {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #51cf66;
-  margin-top: 0.5rem;
+  text-align: center !important;
+  font-size: 0.85rem !important;
+  color: #51cf66 !important;
+  margin-top: 0.5rem !important;
 }
 
 /* ===== MAX LEVEL ===== */
 .modal-max-level {
-  text-align: center;
-  padding: 1.5rem;
-  background: rgba(255, 215, 0, 0.04);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 215, 0, 0.08);
-  margin-bottom: 1rem;
+  text-align: center !important;
+  padding: 1.5rem !important;
+  background: rgba(255, 215, 0, 0.04) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 215, 0, 0.08) !important;
+  margin-bottom: 1rem !important;
 }
 
 .max-level-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
+  font-size: 3rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 .modal-max-level h3 {
-  color: #ffd700;
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin-bottom: 0.3rem;
+  color: #ffd700 !important;
+  font-size: 1.3rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 0.3rem !important;
 }
 
 .modal-max-level p {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.3) !important;
+  font-size: 0.9rem !important;
 }
 
 .modal-max-level .max-power {
-  color: #ffd700;
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-top: 0.5rem;
+  color: #ffd700 !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  margin-top: 0.5rem !important;
 }
 
 /* ===== FOOTER ===== */
 .modal-footer {
-  display: flex;
-  justify-content: center;
-  margin-top: 0.5rem;
+  display: flex !important;
+  justify-content: center !important;
+  margin-top: 0.5rem !important;
 }
 
 .modal-close-btn {
-  padding: 0.7rem 2.5rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  padding: 0.7rem 2.5rem !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  font-size: 0.95rem !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease !important;
 }
 
 .modal-close-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 600px) {
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .card-modal-overlay {
+    padding: 16px !important;
+  }
+
   .card-modal {
-    padding: 1.2rem;
-    max-height: 95vh;
+    padding: 1.5rem !important;
+    max-width: 460px !important;
+    border-radius: 24px !important;
+    max-height: 80vh !important;
   }
 
   .modal-card-image {
-    max-height: 200px;
+    max-height: 220px !important;
   }
 
   .modal-card-name {
-    font-size: 1.4rem;
+    font-size: 1.6rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .card-modal-overlay {
+    padding: 12px !important;
+  }
+
+  .card-modal {
+    padding: 1.2rem !important;
+    max-width: 100% !important;
+    max-height: 80vh !important;
+    border-radius: 20px !important;
+  }
+
+  .modal-card-image {
+    max-height: 200px !important;
+  }
+
+  .modal-card-name {
+    font-size: 1.4rem !important;
   }
 
   .modal-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    padding: 0.8rem;
-  }
-
-  .upgrade-info {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-  }
-
-  .upgrade-value {
-    font-size: 1rem;
-  }
-
-  .modal-card-placeholder {
-    font-size: 3.5rem;
-  }
-
-  .modal-close {
-    top: 8px;
-    right: 12px;
-    width: 30px;
-    height: 30px;
-    font-size: 1rem;
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
 @media (max-width: 400px) {
+  .card-modal-overlay {
+    padding: 8px !important;
+  }
+
   .card-modal {
-    padding: 1rem;
+    padding: 1rem !important;
+    max-height: 75vh !important;
+    border-radius: 16px !important;
   }
 
   .modal-card-image {
-    max-height: 150px;
+    max-height: 160px !important;
   }
 
   .modal-card-name {
-    font-size: 1.2rem;
+    font-size: 1.2rem !important;
   }
+}
 
-  .modal-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.3rem;
-    padding: 0.5rem;
-  }
-
-  .modal-stat .stat-value {
-    font-size: 0.9rem;
-  }
-
-  .upgrade-info {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.3rem;
-  }
-
-  .upgrade-value {
-    font-size: 0.9rem;
-  }
-
-  .upgrade-btn {
-    font-size: 0.85rem;
-    padding: 0.7rem;
-  }
+/* ============================================================
+   BODY SCROLL LOCK
+   ============================================================ */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
 }
