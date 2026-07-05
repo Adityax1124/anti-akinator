@@ -122,7 +122,7 @@ const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) 
         {success && <div className="modal-success">{success}</div>}
 
         <button
-          className="btn btn-primary purchase-btn"
+          className="purchase-btn"
           onClick={handlePurchase}
           disabled={!selectedPackage || loading}
         >
@@ -163,7 +163,6 @@ const Game = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ===== Buy Shards Modal State =====
   const [isBuyShardsOpen, setIsBuyShardsOpen] = useState(false);
   
   const hasEnded = useRef(false);
@@ -172,7 +171,6 @@ const Game = () => {
   const prevPathRef = useRef(location.pathname);
   const isPaymentModalOpen = useRef(false);
 
-  // ===== FETCH SHARDS =====
   useEffect(() => {
     fetchUserShards();
   }, []);
@@ -236,7 +234,6 @@ const Game = () => {
     }
   };
 
-  // ===== DETECT NAVIGATION AWAY =====
   useEffect(() => {
     if (gameState.status !== 'playing') return;
 
@@ -270,7 +267,6 @@ const Game = () => {
     prevPathRef.current = location.pathname;
   }, [location.pathname, gameState.status]);
 
-  // ===== DETECT PAGE LEAVE =====
   useEffect(() => {
     if (gameState.status !== 'playing') return;
 
@@ -377,7 +373,6 @@ const Game = () => {
     };
   }, [gameState.status, gameState.gameId]);
 
-  // ===== CLEANUP ON UNMOUNT =====
   useEffect(() => {
     return () => {
       if (gameState.status === 'playing' && !hasEnded.current && !isPaymentModalOpen.current) {
@@ -386,14 +381,12 @@ const Game = () => {
     };
   }, [gameState.status]);
 
-  // ===== HANDLE NAVIGATION AWAY FROM RESULT =====
   useEffect(() => {
     if (gameState.status === 'won' || gameState.status === 'lost') {
       hasEnded.current = true;
     }
   }, [gameState.status]);
 
-  // ===== Auto-dismiss card notification after 5 seconds =====
   useEffect(() => {
     if (cardNotification) {
       const timer = setTimeout(() => {
@@ -403,7 +396,6 @@ const Game = () => {
     }
   }, [cardNotification]);
 
-  // ===== START GAME =====
   const startGame = async () => {
     setError('');
     setGameState(prev => ({ ...prev, loading: true }));
@@ -439,19 +431,16 @@ const Game = () => {
     }
   };
 
-  // ===== OPEN BUY SHARDS MODAL =====
   const openBuyShardsModal = () => {
     isPaymentModalOpen.current = true;
     setIsBuyShardsOpen(true);
   };
 
-  // ===== CLOSE BUY SHARDS MODAL =====
   const closeBuyShardsModal = () => {
     isPaymentModalOpen.current = false;
     setIsBuyShardsOpen(false);
   };
 
-  // ===== ASK QUESTION =====
   const askQuestion = async (e) => {
     e.preventDefault();
     if (!question.trim() || gameState.status !== 'playing' || gameState.loading) return;
@@ -498,7 +487,6 @@ const Game = () => {
     }
   };
 
-  // ===== USE HINT =====
   const useHint = async () => {
     if (hintUsed || gameState.status !== 'playing') return;
 
@@ -525,7 +513,6 @@ const Game = () => {
     }
   };
 
-  // ===== MAKE GUESS =====
   const makeGuess = async (e) => {
     e.preventDefault();
     
@@ -619,7 +606,6 @@ const Game = () => {
     }
   };
 
-  // ===== GIVE UP =====
   const giveUp = async () => {
     if (!window.confirm('Are you sure you want to give up?')) return;
 
@@ -644,7 +630,6 @@ const Game = () => {
     }
   };
 
-  // ===== CLOSE UNLOCK POPUP =====
   const closeUnlockPopup = () => {
     if (currentUnlockIndex < unlockNotifications.length - 1) {
       setCurrentUnlockIndex(prev => prev + 1);
@@ -654,7 +639,6 @@ const Game = () => {
     }
   };
 
-  // ===== PLAY AGAIN =====
   const playAgain = () => {
     setGameState({
       gameId: null,
@@ -683,27 +667,25 @@ const Game = () => {
     isPaymentModalOpen.current = false;
   };
 
-  // ===== GO HOME =====
   const goHome = () => {
     navigate('/');
   };
 
   const currentUnlock = unlockNotifications[currentUnlockIndex] || null;
 
-  // ===== RENDER IDLE =====
   if (gameState.status === 'idle') {
     return (
       <div className="game-container fade-in">
         <div className="game-start">
           <div className="game-start-content">
             <h1>🎯 Ready to Play?</h1>
-            <p>AI will pick a secret anime character. You ask questions and guess!</p>
-            <p className="game-hint">💡 You have 3 wrong guesses before game over</p>
-            <p className="game-hint">📝 You have 10 questions per game</p>
-            <p className="game-hint">🎴 You have {shards} Shards</p>
-            <p className="game-hint-warning">⚠️ If you leave the game, your streak will be reset!</p>
+            <p className="start-subtitle">AI will pick a secret anime character. You ask questions and guess!</p>
+            <div className="game-hint">💡 You have 3 wrong guesses before game over</div>
+            <div className="game-hint">📝 You have 10 questions per game</div>
+            <div className="game-hint">🎴 You have {shards} Shards</div>
+            <div className="game-hint-warning">⚠️ If you leave the game, your streak will be reset!</div>
             <button
-              className="btn btn-primary start-btn"
+              className="start-btn"
               onClick={startGame}
               disabled={gameState.loading}
             >
@@ -716,10 +698,8 @@ const Game = () => {
     );
   }
 
-  // ===== RENDER GAME =====
   return (
     <div className="game-container fade-in">
-      {/* ===== BUY SHARDS MODAL ===== */}
       <BuyShardsModal
         isOpen={isBuyShardsOpen}
         onClose={closeBuyShardsModal}
@@ -727,16 +707,15 @@ const Game = () => {
         currentShards={shards}
       />
 
-      {/* ===== CARD NOTIFICATION ===== */}
       {cardNotification && (
         <div className="card-notification">
           <div className="card-notification-content">
             <span className="card-icon">🃏</span>
             <div className="card-info">
               <h4>New Card Collected!</h4>
-              <p>
-                <strong>{cardNotification.character}</strong> 
-                <span className="card-power">⚡ Power: {cardNotification.powerLevel}</span>
+              <p className="card-name">
+                <strong>{cardNotification.character}</strong>
+                <span className="card-power">⚡ {cardNotification.powerLevel}</span>
               </p>
               <p className="card-total">Total Cards: {cardNotification.cardCount}</p>
             </div>
@@ -747,12 +726,17 @@ const Game = () => {
       {currentUnlock && (
         <div className="unlock-popup">
           <div className="unlock-popup-content">
+            <span className="unlock-icon">
+              {currentUnlock.type === 'banner' && '🎨'}
+              {currentUnlock.type === 'title' && '🏷️'}
+              {currentUnlock.type === 'profile_photo' && '📸'}
+            </span>
             <h2>
-              {currentUnlock.type === 'banner' && '🎨 New Banner Unlocked!'}
-              {currentUnlock.type === 'title' && '🏷️ New Title Unlocked!'}
-              {currentUnlock.type === 'profile_photo' && '📸 New Profile Photo!'}
+              {currentUnlock.type === 'banner' && 'New Banner Unlocked!'}
+              {currentUnlock.type === 'title' && 'New Title Unlocked!'}
+              {currentUnlock.type === 'profile_photo' && 'New Profile Photo!'}
             </h2>
-            <p>
+            <p className="unlock-sub">
               {currentUnlock.type === 'banner' && 'You earned a new profile banner!'}
               {currentUnlock.type === 'title' && 'You earned a new title!'}
               {currentUnlock.type === 'profile_photo' && 'You earned a new character photo!'}
@@ -778,10 +762,10 @@ const Game = () => {
                 </div>
               )}
             </div>
-            <h3>{currentUnlock.name}</h3>
+            <div className="unlock-name">{currentUnlock.name}</div>
             <p className="unlock-desc">{currentUnlock.data?.description || 'Check your profile to equip it ✨'}</p>
             <button 
-              className="btn btn-primary"
+              className="btn"
               onClick={closeUnlockPopup}
             >
               {currentUnlockIndex < unlockNotifications.length - 1 
@@ -794,21 +778,21 @@ const Game = () => {
 
       <div className="game-header">
         <div className="game-info">
-          <span className="game-status">
+          <span className={`game-status ${gameState.status}`}>
             {gameState.status === 'playing' && '🎮 Playing'}
             {gameState.status === 'won' && '🎉 Won!'}
             {gameState.status === 'lost' && '😔 Game Over'}
           </span>
-          <span className="game-count">Questions: {gameState.remainingQuestions} left</span>
+          <span className="game-count">📝 {gameState.remainingQuestions} left</span>
           {gameState.status === 'playing' && (
-            <span className="game-guesses">Guesses left: {gameState.remainingGuesses}</span>
+            <span className="game-guesses">💫 {gameState.remainingGuesses} guesses left</span>
           )}
-          <span className="game-shards">🎴 {shards} Shards</span>
+          <span className="game-shards">🎴 {shards}</span>
         </div>
         <div className="game-header-buttons">
           {gameState.status === 'playing' && (
             <button 
-              className="btn btn-shards btn-sm"
+              className="btn-sm btn-shards"
               onClick={openBuyShardsModal}
               title="Buy Shards without losing your streak"
             >
@@ -816,7 +800,7 @@ const Game = () => {
             </button>
           )}
           {gameState.status === 'playing' && (
-            <button className="btn btn-danger btn-sm" onClick={giveUp}>
+            <button className="btn-sm btn-danger-sm" onClick={giveUp}>
               Give Up
             </button>
           )}
@@ -827,8 +811,9 @@ const Game = () => {
         <div className="chat-messages">
           {gameState.questions.length === 0 && (
             <div className="chat-welcome">
-              <p>🤔 Ask your first question about the secret character!</p>
-              <p className="hint">Example: "Is your character a girl?" or "Bhai kya ye Naruto se hai?"</p>
+              <span className="welcome-icon">🤔</span>
+              <div className="welcome-title">Ask your first question!</div>
+              <div className="welcome-sub">Example: "Is your character a girl?" or "Is she from Naruto?"</div>
             </div>
           )}
           
@@ -882,7 +867,7 @@ const Game = () => {
         {gameState.status === 'won' && (
           <div className="game-result win">
             <h2>🎉 Congratulations!</h2>
-            <p>You guessed it right!</p>
+            <p className="result-sub">You guessed it right!</p>
             {gameState.characterImage && (
               <div className="result-image">
                 <img src={gameState.characterImage} alt={gameState.character} />
@@ -903,7 +888,7 @@ const Game = () => {
         {gameState.status === 'lost' && (
           <div className="game-result lose">
             <h2>😔 Game Over!</h2>
-            <p>The character was:</p>
+            <p className="result-sub">The character was:</p>
             {gameState.characterImage && (
               <div className="result-image">
                 <img src={gameState.characterImage} alt={gameState.character} />
@@ -913,7 +898,7 @@ const Game = () => {
             {gameState.powerLevel && (
               <p className="result-power">⚡ Power Level: <strong>{gameState.powerLevel}</strong></p>
             )}
-            <p>Better luck next time!</p>
+            <p className="result-stats">Better luck next time!</p>
             <div className="result-buttons">
               <button className="btn btn-primary" onClick={playAgain}>Try Again</button>
               <button className="btn btn-secondary" onClick={goHome}>Home</button>
@@ -954,8 +939,8 @@ const Game = () => {
               <form onSubmit={askQuestion} className="chat-form">
                 <input
                   type="text"
-                  className="form-control chat-input"
-                  placeholder={gameState.remainingQuestions <= 0 ? "No questions left! Make a guess." : "Ask a question... (e.g., 'Is she from Naruto?')"}
+                  className="chat-input"
+                  placeholder={gameState.remainingQuestions <= 0 ? "No questions left! Make a guess." : 'Ask a question... (e.g., "Is she from Naruto?")'}
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   disabled={gameState.loading || gameState.remainingQuestions <= 0}
@@ -963,14 +948,14 @@ const Game = () => {
                 <div className="button-group">
                   <button 
                     type="submit" 
-                    className="btn btn-primary send-btn"
+                    className="send-btn btn-primary"
                     disabled={!question.trim() || gameState.loading || gameState.remainingQuestions <= 0}
                   >
                     Ask ➤
                   </button>
                   <button 
                     type="button"
-                    className={`btn btn-warning hint-btn ${hintUsed ? 'used' : ''}`}
+                    className={`hint-btn ${hintUsed ? 'used' : ''}`}
                     onClick={useHint}
                     disabled={hintUsed || gameState.loading}
                     title={hintUsed ? 'Hint already used' : 'Use 50 🎴 Shards for a hint'}
@@ -983,7 +968,7 @@ const Game = () => {
               <form onSubmit={makeGuess} className="chat-form">
                 <input
                   type="text"
-                  className="form-control chat-input guess-input"
+                  className="chat-input guess-input"
                   placeholder="Enter your guess..."
                   value={guess}
                   onChange={(e) => setGuess(e.target.value)}
@@ -991,7 +976,7 @@ const Game = () => {
                 />
                 <button 
                   type="submit" 
-                  className="btn btn-success send-btn"
+                  className="send-btn btn-success"
                   disabled={!guess.trim() || gameState.loading}
                 >
                   Guess!

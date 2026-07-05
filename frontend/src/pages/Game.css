@@ -1,18 +1,40 @@
 /* ============================================================
-   GAME PAGE – Premium Chat Interface
+   GAME PAGE - PREMIUM NAVY/BLUE/PURPLE THEME (FULLY OPTIMIZED)
    ============================================================ */
 
-/* ===== GAME CONTAINER ===== */
+/* ===== ROOT VARIABLES ===== */
+:root {
+  --game-accent: #6c63ff;
+  --game-accent-glow: rgba(108, 99, 255, 0.15);
+  --game-gold: #ffd700;
+  --game-text-primary: #ffffff;
+  --game-text-secondary: rgba(255, 255, 255, 0.75);
+  --game-text-muted: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================
+   CONTAINER - FADE IN
+   ============================================================ */
 .game-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 20px 20px 30px;
   min-height: 85vh;
   display: flex;
   flex-direction: column;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* ===== GAME START SCREEN ===== */
+.game-container.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   START SCREEN - PREMIUM
+   ============================================================ */
 .game-start {
   display: flex;
   justify-content: center;
@@ -23,73 +45,104 @@
 
 .game-start-content {
   text-align: center;
-  background: rgba(16, 16, 32, 0.85);
-  backdrop-filter: blur(20px);
-  padding: 50px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  max-width: 500px;
+  background: rgba(10, 10, 30, 0.75);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  padding: 50px 40px;
+  border-radius: 28px;
+  border: 1px solid rgba(108, 99, 255, 0.08);
+  max-width: 520px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(108, 99, 255, 0.05);
 }
 
 .game-start-content h1 {
-  font-size: 36px;
-  margin-bottom: 16px;
-  background: linear-gradient(135deg, #00d4ff, #7b2ffc, #ff6b9d);
+  font-size: 38px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #4f46e5, #818cf8, #a78bfa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  letter-spacing: -1px;
 }
 
-.game-start-content p {
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 12px;
+.game-start-content .start-subtitle {
+  color: var(--game-text-secondary);
   font-size: 16px;
+  margin-bottom: 20px;
+  -webkit-text-fill-color: var(--game-text-secondary);
 }
 
 .game-hint {
-  color: #a29bfe !important;
+  color: #a78bfa !important;
   font-size: 14px !important;
-  background: rgba(108, 92, 231, 0.15);
+  background: rgba(108, 99, 255, 0.08);
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: inline-block;
+  margin: 4px 0;
+  -webkit-text-fill-color: #a78bfa !important;
 }
 
 .game-hint-warning {
-  color: #fd79a8 !important;
+  color: #f472b6 !important;
   font-size: 13px !important;
-  background: rgba(253, 121, 168, 0.1);
+  background: rgba(244, 114, 182, 0.08);
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: inline-block;
-  margin-top: 4px;
+  margin-top: 6px;
+  -webkit-text-fill-color: #f472b6 !important;
 }
 
 .start-btn {
   font-size: 18px;
-  padding: 14px 40px;
+  padding: 16px 44px;
   margin-top: 20px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 4px 30px rgba(108, 99, 255, 0.25);
+}
+
+.start-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 40px rgba(108, 99, 255, 0.35);
+}
+
+.start-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .game-error {
-  color: #fd79a8;
+  color: #f87171;
   margin-top: 12px;
   font-size: 14px;
+  background: rgba(248, 113, 113, 0.06);
+  padding: 10px 16px;
+  border-radius: 10px;
 }
 
-/* ===== GAME HEADER ===== */
+/* ============================================================
+   GAME HEADER - PREMIUM
+   ============================================================ */
 .game-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 20px;
-  background: rgba(16, 16, 32, 0.7);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
+  padding: 14px 22px;
+  background: rgba(10, 10, 30, 0.6);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 18px;
   margin-bottom: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(108, 99, 255, 0.06);
   flex-wrap: wrap;
   gap: 10px;
   flex-shrink: 0;
@@ -97,31 +150,59 @@
 
 .game-info {
   display: flex;
-  gap: 18px;
+  gap: 16px;
   flex-wrap: wrap;
   align-items: center;
 }
 
 .game-status {
-  font-weight: 600;
-  color: #00d4ff;
+  font-weight: 700;
+  color: #818cf8;
   font-size: 14px;
+  padding: 4px 14px;
+  background: rgba(108, 99, 255, 0.08);
+  border-radius: 50px;
+  border: 1px solid rgba(108, 99, 255, 0.06);
+}
+
+.game-status.playing {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border-color: rgba(52, 211, 153, 0.1);
+}
+
+.game-status.won {
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.08);
+  border-color: rgba(255, 215, 0, 0.1);
+}
+
+.game-status.lost {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.1);
 }
 
 .game-count {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--game-text-muted);
   font-size: 13px;
+  font-weight: 500;
 }
 
 .game-guesses {
-  color: #a29bfe;
+  color: #a78bfa;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .game-shards {
-  color: #fdcb6e;
-  font-weight: 600;
-  font-size: 13px;
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px 14px;
+  background: rgba(255, 215, 0, 0.06);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 215, 0, 0.06);
 }
 
 .game-header-buttons {
@@ -131,14 +212,17 @@
   flex-shrink: 0;
 }
 
-/* ===== BUTTON STYLES ===== */
+/* ============================================================
+   BUTTON STYLES
+   ============================================================ */
 .btn-sm {
-  padding: 6px 14px;
+  padding: 6px 16px;
   font-size: 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  font-weight: 600;
 }
 
 .btn-shards {
@@ -149,55 +233,22 @@
 
 .btn-shards:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(247, 151, 30, 0.4);
+  box-shadow: 0 4px 20px rgba(247, 151, 30, 0.3);
 }
 
-.btn-danger {
-  background: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.15);
+.btn-danger-sm {
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.1);
 }
 
-.btn-danger:hover {
-  background: rgba(231, 76, 60, 0.2);
+.btn-danger-sm:hover {
+  background: rgba(248, 113, 113, 0.15);
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
-}
-
-.btn-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 10px 24px;
-  border-radius: 12px;
-  font-weight: 600;
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-/* ===== BUY SHARDS MODAL ===== */
+/* ============================================================
+   BUY SHARDS MODAL - PREMIUM
+   ============================================================ */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -205,36 +256,37 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.3s ease;
   padding: 20px;
+  animation: overlayFade 0.3s ease;
 }
 
-@keyframes fadeIn {
+@keyframes overlayFade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 .modal-content {
-  background: linear-gradient(145deg, rgba(20, 20, 50, 0.97), rgba(10, 10, 30, 0.99));
-  border-radius: 24px;
-  padding: 2.5rem;
+  background: linear-gradient(165deg, rgba(10, 10, 30, 0.97), rgba(20, 20, 50, 0.98));
+  border-radius: 28px;
+  padding: 32px 36px;
   max-width: 750px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  animation: slideUp 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  animation: modalSlide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1px solid rgba(108, 99, 255, 0.06);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
 }
 
-@keyframes slideUp {
-  from { transform: translateY(30px) scale(0.95); opacity: 0; }
+@keyframes modalSlide {
+  from { transform: translateY(40px) scale(0.96); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
@@ -242,7 +294,7 @@
   width: 4px;
 }
 .modal-content::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.4);
+  background: rgba(108, 99, 255, 0.3);
   border-radius: 10px;
 }
 
@@ -254,10 +306,10 @@
   border: none;
   font-size: 20px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-  width: 36px;
-  height: 36px;
+  color: var(--game-text-muted);
+  transition: all 0.25s ease;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -271,76 +323,84 @@
 }
 
 .modal-content h2 {
-  font-size: 1.8rem;
-  margin-bottom: 0.3rem;
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 4px;
   color: #fff;
   text-align: center;
+  background: linear-gradient(135deg, #4f46e5, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .modal-subtitle {
-  color: rgba(255, 255, 255, 0.3);
-  margin-bottom: 1.5rem;
+  color: var(--game-text-muted);
+  margin-bottom: 20px;
   text-align: center;
-  font-size: 1rem;
+  font-size: 15px;
+  -webkit-text-fill-color: var(--game-text-muted);
 }
 
 .modal-subtitle strong {
   color: #ffd700;
-  font-size: 1.2rem;
+  font-size: 18px;
+  -webkit-text-fill-color: #ffd700;
 }
 
 .shard-packages {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .shard-package {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 1.2rem 0.8rem;
+  border-radius: 16px;
+  padding: 16px 12px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .shard-package:hover {
-  transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(108, 99, 255, 0.2);
+  transform: translateY(-4px);
+  background: rgba(108, 99, 255, 0.04);
+  border-color: rgba(108, 99, 255, 0.15);
 }
 
 .shard-package.selected {
   border-color: #6c63ff;
-  background: rgba(108, 99, 255, 0.12);
-  box-shadow: 0 0 30px rgba(108, 99, 255, 0.1);
+  background: rgba(108, 99, 255, 0.08);
+  box-shadow: 0 0 40px rgba(108, 99, 255, 0.08);
 }
 
 .shard-amount {
-  font-size: 2rem;
+  font-size: 28px;
   font-weight: 800;
   color: #ffd700;
   line-height: 1.2;
 }
 
 .shard-label {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  color: var(--game-text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-top: 2px;
 }
 
 .shard-hints {
-  font-size: 0.75rem;
-  color: #6c63ff;
+  font-size: 12px;
+  color: #818cf8;
   margin-top: 2px;
+  font-weight: 500;
 }
 
 .shard-price {
-  font-size: 1.3rem;
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
   margin-top: 6px;
@@ -348,27 +408,28 @@
 
 .shard-price::before {
   content: '₹';
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  color: var(--game-text-muted);
 }
 
 .purchase-btn {
   width: 100%;
-  padding: 0.9rem;
-  font-size: 1.1rem;
+  padding: 14px;
+  font-size: 16px;
   font-weight: 700;
-  margin-top: 0.5rem;
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  margin-top: 8px;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
   color: #fff;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 25px rgba(108, 99, 255, 0.2);
 }
 
 .purchase-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(108, 99, 255, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 35px rgba(108, 99, 255, 0.3);
 }
 
 .purchase-btn:disabled {
@@ -378,93 +439,118 @@
 
 .modal-footer {
   text-align: center;
-  color: rgba(255, 255, 255, 0.15);
-  font-size: 0.8rem;
-  margin-top: 1rem;
+  color: var(--game-text-muted);
+  font-size: 12px;
+  margin-top: 12px;
+  opacity: 0.5;
 }
 
 .modal-error {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.06);
-  padding: 0.8rem;
-  border-radius: 10px;
-  margin-bottom: 1rem;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.06);
+  padding: 10px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
   text-align: center;
-  border: 1px solid rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.08);
 }
 
 .modal-success {
-  color: #51cf66;
-  background: rgba(81, 207, 102, 0.06);
-  padding: 0.8rem;
-  border-radius: 10px;
-  margin-bottom: 1rem;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.06);
+  padding: 10px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
   text-align: center;
-  border: 1px solid rgba(81, 207, 102, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.08);
 }
 
-/* ===== CHAT CONTAINER ===== */
+/* ============================================================
+   CHAT CONTAINER - PREMIUM (FIXED - NO MAX HEIGHT)
+   ============================================================ */
 .chat-container {
-  background: rgba(16, 16, 32, 0.7);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 10, 30, 0.6);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 18px;
+  border: 1px solid rgba(108, 99, 255, 0.06);
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
-  max-height: 600px;
+  min-height: 450px;
   overflow: hidden;
+  position: relative;
 }
 
-/* ===== CHAT MESSAGES ===== */
+/* When game is in result state, allow container to grow */
+.chat-container.has-result {
+  min-height: auto;
+  flex: 1;
+}
+
+/* ============================================================
+   CHAT MESSAGES - SCROLLABLE AREA
+   ============================================================ */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   scroll-behavior: smooth;
+  min-height: 0;
 }
 
 .chat-messages::-webkit-scrollbar {
   width: 4px;
 }
 .chat-messages::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.3);
+  background: rgba(108, 99, 255, 0.25);
   border-radius: 10px;
 }
 
-/* ===== CHAT WELCOME ===== */
+/* ============================================================
+   CHAT WELCOME
+   ============================================================ */
 .chat-welcome {
   text-align: center;
   padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.2);
+  margin: auto;
 }
 
-.chat-welcome p:first-child {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 8px;
+.chat-welcome .welcome-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 12px;
 }
 
-.chat-welcome .hint {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.15);
+.chat-welcome .welcome-title {
+  font-size: 20px;
+  color: var(--game-text-secondary);
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
-/* ===== CHAT MESSAGE ===== */
+.chat-welcome .welcome-sub {
+  font-size: 14px;
+  color: var(--game-text-muted);
+}
+
+/* ============================================================
+   CHAT MESSAGE - PREMIUM BUBBLES
+   ============================================================ */
 .chat-message {
   display: flex;
-  gap: 10px;
-  animation: slideIn 0.3s ease;
-  max-width: 85%;
+  gap: 12px;
+  animation: messageSlide 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  max-width: 88%;
+  flex-shrink: 0;
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes messageSlide {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .chat-message.user {
@@ -483,13 +569,15 @@
 
 .chat-message.hint {
   align-self: flex-start;
-  max-width: 85%;
+  max-width: 88%;
 }
 
-/* ===== MESSAGE AVATARS ===== */
+/* ============================================================
+   MESSAGE AVATARS - PREMIUM
+   ============================================================ */
 .message-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.04);
   display: flex;
@@ -497,66 +585,77 @@
   justify-content: center;
   flex-shrink: 0;
   font-size: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.3s ease;
 }
 
 .chat-message.user .message-avatar {
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
   border: none;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
 }
 
 .chat-message.ai .message-avatar {
-  background: rgba(0, 212, 255, 0.1);
-  border: 1px solid rgba(0, 212, 255, 0.08);
+  background: rgba(108, 99, 255, 0.08);
+  border: 2px solid rgba(108, 99, 255, 0.08);
 }
 
 .chat-message.system .message-avatar {
-  background: rgba(255, 107, 107, 0.08);
-  border: 1px solid rgba(255, 107, 107, 0.08);
+  background: rgba(248, 113, 113, 0.06);
+  border: 2px solid rgba(248, 113, 113, 0.06);
 }
 
 .chat-message.hint .message-avatar {
-  background: rgba(255, 215, 0, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.08);
+  background: rgba(255, 215, 0, 0.06);
+  border: 2px solid rgba(255, 215, 0, 0.06);
 }
 
-/* ===== MESSAGE CONTENT ===== */
+/* ============================================================
+   MESSAGE CONTENT - PREMIUM BUBBLES
+   ============================================================ */
 .message-content {
-  background: rgba(255, 255, 255, 0.02);
-  padding: 10px 14px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 16px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.04);
   max-width: 100%;
+  position: relative;
 }
 
 .chat-message.user .message-content {
   background: linear-gradient(135deg, #6c63ff, #5a52d5);
   border: none;
+  border-radius: 14px 14px 4px 14px;
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.15);
 }
 
 .chat-message.ai .message-content {
-  background: rgba(0, 212, 255, 0.04);
-  border: 1px solid rgba(0, 212, 255, 0.06);
+  background: rgba(108, 99, 255, 0.04);
+  border: 1px solid rgba(108, 99, 255, 0.06);
+  border-radius: 14px 14px 14px 4px;
 }
 
 .chat-message.system .message-content {
-  background: rgba(255, 107, 107, 0.04);
-  border: 1px solid rgba(255, 107, 107, 0.06);
-  color: #ff6b6b;
+  background: rgba(248, 113, 113, 0.04);
+  border: 1px solid rgba(248, 113, 113, 0.06);
+  border-radius: 14px;
+  color: #f87171;
 }
 
 .chat-message.hint .message-content {
-  background: rgba(255, 215, 0, 0.06);
-  border: 1px solid rgba(255, 215, 0, 0.08);
-  color: #ffd700;
+  background: rgba(255, 215, 0, 0.04);
+  border: 1px solid rgba(255, 215, 0, 0.06);
+  border-radius: 14px 14px 14px 4px;
 }
 
-/* ===== MESSAGE TEXT ===== */
+/* ============================================================
+   MESSAGE TEXT
+   ============================================================ */
 .message-text {
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   word-wrap: break-word;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--game-text-secondary);
 }
 
 .chat-message.user .message-text {
@@ -564,11 +663,11 @@
 }
 
 .chat-message.ai .message-text {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--game-text-secondary);
 }
 
 .chat-message.system .message-text {
-  color: #ff6b6b !important;
+  color: #f87171 !important;
 }
 
 .chat-message.hint .message-text {
@@ -577,28 +676,31 @@
 
 .message-meta {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.15);
-  margin-top: 2px;
+  color: var(--game-text-muted);
+  margin-top: 4px;
   text-align: right;
+  opacity: 0.5;
 }
 
 .chat-message.user .message-meta {
   color: rgba(255, 255, 255, 0.3);
 }
 
-/* ===== TYPING INDICATOR ===== */
+/* ============================================================
+   TYPING INDICATOR
+   ============================================================ */
 .typing-indicator {
   display: flex;
-  gap: 4px;
-  padding: 4px 0;
+  gap: 5px;
+  padding: 6px 0;
 }
 
 .typing-indicator span {
-  width: 8px;
-  height: 8px;
-  background: rgba(108, 99, 255, 0.3);
+  width: 9px;
+  height: 9px;
+  background: rgba(108, 99, 255, 0.2);
   border-radius: 50%;
-  animation: typing 1.4s infinite;
+  animation: typingBounce 1.4s infinite;
 }
 
 .typing-indicator span:nth-child(2) {
@@ -608,78 +710,88 @@
   animation-delay: 0.4s;
 }
 
-@keyframes typing {
+@keyframes typingBounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
-  30% { transform: translateY(-8px); opacity: 1; }
+  30% { transform: translateY(-10px); opacity: 1; }
 }
 
-/* ===== CHAT INPUT AREA ===== */
+/* ============================================================
+   CHAT INPUT AREA - PREMIUM (FIXED AT BOTTOM)
+   ============================================================ */
 .chat-input-area {
-  padding: 14px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 14px 20px 18px;
+  border-top: 1px solid rgba(108, 99, 255, 0.06);
   flex-shrink: 0;
-  background: rgba(16, 16, 32, 0.9);
-  border-radius: 0 0 16px 16px;
+  background: rgba(10, 10, 30, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0 0 18px 18px;
+  margin-top: auto;
 }
 
 .input-tabs {
   display: flex;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .tab-btn {
   flex: 1;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.04);
+  color: var(--game-text-muted);
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tab-btn:hover {
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--game-text-secondary);
 }
 
 .tab-btn.active {
   border-color: #6c63ff;
-  color: #6c63ff;
+  color: #818cf8;
   background: rgba(108, 99, 255, 0.06);
 }
 
 .tab-badge {
   font-size: 10px;
-  padding: 1px 8px;
-  border-radius: 4px;
-  background: rgba(108, 99, 255, 0.08);
-  color: rgba(255, 255, 255, 0.3);
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: rgba(108, 99, 255, 0.06);
+  color: var(--game-text-muted);
+  font-weight: 700;
 }
 
 .tab-badge.disabled {
-  background: rgba(255, 107, 107, 0.08);
-  color: #ff6b6b;
+  background: rgba(248, 113, 113, 0.06);
+  color: #f87171;
 }
 
 .no-questions-message {
   text-align: center;
-  padding: 10px;
-  margin-bottom: 8px;
-  background: rgba(255, 107, 107, 0.04);
-  border: 1px solid rgba(255, 107, 107, 0.06);
-  border-radius: 8px;
-  color: #ff6b6b;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  background: rgba(248, 113, 113, 0.04);
+  border: 1px solid rgba(248, 113, 113, 0.06);
+  border-radius: 10px;
+  color: #f87171;
   font-size: 13px;
+  font-weight: 500;
 }
 
+/* ============================================================
+   CHAT FORM
+   ============================================================ */
 .chat-form {
   display: flex;
   gap: 8px;
@@ -688,24 +800,27 @@
 
 .chat-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 10px 16px;
   color: #fff;
   font-size: 14px;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   min-width: 0;
   outline: none;
+  font-family: 'Inter', -apple-system, sans-serif;
 }
 
 .chat-input:focus {
   border-color: #6c63ff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(108, 99, 255, 0.04);
+  box-shadow: 0 0 30px rgba(108, 99, 255, 0.03);
 }
 
 .chat-input::placeholder {
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--game-text-muted);
+  opacity: 0.5;
 }
 
 .chat-input:disabled {
@@ -714,7 +829,7 @@
 }
 
 .guess-input:focus {
-  border-color: #51cf66;
+  border-color: #34d399;
 }
 
 .button-group {
@@ -723,34 +838,36 @@
 }
 
 .send-btn {
-  padding: 10px 20px;
+  padding: 10px 22px;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 13px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   white-space: nowrap;
 }
 
 .send-btn.btn-primary {
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
   color: #fff;
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.15);
 }
 
 .send-btn.btn-primary:hover:not(:disabled) {
-  transform: scale(1.02);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.2);
+  transform: scale(1.03);
+  box-shadow: 0 6px 30px rgba(108, 99, 255, 0.25);
 }
 
 .send-btn.btn-success {
-  background: linear-gradient(135deg, #00b894, #00a381);
+  background: linear-gradient(135deg, #34d399, #10b981);
   color: #fff;
+  box-shadow: 0 4px 20px rgba(52, 211, 153, 0.15);
 }
 
 .send-btn.btn-success:hover:not(:disabled) {
-  transform: scale(1.02);
-  box-shadow: 0 4px 20px rgba(0, 184, 148, 0.2);
+  transform: scale(1.03);
+  box-shadow: 0 6px 30px rgba(52, 211, 153, 0.25);
 }
 
 .send-btn:disabled {
@@ -759,26 +876,28 @@
 }
 
 .hint-btn {
-  padding: 10px 16px;
+  padding: 10px 18px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   white-space: nowrap;
   background: rgba(255, 215, 0, 0.06);
   color: #ffd700;
-  border: 1px solid rgba(255, 215, 0, 0.08);
+  border: 2px solid rgba(255, 215, 0, 0.06);
 }
 
 .hint-btn:hover:not(:disabled) {
   background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.12);
 }
 
 .hint-btn.used {
   opacity: 0.3;
   cursor: not-allowed;
+  border-color: transparent;
 }
 
 .hint-btn:disabled {
@@ -787,68 +906,82 @@
 }
 
 .chat-error {
-  color: #ff6b6b;
-  font-size: 12px;
+  color: #f87171;
+  font-size: 13px;
   text-align: center;
-  padding: 4px 0;
-  margin-top: 4px;
+  padding: 6px 0;
+  margin-top: 6px;
 }
 
-/* ===== GAME RESULT ===== */
+/* ============================================================
+   GAME RESULT - PREMIUM (FIXED - FULLY VISIBLE)
+   ============================================================ */
 .game-result {
-  padding: 30px 20px;
+  padding: 24px 24px 28px;
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(108, 99, 255, 0.06);
+  background: rgba(10, 10, 30, 0.4);
+  flex-shrink: 0;
+  width: 100%;
+  border-radius: 0 0 18px 18px;
 }
 
 .game-result.win {
-  background: rgba(0, 184, 148, 0.02);
+  background: rgba(52, 211, 153, 0.02);
 }
 
 .game-result.lose {
-  background: rgba(255, 107, 107, 0.02);
+  background: rgba(248, 113, 113, 0.02);
 }
 
 .game-result h2 {
-  font-size: 24px;
-  margin-bottom: 4px;
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 2px;
 }
 
 .game-result.win h2 {
-  color: #00b894;
+  color: #34d399;
 }
 
 .game-result.lose h2 {
-  color: #ff6b6b;
+  color: #f87171;
+}
+
+.game-result .result-sub {
+  color: var(--game-text-muted);
+  font-size: 14px;
 }
 
 .result-character {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: #fff;
-  margin: 8px 0;
+  margin: 6px 0 2px;
 }
 
 .result-power {
-  font-size: 16px;
+  font-size: 15px;
   color: #ffd700;
-  margin: 4px 0;
+  margin: 2px 0;
+  font-weight: 600;
 }
 
 .result-stats {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 14px;
-  margin: 8px 0 16px;
+  color: var(--game-text-muted);
+  font-size: 13px;
+  margin: 6px 0 14px;
 }
 
 .result-image {
-  width: 150px;
-  height: 150px;
-  margin: 8px auto;
-  border-radius: 12px;
+  width: 130px;
+  height: 130px;
+  margin: 8px auto 10px;
+  border-radius: 16px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(108, 99, 255, 0.06);
+  transition: all 0.3s ease;
 }
 
 .result-image img {
@@ -857,55 +990,62 @@
   object-fit: cover;
 }
 
+/* ===== RESULT BUTTONS - CLEAN & FULLY VISIBLE ===== */
 .result-buttons {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
+  margin-top: 6px;
+  padding: 4px 0 0;
 }
 
 .result-buttons .btn {
-  padding: 8px 24px;
+  padding: 10px 28px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  min-width: 120px;
+  text-align: center;
 }
 
 .result-buttons .btn-primary {
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
   color: #fff;
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.15);
 }
 
 .result-buttons .btn-primary:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(108, 99, 255, 0.25);
+}
+
+.result-buttons .btn-primary:active {
+  transform: scale(0.97);
 }
 
 .result-buttons .btn-secondary {
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--game-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .result-buttons .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-/* ===== LIMIT WARNING ===== */
-.limit-warning {
-  text-align: center;
-  padding: 8px 12px;
-  background: rgba(255, 107, 107, 0.04);
-  border-radius: 8px;
-  color: #ff6b6b;
-  font-size: 13px;
-  border: 1px solid rgba(255, 107, 107, 0.06);
+.result-buttons .btn-secondary:active {
+  transform: scale(0.97);
 }
 
-/* ===== UNLOCK POPUP ===== */
+/* ============================================================
+   UNLOCK POPUP - PREMIUM
+   ============================================================ */
 .unlock-popup {
   position: fixed;
   top: 0;
@@ -913,146 +1053,175 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.3s ease;
+  z-index: 10000;
+  animation: overlayFade 0.4s ease;
   padding: 20px;
 }
 
 .unlock-popup-content {
-  background: linear-gradient(145deg, rgba(20, 20, 50, 0.97), rgba(10, 10, 30, 0.99));
-  border-radius: 24px;
-  padding: 30px 40px;
-  max-width: 400px;
+  background: linear-gradient(165deg, rgba(10, 10, 30, 0.97), rgba(20, 20, 50, 0.98));
+  border-radius: 28px;
+  padding: 36px 40px 40px;
+  max-width: 420px;
   width: 100%;
   text-align: center;
-  border: 1px solid rgba(255, 215, 0, 0.1);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 215, 0, 0.08);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+  animation: modalSlide 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.unlock-popup-content .unlock-icon {
+  font-size: 56px;
+  display: block;
+  margin-bottom: 8px;
 }
 
 .unlock-popup-content h2 {
   color: #ffd700;
-  font-size: 20px;
-  margin-bottom: 8px;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
 }
 
-.unlock-popup-content h3 {
-  color: #fff;
-  font-size: 18px;
-  margin: 8px 0;
-}
-
-.unlock-popup-content p {
-  color: rgba(255, 255, 255, 0.3);
+.unlock-popup-content .unlock-sub {
+  color: var(--game-text-muted);
   font-size: 14px;
+  margin-bottom: 16px;
 }
 
 .unlock-preview {
-  margin: 12px 0;
+  margin: 12px 0 16px;
+  display: flex;
+  justify-content: center;
 }
 
 .unlock-banner-gif {
   max-width: 100%;
-  max-height: 100px;
-  border-radius: 8px;
+  max-height: 120px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 215, 0, 0.06);
 }
 
 .unlock-photo-img {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid rgba(255, 215, 0, 0.15);
+  border: 3px solid rgba(255, 215, 0, 0.1);
+  box-shadow: 0 8px 30px rgba(255, 215, 0, 0.05);
 }
 
 .unlock-title-preview {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: #ffd700;
+  padding: 8px 20px;
+  background: rgba(255, 215, 0, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.06);
 }
 
-.unlock-desc {
-  color: rgba(255, 255, 255, 0.2) !important;
-  font-size: 12px !important;
+.unlock-popup-content .unlock-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 4px 0 2px;
+}
+
+.unlock-popup-content .unlock-desc {
+  color: var(--game-text-muted);
+  font-size: 13px !important;
+  margin-bottom: 16px;
 }
 
 .unlock-popup-content .btn {
-  padding: 8px 24px;
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
-  color: #fff;
+  padding: 10px 32px;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 12px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.15);
 }
 
 .unlock-popup-content .btn:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.2);
+  transform: scale(1.03);
+  box-shadow: 0 6px 30px rgba(108, 99, 255, 0.25);
 }
 
-/* ===== CARD NOTIFICATION ===== */
+/* ============================================================
+   CARD NOTIFICATION - PREMIUM
+   ============================================================ */
 .card-notification {
   position: fixed;
   top: 80px;
-  right: 20px;
-  z-index: 999;
-  background: linear-gradient(145deg, rgba(20, 20, 50, 0.97), rgba(10, 10, 30, 0.99));
-  border: 1px solid rgba(255, 215, 0, 0.15);
-  border-radius: 14px;
-  padding: 14px 20px;
-  max-width: 320px;
+  right: 24px;
+  z-index: 9999;
+  background: linear-gradient(165deg, rgba(10, 10, 30, 0.95), rgba(20, 20, 50, 0.96));
+  border: 1px solid rgba(255, 215, 0, 0.12);
+  border-radius: 16px;
+  padding: 16px 22px;
+  max-width: 340px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  animation: slideInRight 0.4s ease;
+  animation: slideInRight 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100px); opacity: 0; }
+  from { transform: translateX(80px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
 .card-notification-content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .card-icon {
-  font-size: 30px;
+  font-size: 34px;
 }
 
 .card-info h4 {
   color: #ffd700;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
   margin: 0 0 2px;
 }
 
-.card-info p {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
+.card-info .card-name {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
   margin: 0;
 }
 
 .card-info .card-power {
   color: #ffd700;
-  font-size: 11px;
+  font-size: 12px;
   margin-left: 6px;
 }
 
 .card-info .card-total {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 10px;
+  color: var(--game-text-muted);
+  font-size: 11px;
+  margin: 0;
+  opacity: 0.6;
 }
 
-/* ===== RESPONSIVE ===== */
+/* ============================================================
+   RESPONSIVE - FULLY OPTIMIZED
+   ============================================================ */
 @media (max-width: 768px) {
   .game-container {
-    padding: 12px;
+    padding: 12px 12px 16px;
   }
 
   .game-header {
@@ -1060,12 +1229,13 @@
     align-items: stretch;
     gap: 8px;
     padding: 12px 16px;
+    border-radius: 14px;
   }
 
   .game-info {
     justify-content: center;
     font-size: 12px;
-    gap: 10px;
+    gap: 8px;
   }
 
   .game-header-buttons {
@@ -1073,12 +1243,20 @@
   }
 
   .chat-container {
-    max-height: 500px;
-    min-height: 350px;
+    min-height: 380px;
+    border-radius: 14px;
+  }
+
+  .chat-messages {
+    padding: 14px 16px;
   }
 
   .chat-message {
-    max-width: 95%;
+    max-width: 92%;
+  }
+
+  .chat-input-area {
+    padding: 12px 16px 14px;
   }
 
   .chat-form {
@@ -1101,11 +1279,15 @@
 
   .shard-packages {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.8rem;
+    gap: 10px;
   }
 
   .modal-content {
-    padding: 1.5rem;
+    padding: 24px 20px;
+  }
+
+  .modal-content h2 {
+    font-size: 24px;
   }
 
   .input-tabs {
@@ -1113,40 +1295,107 @@
   }
 
   .tab-btn {
-    font-size: 11px;
-    padding: 6px 8px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .game-start-content {
+    padding: 32px 24px;
+  }
+
+  .game-start-content h1 {
+    font-size: 30px;
   }
 
   .unlock-popup-content {
-    padding: 24px 20px;
-    max-width: 340px;
+    padding: 28px 24px;
+    max-width: 360px;
+  }
+
+  .card-notification {
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+
+  /* ===== RESULT ON TABLET ===== */
+  .game-result {
+    padding: 20px 18px 22px;
+    border-radius: 0 0 14px 14px;
+  }
+
+  .game-result h2 {
+    font-size: 24px;
+  }
+
+  .result-image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .result-character {
+    font-size: 20px;
+  }
+
+  .result-buttons .btn {
+    padding: 10px 24px;
+    font-size: 13px;
+    min-width: 100px;
   }
 }
 
 @media (max-width: 480px) {
   .game-container {
-    padding: 8px;
+    padding: 8px 8px 12px;
   }
 
   .game-start-content {
     padding: 24px 16px;
+    border-radius: 20px;
   }
 
   .game-start-content h1 {
     font-size: 24px;
   }
 
+  .game-start-content .start-subtitle {
+    font-size: 14px;
+  }
+
+  .game-header {
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .game-info {
+    font-size: 11px;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .game-status {
+    font-size: 11px;
+    padding: 2px 10px;
+  }
+
+  .game-shards {
+    font-size: 12px;
+    padding: 2px 10px;
+  }
+
   .chat-container {
-    max-height: 400px;
-    min-height: 300px;
+    min-height: 320px;
+    border-radius: 12px;
   }
 
   .chat-messages {
-    padding: 12px;
+    padding: 10px 12px;
+    gap: 8px;
   }
 
   .chat-input-area {
-    padding: 10px 12px;
+    padding: 10px 12px 12px;
   }
 
   .message-content {
@@ -1158,59 +1407,266 @@
   }
 
   .message-avatar {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     font-size: 14px;
+  }
+
+  .chat-message {
+    max-width: 95%;
+    gap: 8px;
+  }
+
+  .chat-welcome {
+    padding: 20px 12px;
+  }
+
+  .chat-welcome .welcome-icon {
+    font-size: 36px;
+  }
+
+  .chat-welcome .welcome-title {
+    font-size: 16px;
+  }
+
+  .chat-welcome .welcome-sub {
+    font-size: 12px;
   }
 
   .shard-packages {
     grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
+    gap: 6px;
   }
 
   .shard-package {
-    padding: 0.8rem 0.5rem;
+    padding: 10px 8px;
+    border-radius: 12px;
   }
 
   .shard-amount {
-    font-size: 1.5rem;
+    font-size: 20px;
   }
 
   .shard-price {
-    font-size: 1rem;
+    font-size: 14px;
   }
 
   .modal-content {
-    padding: 1rem;
+    padding: 16px 14px;
+    border-radius: 20px;
   }
 
   .modal-content h2 {
-    font-size: 1.4rem;
+    font-size: 20px;
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    top: 12px;
+    right: 14px;
+  }
+
+  .tab-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .tab-badge {
+    font-size: 8px;
+    padding: 0px 6px;
+  }
+
+  .chat-input {
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 10px;
+  }
+
+  .send-btn {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+
+  .hint-btn {
+    font-size: 11px;
+    padding: 8px 12px;
+  }
+
+  .btn-sm {
+    font-size: 10px;
+    padding: 4px 12px;
+  }
+
+  /* ===== RESULT ON MOBILE - FULLY VISIBLE ===== */
+  .game-result {
+    padding: 16px 14px 20px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .game-result h2 {
+    font-size: 22px;
+  }
+
+  .game-result .result-sub {
+    font-size: 13px;
   }
 
   .result-image {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
+    margin: 6px auto 8px;
+  }
+
+  .result-character {
+    font-size: 18px;
+  }
+
+  .result-power {
+    font-size: 14px;
+  }
+
+  .result-stats {
+    font-size: 12px;
+    margin: 4px 0 10px;
+  }
+
+  .result-buttons {
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .result-buttons .btn {
+    font-size: 13px;
+    padding: 10px 18px;
+    min-width: 100px;
+    flex: 1 1 auto;
+    max-width: 150px;
   }
 
   .unlock-popup-content {
-    padding: 16px;
-    max-width: 300px;
+    padding: 20px 16px;
+    max-width: 320px;
+    border-radius: 20px;
   }
 
   .unlock-popup-content h2 {
     font-size: 18px;
+  }
+
+  .unlock-popup-content .unlock-icon {
+    font-size: 44px;
+  }
+
+  .unlock-photo-img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .unlock-banner-gif {
+    max-height: 80px;
+  }
+
+  .card-notification {
+    top: 70px;
+    right: 8px;
+    left: 8px;
+    padding: 12px 16px;
+    border-radius: 14px;
+  }
+
+  .card-icon {
+    font-size: 28px;
+  }
+
+  .card-info h4 {
+    font-size: 12px;
+  }
+
+  .card-info .card-name {
+    font-size: 13px;
   }
 }
 
 @media (max-width: 400px) {
   .game-info {
     font-size: 10px;
-    gap: 6px;
+    gap: 4px;
   }
 
-  .game-header {
+  .game-status {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .game-shards {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  .chat-container {
+    min-height: 280px;
+  }
+
+  .chat-messages {
     padding: 8px 10px;
+  }
+
+  .message-text {
+    font-size: 12px;
+  }
+
+  .message-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .chat-welcome .welcome-icon {
+    font-size: 30px;
+  }
+
+  .chat-welcome .welcome-title {
+    font-size: 14px;
+  }
+
+  .chat-welcome .welcome-sub {
+    font-size: 11px;
+  }
+
+  .shard-packages {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+
+  .shard-package {
+    padding: 8px 6px;
+  }
+
+  .shard-amount {
+    font-size: 17px;
+  }
+
+  .shard-price {
+    font-size: 12px;
+  }
+
+  .shard-label {
+    font-size: 9px;
+  }
+
+  .shard-hints {
+    font-size: 9px;
+  }
+
+  .modal-content {
+    padding: 12px 10px;
+  }
+
+  .modal-content h2 {
+    font-size: 17px;
   }
 
   .tab-btn {
@@ -1219,70 +1675,68 @@
   }
 
   .tab-badge {
-    font-size: 8px;
+    font-size: 7px;
     padding: 0px 4px;
   }
 
   .chat-input {
     font-size: 12px;
-    padding: 8px 10px;
+    padding: 6px 10px;
   }
 
   .send-btn {
     font-size: 11px;
-    padding: 8px 12px;
+    padding: 6px 10px;
   }
 
   .hint-btn {
     font-size: 10px;
-    padding: 8px 10px;
+    padding: 6px 10px;
   }
 
-  .shard-packages {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.3rem;
+  /* ===== RESULT ON VERY SMALL SCREENS ===== */
+  .game-result {
+    padding: 14px 10px 18px;
   }
 
-  .shard-package {
-    padding: 0.5rem 0.3rem;
-  }
-
-  .shard-amount {
-    font-size: 1.2rem;
-  }
-
-  .shard-price {
-    font-size: 0.8rem;
-  }
-
-  .shard-label {
-    font-size: 0.6rem;
-  }
-
-  .shard-hints {
-    font-size: 0.6rem;
-  }
-
-  .modal-content {
-    padding: 0.8rem;
-  }
-
-  .modal-content h2 {
-    font-size: 1.2rem;
-  }
-
-  .modal-close {
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
+  .game-result h2 {
+    font-size: 18px;
   }
 
   .result-image {
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
   }
 
   .result-character {
     font-size: 16px;
+  }
+
+  .result-power {
+    font-size: 13px;
+  }
+
+  .result-stats {
+    font-size: 11px;
+    margin: 2px 0 8px;
+  }
+
+  .result-buttons .btn {
+    font-size: 12px;
+    padding: 8px 14px;
+    min-width: 80px;
+    max-width: 130px;
+  }
+
+  .unlock-popup-content {
+    padding: 16px 12px;
+  }
+
+  .unlock-popup-content h2 {
+    font-size: 16px;
+  }
+
+  .unlock-popup-content .unlock-icon {
+    font-size: 36px;
   }
 }
