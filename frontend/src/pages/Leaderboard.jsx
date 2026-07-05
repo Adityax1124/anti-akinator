@@ -14,6 +14,9 @@ const Leaderboard = () => {
   
   // ===== PREVENT MULTIPLE FETCHES =====
   const fetchedRef = useRef(false);
+  // ===== REF FOR INTERSECTION OBSERVER =====
+  const containerRef = useRef(null);
+  const itemRefs = useRef([]);
 
   useEffect(() => {
     if (!fetchedRef.current) {
@@ -24,6 +27,36 @@ const Leaderboard = () => {
     const timer = setInterval(calculateTimeLeft, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // ===== INTERSECTION OBSERVER FOR SCROLL ANIMATIONS =====
+  useEffect(() => {
+    if (!loading && leaderboard.length > 0) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            }
+          });
+        },
+        {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px',
+        }
+      );
+
+      // Observe all leaderboard items
+      itemRefs.current.forEach((item) => {
+        if (item) observer.observe(item);
+      });
+
+      return () => {
+        if (observer) {
+          observer.disconnect();
+        }
+      };
+    }
+  }, [loading, leaderboard]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -36,7 +69,6 @@ const Leaderboard = () => {
       let leaderboardData = data.leaderboard || [];
       let seasonNumber = data.season || 1;
       
-      // ✅ Check if leaderboardData has items
       if (Array.isArray(leaderboardData) && leaderboardData.length > 0) {
         setLeaderboard(leaderboardData);
         console.log('✅ Leaderboard loaded:', leaderboardData.length, 'players');
@@ -87,14 +119,30 @@ const Leaderboard = () => {
   };
 
   const handlePlayerClick = (username) => {
-    if (username) {
+    if (username && username !== 'Unknown') {
       navigate(`/profile/${username}`);
     }
   };
 
+  // ===== GET RANK CLASS =====
+  const getRankClass = (index) => {
+    if (index === 0) return 'gold';
+    if (index === 1) return 'silver';
+    if (index === 2) return 'bronze';
+    return '';
+  };
+
+  // ===== GET RANK DISPLAY =====
+  const getRankDisplay = (index, rank) => {
+    if (index === 0) return '🥇';
+    if (index === 1) return '🥈';
+    if (index === 2) return '🥉';
+    return `#${rank}`;
+  };
+
   if (loading) {
     return (
-      <div className="leaderboard-container">
+      <div className="leaderboard-container fade-in">
         <div className="loading-container">
           <div className="loader"></div>
           <p>Loading leaderboard...</p>
@@ -104,14 +152,14 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className="leaderboard-container fade-in">
+    <div className="leaderboard-container fade-in" ref={containerRef}>
       <div className="leaderboard-header">
-        <h1>🏆 {seasonDisplayName} Leaderboard</h1>
+        <h1>🏆 {seasonDisplayName} Leaderboard 🏆</h1>
         <p className="prize-message">
           🥇 Season Winner will receive <strong>₹2,000 INR</strong>!
         </p>
         <p className="leaderboard-subtitle">
-          Ranked by season wins • Highest streak breaks ties
+          Ranked by streak • Less season win breaks ties
         </p>
         <p className="season-countdown">
           ⏳ Season ends in: <strong>{timeLeft}</strong>
@@ -143,16 +191,20 @@ const Leaderboard = () => {
               const username = player.username || 'Unknown';
               const wins = player.wins || 0;
               const streak = player.streak || 0;
+              const rankClass = getRankClass(index);
+              const rankDisplay = getRankDisplay(index, rank);
+              const isTop = index < 3;
               
               return (
                 <div 
                   key={username + index + player._id || index} 
-                  className={`leaderboard-item ${index < 3 ? 'top' : ''}`}
+                  ref={el => itemRefs.current[index] = el}
+                  className={`leaderboard-item ${isTop ? 'top' : ''}`}
                   onClick={() => handlePlayerClick(username)}
                   style={{ cursor: username !== 'Unknown' ? 'pointer' : 'default' }}
                 >
-                  <span className="rank">
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${rank}`}
+                  <span className={`rank ${rankClass}`}>
+                    {rankDisplay}
                   </span>
                   <span className="avatar-col">
                     {player.profilePhoto ? (
@@ -177,7 +229,9 @@ const Leaderboard = () => {
                   </span>
                   <span className="player">{username}</span>
                   <span className="games">{wins}</span>
-                  <span className="streak">{streak}</span>
+                  <span className={`streak ${streak >= 10 ? 'high' : ''}`}>
+                    {streak}
+                  </span>
                 </div>
               );
             })}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -12,16 +12,49 @@ const Shop = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [purchasing, setPurchasing] = useState(null);
-  const [activeTab, setActiveTab] = useState('banners'); // 'banners' or 'photos'
+  const [activeTab, setActiveTab] = useState('banners');
+  
+  // ===== REFS FOR INTERSECTION OBSERVER =====
+  const itemRefs = useRef([]);
 
   useEffect(() => {
     fetchShopItems();
   }, []);
 
+  // ===== INTERSECTION OBSERVER FOR STAGGERED ANIMATIONS =====
+  useEffect(() => {
+    if (!loading && items.length > 0) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            }
+          });
+        },
+        {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px',
+        }
+      );
+
+      itemRefs.current.forEach((item) => {
+        if (item) observer.observe(item);
+      });
+
+      return () => {
+        if (observer) {
+          observer.disconnect();
+        }
+      };
+    }
+  }, [loading, items, activeTab]);
+
   const fetchShopItems = async () => {
     setLoading(true);
     try {
       const response = await api.get('/shop/items?_t=' + Date.now());
+      console.log('📦 Shop items response:', response.data);
       setItems(response.data.items || []);
       setError('');
     } catch (err) {
@@ -76,18 +109,43 @@ const Shop = () => {
   // ===== CORS PROXY HELPER =====
   const getProxiedUrl = (url) => {
     if (!url) return '';
-    // If it's a Pinterest URL, use CORS proxy
     if (url.includes('pinimg.com')) {
       return `https://corsproxy.io/?${encodeURIComponent(url)}`;
     }
     return url;
   };
 
+  // ===== FORMAT TIME REMAINING =====
+  const getTimeRemaining = (endDate) => {
+    if (!endDate) return null;
+    const now = new Date();
+    const end = new Date(endDate);
+    const diff = end - now;
+    
+    if (diff <= 0) return 'Expired';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
   // ===== FILTER ITEMS BY TYPE =====
   const bannerItems = items.filter(item => item.itemType === 'banner');
   const photoItems = items.filter(item => item.itemType === 'profilePhoto');
 
+  // Get current items based on active tab
   const currentItems = activeTab === 'banners' ? bannerItems : photoItems;
+
+  // Debug logging
+  console.log('📊 Total items:', items.length);
+  console.log('📊 Banner items:', bannerItems.length);
+  console.log('📊 Photo items:', photoItems.length);
+  console.log('📊 Active tab:', activeTab);
+  console.log('📊 Current items:', currentItems.length);
 
   if (loading) {
     return (
@@ -103,7 +161,7 @@ const Shop = () => {
   return (
     <div className="shop-container fade-in">
       <div className="shop-header">
-        <h1>🛒 Shop</h1>
+        <h1>🛒 Premium Shop</h1>
         <p className="shop-subtitle">Spend your shards on exclusive items!</p>
         <div className="shards-display">
           🎴 Your Shards: <strong>{user?.shards || 0}</strong>
@@ -117,13 +175,23 @@ const Shop = () => {
       <div className="shop-tabs">
         <button
           className={`shop-tab-btn ${activeTab === 'banners' ? 'active' : ''}`}
-          onClick={() => setActiveTab('banners')}
+          onClick={() => {
+            console.log('🔄 Switching to Banners tab');
+            setActiveTab('banners');
+            // Reset refs for new items
+            itemRefs.current = [];
+          }}
         >
           🎨 Banners <span className="tab-count">{bannerItems.length}</span>
         </button>
         <button
           className={`shop-tab-btn ${activeTab === 'photos' ? 'active' : ''}`}
-          onClick={() => setActiveTab('photos')}
+          onClick={() => {
+            console.log('🔄 Switching to Photos tab');
+            setActiveTab('photos');
+            // Reset refs for new items
+            itemRefs.current = [];
+          }}
         >
           📸 Photos <span className="tab-count">{photoItems.length}</span>
         </button>
@@ -139,15 +207,25 @@ const Shop = () => {
         </div>
       ) : (
         <div className="shop-grid">
-          {currentItems.map((item) => {
+          {currentItems.map((item, index) => {
             const isOwned = item.isPurchased;
             const canAfford = (user?.shards || 0) >= item.price;
             const isLimited = item.isLimited;
             const isExpired = isLimited && item.endDate && new Date(item.endDate) < new Date();
             const isNotStarted = isLimited && item.startDate && new Date(item.startDate) > new Date();
+            const timeRemaining = isLimited && item.endDate ? getTimeRemaining(item.endDate) : null;
+            const isUrgent = isLimited && timeRemaining && timeRemaining.includes('h') && !timeRemaining.includes('d');
 
             return (
-              <div key={item._id} className={`shop-item-card ${isOwned ? 'owned' : ''}`}>
+              <div 
+                key={item._id || index} 
+                ref={el => {
+                  if (el) {
+                    itemRefs.current[index] = el;
+                  }
+                }}
+                className={`shop-item-card ${isOwned ? 'owned' : ''}`}
+              >
                 <div className="shop-item-preview">
                   {item.itemType === 'banner' ? (
                     <div className="shop-banner-preview">
@@ -160,11 +238,6 @@ const Shop = () => {
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"%3E%3Crect width="400" height="200" fill="%23333"/%3E%3Ctext x="50%25" y="50%25" font-size="20" font-family="Arial" fill="%23999" text-anchor="middle" dy=".3em"%3EGIF Not Found%3C/text%3E%3C/svg%3E';
-                        }}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
                         }}
                       />
                     </div>
@@ -179,25 +252,33 @@ const Shop = () => {
                         e.target.onerror = null;
                         e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect width="400" height="400" fill="%236c63ff"/%3E%3Ctext x="50%25" y="50%25" font-size="24" font-family="Arial" fill="%23ffffff" text-anchor="middle" dy=".3em"%3ENo Image%3C/text%3E%3C/svg%3E';
                       }}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
                     />
                   )}
-                  <div className="shop-item-badge exclusive">🛒 EXCLUSIVE</div>
-                  {isLimited && (
-                    <div className="shop-item-badge limited">⏳ Limited</div>
+                  
+                  {/* Badges */}
+                  <div className="shop-item-badge exclusive">✨ EXCLUSIVE</div>
+                  
+                  {isLimited && !isExpired && !isNotStarted && (
+                    <div className="shop-item-badge limited">⏳ LIMITED</div>
                   )}
                   {isOwned && (
-                    <div className="shop-item-badge owned">✅ Owned</div>
+                    <div className="shop-item-badge owned">✅ OWNED</div>
                   )}
                   {isExpired && (
-                    <div className="shop-item-badge expired">⛔ Expired</div>
+                    <div className="shop-item-badge expired">⛔ EXPIRED</div>
                   )}
                   {isNotStarted && (
-                    <div className="shop-item-badge coming">📅 Coming Soon</div>
+                    <div className="shop-item-badge coming">📅 COMING SOON</div>
+                  )}
+
+                  {/* Timer Badge - Prominent */}
+                  {isLimited && !isExpired && !isNotStarted && timeRemaining && (
+                    <div className="shop-item-timer-badge">
+                      <span className="timer-icon">⏳</span>
+                      <span className={`timer-text ${isUrgent ? 'urgent' : ''}`}>
+                        {timeRemaining} left
+                      </span>
+                    </div>
                   )}
                 </div>
 
@@ -214,16 +295,6 @@ const Shop = () => {
                   <div className="shop-item-price">
                     <span className="price-icon">🎴</span> {item.price} Shards
                   </div>
-                  {isLimited && item.endDate && (
-                    <div className="shop-item-timer">
-                      <span className="timer-icon">⏳</span> Available until: {new Date(item.endDate).toLocaleDateString()}
-                    </div>
-                  )}
-                  {isLimited && item.startDate && new Date(item.startDate) > new Date() && (
-                    <div className="shop-item-timer">
-                      <span className="timer-icon">📅</span> Available from: {new Date(item.startDate).toLocaleDateString()}
-                    </div>
-                  )}
                 </div>
 
                 <button
@@ -242,7 +313,7 @@ const Shop = () => {
                   ) : !canAfford ? (
                     `Need ${item.price - (user?.shards || 0)} more 🎴`
                   ) : (
-                    `Buy for ${item.price} 🎴`
+                    `Buy Now ${item.price} 🎴`
                   )}
                 </button>
               </div>

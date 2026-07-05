@@ -1,47 +1,78 @@
 /* ============================================================
-   FRIEND MODAL
+   FRIEND MODAL - PREMIUM NAVY/BLUE/PURPLE THEME
    ============================================================ */
 
+/* ============================================================
+   OVERLAY - FADE IN
+   ============================================================ */
 .friend-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   padding: 20px;
-  animation: fadeIn 0.3s ease;
+  animation: overlayFadeIn 0.4s ease;
 }
 
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================================
+   MODAL CONTAINER - SLIDE UP
+   ============================================================ */
 .friend-modal {
-  background: linear-gradient(165deg, rgba(20, 20, 50, 0.97), rgba(10, 10, 30, 0.99));
-  border-radius: 24px;
-  padding: 24px;
-  max-width: 500px;
+  background: linear-gradient(165deg, rgba(10, 10, 30, 0.97), rgba(20, 20, 50, 0.98));
+  backdrop-filter: blur(20px);
+  border-radius: 28px;
+  padding: 28px 30px 32px;
+  max-width: 560px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-  animation: slideUp 0.3s ease;
+  border: 1px solid rgba(108, 99, 255, 0.08);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(108, 99, 255, 0.05);
+  animation: modalSlideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .friend-modal::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .friend-modal::-webkit-scrollbar-track {
   background: transparent;
 }
 .friend-modal::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.4);
+  background: rgba(108, 99, 255, 0.3);
   border-radius: 10px;
 }
+.friend-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 99, 255, 0.5);
+}
 
+/* ============================================================
+   CLOSE BUTTON
+   ============================================================ */
 .friend-modal-close {
   position: absolute;
   top: 16px;
@@ -50,14 +81,15 @@
   border: none;
   font-size: 20px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-  width: 36px;
-  height: 36px;
+  color: rgba(255, 255, 255, 0.25);
+  transition: all 0.25s ease;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10;
 }
 
 .friend-modal-close:hover {
@@ -66,70 +98,401 @@
   transform: rotate(90deg);
 }
 
+/* ============================================================
+   HEADER
+   ============================================================ */
 .friend-modal-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding-top: 4px;
 }
 
 .friend-modal-header h2 {
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 800;
   color: #fff;
   margin: 0;
+  background: linear-gradient(135deg, #4f46e5, #818cf8, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
 }
 
-/* ===== TABS ===== */
+.friend-modal-header .subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 4px;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================
+   TABS - PREMIUM
+   ============================================================ */
 .friend-tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .friend-tabs .tab-btn {
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.35);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  letter-spacing: 0.3px;
 }
 
 .friend-tabs .tab-btn:hover {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.03);
 }
 
 .friend-tabs .tab-btn.active {
-  color: #6c63ff;
-  background: rgba(108, 99, 255, 0.08);
+  color: #fff;
+  background: rgba(108, 99, 255, 0.15);
+  box-shadow: 0 2px 15px rgba(108, 99, 255, 0.05);
 }
 
-/* ===== FRIEND LIST ===== */
+.friend-tabs .tab-btn .tab-count {
+  display: inline-block;
+  background: rgba(108, 99, 255, 0.15);
+  color: #818cf8;
+  padding: 1px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.friend-tabs .tab-btn.active .tab-count {
+  background: rgba(108, 99, 255, 0.25);
+  color: #a78bfa;
+}
+
+/* ============================================================
+   FRIEND LIST
+   ============================================================ */
 .friend-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 350px;
+  gap: 8px;
+  max-height: 380px;
   overflow-y: auto;
+  padding-right: 4px;
 }
 
 .friend-list::-webkit-scrollbar {
   width: 4px;
 }
 .friend-list::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.3);
+  background: rgba(108, 99, 255, 0.25);
   border-radius: 10px;
 }
 
+/* ============================================================
+   FRIEND ITEM - PREMIUM
+   ============================================================ */
 .friend-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.friend-item:hover {
+  background: rgba(108, 99, 255, 0.04);
+  border-color: rgba(108, 99, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.friend-item.clickable {
+  cursor: pointer;
+}
+
+.friend-item .friend-click-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.friend-item .friend-actions-area {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   AVATAR
+   ============================================================ */
+.friend-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.15);
+  transition: all 0.25s ease;
+}
+
+.friend-item:hover .friend-avatar {
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(108, 99, 255, 0.2);
+}
+
+/* ============================================================
+   FRIEND INFO
+   ============================================================ */
+.friend-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.friend-name {
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+  transition: color 0.2s ease;
+}
+
+.friend-item:hover .friend-name {
+  color: #a78bfa;
+}
+
+.friend-status {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.friend-status.online {
+  color: #51cf66;
+}
+
+.friend-status.offline {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.friend-status.pending {
+  color: #ffd93d;
+}
+
+.friend-status .status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 2px;
+}
+
+.friend-status.online .status-dot {
+  background: #51cf66;
+  box-shadow: 0 0 10px rgba(81, 207, 102, 0.3);
+}
+
+.friend-status.offline .status-dot {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.friend-status.pending .status-dot {
+  background: #ffd93d;
+  box-shadow: 0 0 10px rgba(255, 217, 61, 0.2);
+}
+
+.friend-stats {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================================
+   FRIEND ACTIONS - BUTTONS
+   ============================================================ */
+.friend-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.friend-action-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.friend-action-btn.accept {
+  background: rgba(81, 207, 102, 0.12);
+  color: #51cf66;
+}
+
+.friend-action-btn.accept:hover {
+  background: rgba(81, 207, 102, 0.2);
+  transform: scale(1.02);
+}
+
+.friend-action-btn.reject {
+  background: rgba(255, 107, 107, 0.08);
+  color: #ff6b6b;
+}
+
+.friend-action-btn.reject:hover {
+  background: rgba(255, 107, 107, 0.15);
+  transform: scale(1.02);
+}
+
+.friend-action-btn.add {
+  background: rgba(108, 99, 255, 0.12);
+  color: #818cf8;
+  padding: 6px 18px;
+}
+
+.friend-action-btn.add:hover:not(:disabled) {
+  background: rgba(108, 99, 255, 0.22);
+  transform: scale(1.02);
+}
+
+.friend-action-btn.add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.friend-action-btn.unfriend {
+  background: rgba(255, 107, 107, 0.06);
+  color: rgba(255, 107, 107, 0.5);
+  padding: 6px 14px;
+}
+
+.friend-action-btn.unfriend:hover {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+  transform: scale(1.02);
+}
+
+.friend-action-btn.view-profile {
+  background: rgba(108, 99, 255, 0.06);
+  color: rgba(108, 99, 255, 0.4);
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.friend-action-btn.view-profile:hover {
+  background: rgba(108, 99, 255, 0.12);
+  color: #818cf8;
+  transform: scale(1.02);
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.friend-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.friend-empty .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.friend-empty p {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.friend-empty .empty-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+.friend-search {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.friend-search-input {
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.25s ease;
+  font-weight: 400;
+}
+
+.friend-search-input:focus {
+  border-color: #6c63ff;
+  background: rgba(108, 99, 255, 0.04);
+  box-shadow: 0 0 30px rgba(108, 99, 255, 0.03);
+}
+
+.friend-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.search-results-list::-webkit-scrollbar {
+  width: 4px;
+}
+.search-results-list::-webkit-scrollbar-thumb {
+  background: rgba(108, 99, 255, 0.2);
+  border-radius: 10px;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
@@ -137,209 +500,98 @@
   transition: all 0.2s ease;
 }
 
-.friend-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+.search-result-item:hover {
+  background: rgba(108, 99, 255, 0.04);
+  border-color: rgba(108, 99, 255, 0.06);
 }
 
-.friend-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.friend-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.friend-name {
-  color: #fff;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.friend-status {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.friend-status.online {
-  color: #51cf66;
-}
-
-.friend-status.pending {
-  color: #ffd93d;
-}
-
-.friend-stats {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.friend-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.friend-action-btn {
-  padding: 4px 14px;
-  border: none;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.friend-action-btn.accept {
-  background: rgba(81, 207, 102, 0.15);
-  color: #51cf66;
-}
-
-.friend-action-btn.accept:hover {
-  background: rgba(81, 207, 102, 0.25);
-}
-
-.friend-action-btn.reject {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
-}
-
-.friend-action-btn.reject:hover {
-  background: rgba(255, 107, 107, 0.2);
-}
-
-.friend-action-btn.add {
-  background: rgba(108, 99, 255, 0.12);
-  color: #6c63ff;
-}
-
-.friend-action-btn.add:hover:not(:disabled) {
-  background: rgba(108, 99, 255, 0.22);
-}
-
-.friend-action-btn.add:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.friend-action-btn.unfriend {
-  background: rgba(255, 107, 107, 0.08);
-  color: rgba(255, 107, 107, 0.6);
-}
-
-.friend-action-btn.unfriend:hover {
-  background: rgba(255, 107, 107, 0.15);
-  color: #ff6b6b;
-}
-
-/* ===== EMPTY STATE ===== */
-.friend-empty {
-  text-align: center;
-  padding: 30px 20px;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.friend-empty p {
-  margin: 4px 0;
-  font-size: 14px;
-}
-
-/* ===== SEARCH ===== */
-.friend-search {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.friend-search-input {
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  color: #fff;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.friend-search-input:focus {
-  border-color: #6c63ff;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.friend-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.2);
-}
-
-.search-results-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 250px;
-  overflow-y: auto;
-}
-
-.search-result-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-/* ===== ERROR / SUCCESS ===== */
+/* ============================================================
+   ERROR / SUCCESS
+   ============================================================ */
 .friend-error {
-  background: rgba(255, 107, 107, 0.08);
-  border: 1px solid rgba(255, 107, 107, 0.1);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(255, 107, 107, 0.06);
+  border: 1px solid rgba(255, 107, 107, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
   color: #ff6b6b;
   font-size: 13px;
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .friend-success {
-  background: rgba(81, 207, 102, 0.08);
-  border: 1px solid rgba(81, 207, 102, 0.1);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(81, 207, 102, 0.06);
+  border: 1px solid rgba(81, 207, 102, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
   color: #51cf66;
   font-size: 13px;
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-/* ===== RESPONSIVE ===== */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 480px) {
   .friend-modal {
-    padding: 16px;
+    padding: 20px 16px 24px;
     max-width: 100%;
+    border-radius: 20px;
+    max-height: 92vh;
   }
 
-  .friend-item {
-    flex-wrap: wrap;
-  }
-
-  .friend-actions {
-    width: 100%;
-    justify-content: flex-end;
+  .friend-modal-header h2 {
+    font-size: 22px;
   }
 
   .friend-tabs .tab-btn {
     font-size: 12px;
-    padding: 6px 8px;
+    padding: 8px 10px;
+  }
+
+  .friend-item {
+    padding: 10px 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .friend-item .friend-click-area {
+    flex: 1 1 100%;
+    gap: 10px;
+  }
+
+  .friend-item .friend-actions-area {
+    width: 100%;
+    justify-content: flex-end;
+    padding-left: 54px;
+  }
+
+  .friend-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  .friend-name {
+    font-size: 14px;
+  }
+
+  .friend-action-btn {
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+
+  .friend-modal-close {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+    top: 12px;
+    right: 14px;
+  }
+
+  .friend-search-input {
+    font-size: 14px;
+    padding: 12px 14px;
   }
 }

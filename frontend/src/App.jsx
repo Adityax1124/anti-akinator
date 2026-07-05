@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -25,14 +25,27 @@ import ReferralPage from './pages/ReferralPage';
 import TwoFactorSetup from './pages/TwoFactorSetup';
 import TwoFactorVerify from './pages/TwoFactorVerify';
 import PrivateRoute from './components/PrivateRoute';
-// ✅ Collection Page
 import Collection from './pages/Collection';
-// ✅ Legal Pages
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Contact from './pages/Contact';
 import './App.css';
+
+// ✅ NEW: ScrollToTop component to fix scroll position on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant' // or 'smooth' if you want animated scrolling
+    });
+  }, [pathname]);
+
+  return null;
+};
 
 const AppContent = () => {
   const { user, isAuthenticated } = useAuth();
@@ -72,7 +85,6 @@ const AppContent = () => {
       console.log(`📤 Registered user ${userId} for private messages`);
     });
 
-    // ===== TEAM INVITE LISTENERS =====
     socket.on('team-invite', (data) => {
       console.log('📨 Team invite received!', data);
       console.log('📨 From:', data.from?.username);
@@ -87,7 +99,6 @@ const AppContent = () => {
       }
     });
 
-    // ===== MATCH INVITE LISTENERS =====
     socket.on('match-invite', (data) => {
       console.log('📨 Match invite received!', data);
       console.log('📨 From:', data.from?.username);
@@ -124,6 +135,7 @@ const AppContent = () => {
 
   return (
     <>
+      <ScrollToTop /> {/* ✅ ADD THIS LINE - fixes scroll position */}
       <Navbar />
       <Stars />
       <main className="main-content">
@@ -160,7 +172,6 @@ const AppContent = () => {
             <PrivateRouteWrapper><MatchBattle /></PrivateRouteWrapper>
           } />
           
-          {/* ✅ Collection Route */}
           <Route path="/collection" element={
             <PrivateRouteWrapper><Collection /></PrivateRouteWrapper>
           } />

@@ -1,118 +1,425 @@
+/* ============================================================
+   INDEX CSS
+   Premium Design System
+   Inspired by Apple • Discord • Riot Games • Linear
+   ============================================================ */
 
+/* ============================================================
+   GOOGLE FONT
+   ============================================================ */
 
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* ============================================================
+   RESET
+   ============================================================ */
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+*,
+*::before,
+*::after{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+html{
+    scroll-behavior:smooth;
+    -webkit-text-size-adjust:100%;
 }
 
-body {
-  margin: 0;
+body{
+    margin:0;
+    padding:0;
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+/* ============================================================
+   ROOT DESIGN TOKENS
+   ============================================================ */
+
+:root{
+
+    /* ---------- Typography ---------- */
+
+    --font-family:
+        "Geist",
+        -apple-system,
+        BlinkMacSystemFont,
+        "SF Pro Display",
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    /* ---------- Background ---------- */
+
+    --bg-primary:#09090b;
+    --bg-secondary:#111115;
+    --bg-tertiary:#18181d;
+
+    /* ---------- Surface ---------- */
+
+    --surface-1:rgba(255,255,255,.025);
+    --surface-2:rgba(255,255,255,.045);
+    --surface-3:rgba(255,255,255,.065);
+
+    /* ---------- Text ---------- */
+
+    --text-primary:#ffffff;
+    --text-secondary:rgba(255,255,255,.74);
+    --text-muted:rgba(255,255,255,.46);
+    --text-disabled:rgba(255,255,255,.24);
+
+    /* ---------- Accent ---------- */
+
+    --accent:#7267ff;
+    --accent-hover:#8d84ff;
+    --accent-light:rgba(114,103,255,.12);
+
+    /* ---------- Status ---------- */
+
+    --success:#00c48c;
+    --warning:#ffb547;
+    --danger:#ff5d73;
+
+    /* ---------- Borders ---------- */
+
+    --border:rgba(255,255,255,.07);
+    --border-hover:rgba(255,255,255,.13);
+
+    /* ---------- Radius ---------- */
+
+    --radius-xs:8px;
+    --radius-sm:12px;
+    --radius-md:16px;
+    --radius-lg:20px;
+    --radius-xl:28px;
+
+    /* ---------- Shadows ---------- */
+
+    --shadow-sm:
+        0 6px 20px rgba(0,0,0,.18);
+
+    --shadow-md:
+        0 12px 32px rgba(0,0,0,.24);
+
+    --shadow-lg:
+        0 20px 60px rgba(0,0,0,.32);
+
+    --shadow-accent:
+        0 0 40px rgba(114,103,255,.16);
+
+    /* ---------- Motion ---------- */
+
+    --transition-fast:.18s ease;
+
+    --transition:
+        .28s cubic-bezier(.22,1,.36,1);
+
+    --transition-slow:
+        .45s cubic-bezier(.22,1,.36,1);
+
 }
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+body{
+
+    font-family:var(--font-family);
+
+    background:var(--bg-primary);
+
+    color:var(--text-secondary);
+
+    min-height:100vh;
+
+    overflow-x:hidden;
+
+    text-rendering:optimizeLegibility;
+
+    -webkit-font-smoothing:antialiased;
+
+    -moz-osx-font-smoothing:grayscale;
+
+    font-feature-settings:
+        "kern",
+        "liga",
+        "calt";
+}
+
+/* ============================================================
+   ROOT
+   ============================================================ */
+
+#root{
+
+    min-height:100vh;
+
+    display:flex;
+
+    flex-direction:column;
+
+    width:100%;
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3,
+h4,
+h5,
+h6{
+
+    color:var(--text-primary);
+
+    margin:0;
+
+    font-weight:700;
+
+    letter-spacing:-0.03em;
+
+    line-height:1.1;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+h1{
+
+    font-size:clamp(3rem,6vw,5rem);
+
+    font-weight:800;
+
+    letter-spacing:-0.05em;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+h2{
+
+    font-size:clamp(2rem,4vw,3.2rem);
+
+    font-weight:750;
+
+    letter-spacing:-0.04em;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+h3{
+
+    font-size:1.45rem;
+
+    font-weight:650;
+
+    letter-spacing:-0.02em;
 }
 
-body {
-  background: url('/anime-bg.jpg') center/cover no-repeat fixed;
-  background-color: #0a0a12;
+h4{
+
+    font-size:1.2rem;
+
+    font-weight:650;
+}
+
+p{
+
+    margin:0;
+
+    font-size:1rem;
+
+    line-height:1.8;
+
+    color:var(--text-secondary);
+}
+
+small{
+
+    color:var(--text-muted);
+}
+
+/* ============================================================
+   LINKS
+   ============================================================ */
+
+a{
+
+    color:inherit;
+
+    text-decoration:none;
+
+    transition:var(--transition);
+}
+
+a:hover{
+
+    color:#ffffff;
+}
+
+/* ============================================================
+   IMAGES
+   ============================================================ */
+
+img{
+
+    display:block;
+
+    max-width:100%;
+
+    user-select:none;
+}
+
+/* ============================================================
+   BUTTON RESET
+   ============================================================ */
+
+button{
+
+    font-family:inherit;
+
+    outline:none;
+
+    border:none;
+
+    background:none;
+
+    cursor:pointer;
+}
+
+input,
+textarea,
+select{
+
+    font-family:inherit;
+}
+
+/* ============================================================
+   SELECTION
+   ============================================================ */
+
+::selection{
+
+    background:var(--accent);
+
+    color:#fff;
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+
+::-webkit-scrollbar{
+
+    width:8px;
+
+    height:8px;
+}
+
+::-webkit-scrollbar-track{
+
+    background:transparent;
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:rgba(255,255,255,.12);
+
+    border-radius:999px;
+
+    transition:var(--transition);
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:rgba(255,255,255,.22);
+}
+
+/* Firefox */
+
+*{
+
+    scrollbar-width:thin;
+
+    scrollbar-color:
+        rgba(255,255,255,.18)
+        transparent;
+}
+
+/* ============================================================
+   FOCUS
+   ============================================================ */
+
+:focus-visible{
+
+    outline:2px solid rgba(114,103,255,.8);
+
+    outline-offset:2px;
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+.text-primary{
+
+    color:var(--text-primary);
+}
+
+.text-secondary{
+
+    color:var(--text-secondary);
+}
+
+.text-muted{
+
+    color:var(--text-muted);
+}
+
+.accent{
+
+    color:var(--accent);
+}
+
+.hidden{
+
+    display:none !important;
+}
+
+.no-select{
+
+    user-select:none;
+}
+
+.pointer{
+
+    cursor:pointer;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width:1024px){
+
+    html{
+
+        font-size:15px;
+    }
+
+}
+
+@media (max-width:768px){
+
+    html{
+
+        font-size:14px;
+    }
+
+}
+
+@media (max-width:480px){
+
+    html{
+
+        font-size:13px;
+    }
+
 }

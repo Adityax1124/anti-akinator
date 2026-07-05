@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -12,14 +12,18 @@ const BuyShards = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // ===== REFS FOR INTERSECTION OBSERVER =====
+  const packRefs = useRef([]);
+  const purchaseRef = useRef(null);
 
   const shardPackages = [
     { 
       id: 1,
       name: 'STARTER', 
       shards: 50, 
-      price: '₹35 INR', 
-      priceValue: 35,
+      price: '₹36 INR', 
+      priceValue: 36,
       hints: 1, 
       tag: null 
     },
@@ -78,6 +82,52 @@ const BuyShards = () => {
     document.body.appendChild(script);
     return () => {
       document.body.removeChild(script);
+    };
+  }, []);
+
+  // ===== INTERSECTION OBSERVER FOR STAGGERED ANIMATIONS =====
+  useEffect(() => {
+    // Observe pack cards
+    const packObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px',
+      }
+    );
+
+    packRefs.current.forEach((pack) => {
+      if (pack) packObserver.observe(pack);
+    });
+
+    // Observe purchase section
+    const purchaseObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px',
+      }
+    );
+
+    if (purchaseRef.current) {
+      purchaseObserver.observe(purchaseRef.current);
+    }
+
+    return () => {
+      packObserver.disconnect();
+      purchaseObserver.disconnect();
     };
   }, []);
 
@@ -152,7 +202,7 @@ const BuyShards = () => {
           email: user?.email || '',
         },
         theme: {
-          color: '#7b2ffc',
+          color: '#6c63ff',
         },
         modal: {
           ondismiss: () => {
@@ -171,10 +221,20 @@ const BuyShards = () => {
     }
   };
 
-  // Calculate hints for a pack
-  const getHints = (shards) => {
-    return Math.floor(shards / 50);
+  // Get selected pack details for display
+  const getSelectedPackDetails = () => {
+    if (!selectedPack) {
+      return {
+        name: 'None Selected',
+        shards: 0,
+        price: '₹0 INR',
+        hints: 0
+      };
+    }
+    return selectedPack;
   };
+
+  const packDetails = getSelectedPackDetails();
 
   return (
     <div className="buy-shards-container fade-in">
@@ -190,10 +250,11 @@ const BuyShards = () => {
       {success && <div className="buy-shards-success">{success}</div>}
 
       <div className="shards-packs-grid">
-        {shardPackages.map((pack) => (
+        {shardPackages.map((pack, index) => (
           <div
             key={pack.id}
-            className={`shards-pack ${selectedPack?.id === pack.id ? 'selected' : ''} ${pack.tag ? 'popular' : ''}`}
+            ref={el => packRefs.current[index] = el}
+            className={`shards-pack ${pack.tag ? 'popular' : ''}`}
             onClick={() => handleSelectPack(pack)}
           >
             {pack.tag && (
@@ -203,66 +264,61 @@ const BuyShards = () => {
             <div className="pack-shards">🎴 {pack.shards} Shards</div>
             <div className="pack-price">{pack.price}</div>
             <div className="pack-hints">💡 <strong>{pack.hints}</strong> Hints</div>
-            {selectedPack?.id === pack.id && (
-              <div className="pack-selected-badge">✓ Selected</div>
-            )}
           </div>
         ))}
       </div>
 
-      {selectedPack && (
-        <div className="purchase-section">
-          <div className="purchase-summary">
-            <h3>📋 Order Summary</h3>
-            <p>
-              <span>Package:</span>
-              <strong>{selectedPack.name} – {selectedPack.shards} Shards</strong>
-            </p>
-            <p>
-              <span>Price:</span>
-              <strong>{selectedPack.price}</strong>
-            </p>
-            <p>
-              <span>Hints Included:</span>
-              <strong>{selectedPack.hints} hints</strong>
-            </p>
-          </div>
-
-          {/* ===== AGREEMENT CHECKBOX ===== */}
-          <div className="agreement-section">
-            <label className="agreement-checkbox">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-              />
-              <span>
-                I agree to the{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer">
-                  Terms & Conditions
-                </a>
-                ,{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer">
-                  Privacy Policy
-                </a>
-                , and{' '}
-                <a href="/refund" target="_blank" rel="noopener noreferrer">
-                  Refund & Cancellation Policy
-                </a>
-                .
-              </span>
-            </label>
-          </div>
-
-          <button
-            className="btn btn-primary purchase-btn"
-            onClick={handlePurchase}
-            disabled={!agreed || loading}
-          >
-            {loading ? 'Processing...' : `Buy ${selectedPack.shards} Shards ${selectedPack.price}`}
-          </button>
+      {/* ===== ORDER SUMMARY - ALWAYS VISIBLE ===== */}
+      <div className="purchase-section" ref={purchaseRef}>
+        <div className="purchase-summary">
+          <h3>📋 Order Summary</h3>
+          <p>
+            <span>Package:</span>
+            <strong>{packDetails.name} – {packDetails.shards} Shards</strong>
+          </p>
+          <p>
+            <span>Price:</span>
+            <strong className="price-highlight">{packDetails.price}</strong>
+          </p>
+          <p>
+            <span>Hints Included:</span>
+            <strong>{packDetails.hints} hints</strong>
+          </p>
         </div>
-      )}
+
+        <div className="agreement-section">
+          <label className="agreement-checkbox">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+            />
+            <span>
+              I agree to the{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer">
+                Terms & Conditions
+              </a>
+              ,{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer">
+                Privacy Policy
+              </a>
+              , and{' '}
+              <a href="/refund" target="_blank" rel="noopener noreferrer">
+                Refund & Cancellation Policy
+              </a>
+              .
+            </span>
+          </label>
+        </div>
+
+        <button
+          className="purchase-btn"
+          onClick={handlePurchase}
+          disabled={!agreed || loading || !selectedPack}
+        >
+          {loading ? 'Processing...' : selectedPack ? `Buy ${selectedPack.shards} Shards ${selectedPack.price}` : 'Select a pack to purchase'}
+        </button>
+      </div>
     </div>
   );
 };

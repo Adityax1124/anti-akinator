@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import './FriendModal.css';
 
 const FriendModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('friends');
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -56,25 +58,26 @@ const FriendModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // ✅ FIXED: Better error handling with fallback IDs
+  // ===== HANDLE FRIEND PROFILE CLICK =====
+  const handleFriendClick = (username) => {
+    if (username) {
+      onClose();
+      navigate(`/profile/${username}`);
+    }
+  };
+
+  // ===== HANDLE SEND REQUEST =====
   const handleSendRequest = async (userId) => {
-    // Try to get userId from multiple possible sources
     let targetId = userId;
     
-    // If userId is undefined or null, try to find it from the search results
     if (!targetId) {
-      console.log('🔍 Looking for user ID in search results...');
-      // Find the user in search results by matching the object reference
-      // This is a fallback - ideally the search result should have _id
       const searchResult = searchResults.find(u => u.username === userId || u._id === userId);
       if (searchResult) {
         targetId = searchResult._id || searchResult.id;
-        console.log('🔍 Found user ID from search results:', targetId);
       }
     }
 
     console.log('📝 [handleSendRequest] Called with userId:', targetId);
-    console.log('📝 [handleSendRequest] Type of userId:', typeof targetId);
     
     if (!targetId) {
       console.error('❌ [handleSendRequest] No userId provided');
@@ -82,10 +85,7 @@ const FriendModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Check if userId is a valid MongoDB ObjectId (24 hex chars)
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(targetId);
-    console.log('📝 [handleSendRequest] Is valid ObjectId?', isValidObjectId);
-    
     if (!isValidObjectId) {
       console.error('❌ [handleSendRequest] Invalid ObjectId format:', targetId);
       setError('Invalid user ID format');
@@ -104,7 +104,6 @@ const FriendModal = ({ isOpen, onClose }) => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('❌ Send request error:', error);
-      console.error('❌ Response:', error.response?.data);
       setError(error.response?.data?.message || 'Failed to send request');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -150,6 +149,7 @@ const FriendModal = ({ isOpen, onClose }) => {
         
         <div className="friend-modal-header">
           <h2>👥 Friends</h2>
+          <p className="subtitle">Connect with players and challenge them</p>
         </div>
 
         <div className="friend-tabs">
@@ -157,13 +157,13 @@ const FriendModal = ({ isOpen, onClose }) => {
             className={`tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
             onClick={() => setActiveTab('friends')}
           >
-            Friends ({friends.length})
+            Friends <span className="tab-count">{friends.length}</span>
           </button>
           <button 
             className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
-            Requests ({pendingRequests.length})
+            Requests <span className="tab-count">{pendingRequests.length}</span>
           </button>
           <button 
             className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`}
@@ -180,27 +180,39 @@ const FriendModal = ({ isOpen, onClose }) => {
           <div className="friend-list">
             {friends.length === 0 ? (
               <div className="friend-empty">
+                <span className="empty-icon">👤</span>
                 <p>You don't have any friends yet.</p>
-                <p>Search for players to add!</p>
+                <p className="empty-sub">Search for players to add!</p>
               </div>
             ) : (
               friends.map((friend) => (
-                <div key={friend.id || friend.userId} className="friend-item">
-                  <div className="friend-avatar">
-                    {friend.username?.charAt(0).toUpperCase()}
+                <div key={friend.id || friend.userId} className="friend-item clickable">
+                  <div className="friend-click-area" onClick={() => handleFriendClick(friend.username)}>
+                    <div className="friend-avatar">
+                      {friend.username?.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="friend-info">
+                      <span className="friend-name">{friend.username}</span>
+                      <span className={`friend-status ${friend.status || 'offline'}`}>
+                        <span className="status-dot"></span>
+                        {friend.status === 'online' ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="friend-info">
-                    <span className="friend-name">{friend.username}</span>
-                    <span className={`friend-status ${friend.status}`}>
-                      {friend.status === 'online' ? '🟢 Online' : '⚪ Offline'}
-                    </span>
+                  <div className="friend-actions-area">
+                    <button 
+                      className="friend-action-btn view-profile"
+                      onClick={() => handleFriendClick(friend.username)}
+                    >
+                      View
+                    </button>
+                    <button 
+                      className="friend-action-btn unfriend"
+                      onClick={() => handleUnfriend(friend.userId)}
+                    >
+                      Unfriend
+                    </button>
                   </div>
-                  <button 
-                    className="friend-action-btn unfriend"
-                    onClick={() => handleUnfriend(friend.userId)}
-                  >
-                    Unfriend
-                  </button>
                 </div>
               ))
             )}
@@ -211,19 +223,25 @@ const FriendModal = ({ isOpen, onClose }) => {
           <div className="friend-list">
             {pendingRequests.length === 0 ? (
               <div className="friend-empty">
+                <span className="empty-icon">📭</span>
                 <p>No pending friend requests.</p>
               </div>
             ) : (
               pendingRequests.map((request) => (
                 <div key={request._id} className="friend-item">
-                  <div className="friend-avatar">
-                    {request.requester?.username?.charAt(0).toUpperCase() || '?'}
+                  <div className="friend-click-area">
+                    <div className="friend-avatar">
+                      {request.requester?.username?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                    <div className="friend-info">
+                      <span className="friend-name">{request.requester?.username || 'Unknown'}</span>
+                      <span className="friend-status pending">
+                        <span className="status-dot"></span>
+                        Pending
+                      </span>
+                    </div>
                   </div>
-                  <div className="friend-info">
-                    <span className="friend-name">{request.requester?.username || 'Unknown'}</span>
-                    <span className="friend-status pending">⏳ Pending</span>
-                  </div>
-                  <div className="friend-actions">
+                  <div className="friend-actions-area">
                     <button 
                       className="friend-action-btn accept"
                       onClick={() => handleAcceptRequest(request.requester._id)}
@@ -255,7 +273,6 @@ const FriendModal = ({ isOpen, onClose }) => {
             {searchResults.length > 0 && (
               <div className="search-results-list">
                 {searchResults.map((result) => {
-                  // ✅ Get the ID from multiple possible sources
                   const userId = result._id || result.id || result.userId;
                   console.log('🔍 Search result:', { username: result.username, userId });
                   
@@ -285,7 +302,9 @@ const FriendModal = ({ isOpen, onClose }) => {
             )}
             {searchQuery.length >= 2 && searchResults.length === 0 && (
               <div className="friend-empty">
+                <span className="empty-icon">🔍</span>
                 <p>No players found.</p>
+                <p className="empty-sub">Try a different username</p>
               </div>
             )}
           </div>

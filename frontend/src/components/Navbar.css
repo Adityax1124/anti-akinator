@@ -1,53 +1,101 @@
 /* ============================================================
-   NAVBAR
+   NAVBAR - APPLE STYLE PREMIUM (FULLY FIXED)
+   ============================================================ */
+
+/* ===== ROOT VARIABLES ===== */
+:root {
+  --navbar-height: 64px;
+  --navbar-bg: rgba(10, 10, 18, 0.6);
+  --navbar-blur: 32px;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-muted: rgba(255, 255, 255, 0.35);
+  --accent: #6c63ff;
+  --accent-glow: rgba(108, 99, 255, 0.15);
+  --transition-speed: 0.3s;
+  --radius: 10px;
+}
+
+/* ============================================================
+   NAVBAR - FULL WIDTH
    ============================================================ */
 .navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(8, 8, 20, 0.92);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  z-index: 1000;
-  padding: 0 20px;
-  height: 60px;
+  width: 100%;
+  max-width: 100%;
+  height: var(--navbar-height);
+  background: transparent !important;
+  backdrop-filter: blur(var(--navbar-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--navbar-blur)) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  z-index: 9999 !important;
+  padding: 0 24px;
   display: flex;
   align-items: center;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
+  transition: all var(--transition-speed) ease;
+  overflow: visible;
+}
+
+.navbar.dropdown-open {
+  background: rgba(10, 10, 18, 0.3) !important;
 }
 
 .navbar-container {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  height: 100%;
 }
 
-/* ===== BRAND ===== */
+/* ============================================================
+   BRAND / LOGO
+   ============================================================ */
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 800;
+  gap: 10px;
   text-decoration: none;
-  background: linear-gradient(135deg, #00d4ff, #7b2ffc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity var(--transition-speed) ease;
+}
+
+.navbar-brand:hover {
+  opacity: 0.85;
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
   flex-shrink: 0;
 }
 
-/* ===== SEARCH WRAPPER - OVAL SHAPE ===== */
+.brand-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ============================================================
+   SEARCH - ICON ON RIGHT SIDE
+   ============================================================ */
 .search-wrapper {
   position: relative;
   flex: 1;
-  max-width: 300px;
-  min-width: 120px;
+  max-width: 320px;
+  min-width: 140px;
 }
 
 .search-container {
@@ -59,63 +107,85 @@
 
 .search-input {
   width: 100%;
-  padding: 8px 36px 8px 18px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 50px !important; /* ✅ OVAL SHAPE */
-  color: #fff;
-  font-size: 13px;
-  transition: all 0.3s ease;
+  padding: 8px 44px 8px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50px !important;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: all var(--transition-speed) ease;
   outline: none;
-  height: 38px;
+  height: 40px;
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
 }
 
 .search-input:focus {
-  border-color: rgba(0, 212, 255, 0.3);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.05);
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
-.search-icon {
+/* ✅ Search Icon - RIGHT SIDE */
+.search-icon-svg {
   position: absolute;
   right: 14px;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 13px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
   pointer-events: none;
+  transition: color var(--transition-speed) ease;
 }
 
-/* ===== SEARCH RESULTS ===== */
+.search-input:focus ~ .search-icon-svg {
+  color: var(--accent);
+}
+
+/* ============================================================
+   SEARCH RESULTS
+   ============================================================ */
 .search-results {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: rgba(16, 16, 30, 0.97);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(16, 16, 32, 0.98);
+  backdrop-filter: blur(24px);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  z-index: 2000;
+  z-index: 10000 !important;
   max-height: 280px;
   overflow-y: auto;
-  padding: 6px 0;
+  padding: 6px;
+  animation: dropdownSlide 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.search-results::-webkit-scrollbar {
+  width: 4px;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 10px;
 }
 
 .search-result-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 14px;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-speed) ease;
 }
 
 .search-result-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .search-avatar {
@@ -130,14 +200,13 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2d2d5e, #1a1a2e);
+  background: var(--accent-glow);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
   font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.05);
+  color: var(--accent);
 }
 
 .search-user-info {
@@ -147,8 +216,8 @@
 }
 
 .search-username {
-  font-weight: 600;
-  color: #fff;
+  font-weight: 500;
+  color: var(--text-primary);
   font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
@@ -157,80 +226,128 @@
 
 .search-stats {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
 }
 
 .search-no-results {
-  padding: 14px;
+  padding: 12px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
   font-size: 13px;
 }
 
 /* ============================================================
-   NAVBAR MENU
+   DROPDOWN ANIMATIONS
+   ============================================================ */
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================================
+   NAVBAR MENU - DESKTOP
    ============================================================ */
 .navbar-menu {
   display: flex;
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  overflow: visible;
 }
 
-/* ===== NAV LINKS - NO ORANGE BOX ===== */
+/* ===== NAV LINKS ===== */
 .nav-link {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   text-decoration: none;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 8px;
   font-weight: 500;
   font-size: 13px;
-  background: none !important; /* ✅ NO BACKGROUND */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: none !important;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-speed) ease;
   white-space: nowrap;
   height: 36px;
+  position: relative;
+  letter-spacing: -0.2px;
+}
+
+.nav-link .nav-icon {
+  font-size: 16px;
+  line-height: 1;
+  transition: transform var(--transition-speed) ease;
+}
+
+.nav-link .nav-label {
+  transition: color var(--transition-speed) ease;
 }
 
 .nav-link:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link:hover .nav-icon {
+  transform: scale(1.05);
 }
 
 .nav-link.active {
-  color: #00d4ff;
-  background: rgba(0, 212, 255, 0.08);
-}
-
-/* ===== BATTLE BUTTON - NO ORANGE BOX ===== */
-.battle-btn {
-  color: #ffd700 !important; /* ✅ GOLD TEXT ONLY */
-  background: none !important; /* ✅ NO BACKGROUND */
-  font-weight: 600;
-}
-
-.battle-btn:hover {
-  color: #fff !important;
-  background: rgba(255, 215, 0, 0.08) !important;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ============================================================
-   DROPDOWN SYSTEM
+   DROPDOWN - CLICK TO OPEN (NO HOVER)
    ============================================================ */
 .dropdown-wrapper {
   position: relative;
+  display: inline-block;
+}
+
+.dropdown-wrapper .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px) scale(0.95);
+  min-width: 200px;
+  background: rgba(16, 16, 32, 0.98);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 6px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 10000 !important;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.25s ease;
+}
+
+.dropdown-wrapper .dropdown-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .dropdown-btn {
   padding: 6px 12px;
   height: 36px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-weight: 500;
   font-size: 13px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: none;
   border: none;
   cursor: pointer;
@@ -238,253 +355,189 @@
   align-items: center;
   gap: 4px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-speed) ease;
   white-space: nowrap;
-  font-family: inherit;
 }
 
 .dropdown-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .dropdown-btn.active {
-  color: #00d4ff;
-  background: rgba(0, 212, 255, 0.08);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.dropdown-arrow {
-  font-size: 10px;
-  opacity: 0.4;
-  transition: transform 0.3s ease;
+.dropdown-arrow-svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  transition: all var(--transition-speed) ease;
+  flex-shrink: 0;
 }
 
-.dropdown-btn.active .dropdown-arrow {
+.dropdown-arrow-svg.rotated {
   transform: rotate(180deg);
-  opacity: 0.8;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  min-width: 180px;
-  background: rgba(16, 16, 30, 0.98);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  padding: 6px;
-  z-index: 2000;
-  animation: dropdownFade 0.2s ease;
-}
-
-@keyframes dropdownFade {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-8px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
+  color: var(--text-primary);
 }
 
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 8px 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-speed) ease;
   background: none;
   border: none;
   cursor: pointer;
   width: 100%;
-  font-family: inherit;
   text-align: left;
 }
 
+.dropdown-item .dropdown-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
 .dropdown-item:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .dropdown-item.logout-item {
-  color: #fd79a8;
+  color: #ff6b6b;
 }
 
 .dropdown-item.logout-item:hover {
-  background: rgba(231, 76, 60, 0.08);
-  color: #e74c3c;
+  background: rgba(255, 107, 107, 0.12);
 }
 
 .dropdown-divider {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  margin: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 4px 8px;
 }
 
 /* ===== PROFILE DROPDOWN ===== */
 .profile-dropdown {
   right: 0;
   left: auto;
-  transform: none;
-  min-width: 160px;
+  transform: translateY(-10px) scale(0.95) !important;
+  min-width: 180px;
 }
 
-.profile-dropdown .dropdown-item {
-  font-size: 13px;
-}
-
-/* ===== ADMIN LINK ===== */
-.admin-link {
-  color: #7b2ffc;
-}
-
-.admin-link:hover {
-  color: #9b4dff;
-  background: rgba(123, 47, 252, 0.08);
-}
-
-/* ===== REGISTER BUTTON ===== */
-.register-btn {
-  background: linear-gradient(135deg, #00d4ff, #7b2ffc);
-  color: #fff !important;
-  border-radius: 10px;
-  padding: 6px 18px;
-  height: 36px;
-}
-
-.register-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 25px rgba(0, 212, 255, 0.3);
-  color: #fff !important;
-  background: linear-gradient(135deg, #00d4ff, #7b2ffc) !important;
-}
-
-/* ===== FRIENDS BUTTON ===== */
-.friends-btn {
-  color: #a29bfe !important;
-  background: none !important;
-  font-weight: 500;
-}
-
-.friends-btn:hover {
-  color: #fff !important;
-  background: rgba(162, 155, 254, 0.08) !important;
-}
-
-/* ===== REFERRAL BUTTON ===== */
-.referral-btn {
-  color: #fd79a8 !important;
-  background: none !important;
-  font-weight: 500;
-}
-
-.referral-btn:hover {
-  color: #fff !important;
-  background: rgba(253, 121, 168, 0.08) !important;
-}
-
-/* ===== LOGOUT ===== */
-.logout-btn {
-  color: #fd79a8;
-}
-
-.logout-btn:hover {
-  background: rgba(231, 76, 60, 0.08);
-  color: #e74c3c;
+.profile-dropdown.open {
+  transform: translateY(0) scale(1) !important;
 }
 
 /* ============================================================
-   USER PROFILE SECTION
+   USER PROFILE
    ============================================================ */
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00d4ff, #7b2ffc);
+  background: var(--accent-glow);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  color: #fff;
-  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 13px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  transition: border-color var(--transition-speed) ease;
+}
+
+.profile-btn:hover .user-avatar {
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .navbar-avatar-img {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
 .username {
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-primary);
   font-size: 13px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ===== GEMS DISPLAY ===== */
-.gems-display {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  background: rgba(108, 99, 255, 0.1);
-  padding: 0 8px;
+.gems-badge {
+  background: var(--accent-glow);
+  color: var(--accent);
+  padding: 2px 8px;
   border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
   border: 1px solid rgba(108, 99, 255, 0.08);
-  height: 26px;
-  line-height: 1;
+  white-space: nowrap;
 }
 
-.gems-display .gem-icon {
-  font-size: 9px;
-  line-height: 1;
+.profile-btn {
+  gap: 8px;
+  padding: 2px 10px 2px 2px;
 }
 
-.gems-display .gem-number {
-  font-size: 10px;
-  font-weight: 700;
-  color: #6c63ff;
-  line-height: 1;
+/* ============================================================
+   BATTLE BUTTON
+   ============================================================ */
+.nav-link.battle-btn {
+  color: #ffd700 !important;
 }
 
-/* ===== SHARDS DISPLAY ===== */
-.shards-display {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  background: rgba(253, 203, 110, 0.08);
-  padding: 0 6px;
-  border-radius: 10px;
-  border: 1px solid rgba(253, 203, 110, 0.05);
-  height: 26px;
-  line-height: 1;
-  vertical-align: middle;
+.nav-link.battle-btn .nav-icon {
+  color: #ffd700;
 }
 
-.shards-display .shard-icon {
-  font-size: 9px;
-  line-height: 1;
+.nav-link.battle-btn:hover {
+  background: rgba(255, 215, 0, 0.12) !important;
 }
 
-.shards-display .shard-number {
-  font-size: 10px;
-  font-weight: 700;
-  color: #fdcb6e;
-  line-height: 1;
+.nav-link.battle-btn.active {
+  background: rgba(255, 215, 0, 0.12) !important;
+}
+
+/* ===== ADMIN LINK ===== */
+.nav-link.admin-link {
+  color: #ff6b6b;
+}
+
+.nav-link.admin-link:hover {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.nav-link.admin-link.active {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+/* ===== REGISTER BUTTON ===== */
+.nav-link.register-btn {
+  background: linear-gradient(135deg, var(--accent), #5a52d5) !important;
+  color: #fff !important;
+  border-radius: 8px;
+  padding: 6px 18px;
+  height: 36px;
+  font-weight: 600;
+}
+
+.nav-link.register-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(108, 99, 255, 0.35);
 }
 
 /* ============================================================
@@ -494,313 +547,418 @@
   display: none;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 24px;
+  color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-speed) ease;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
 }
 
 .mobile-menu-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
+@media (max-width: 1200px) {
+  .navbar { padding: 0 20px; }
+  .search-wrapper { max-width: 220px; }
+}
+
 @media (max-width: 1024px) {
-  .search-wrapper {
-    max-width: 200px;
-  }
+  .navbar { padding: 0 16px; }
+  .search-wrapper { max-width: 180px; }
+  .nav-link .nav-label { display: none; }
+  .nav-link .nav-icon { font-size: 18px; }
+  .nav-link { padding: 6px 10px; }
+  .battle-btn .nav-label { display: inline; }
+  .dropdown-btn .nav-label { display: inline; }
+  .brand-text { font-size: 16px; }
+  .brand-logo { width: 30px; height: 30px; }
 }
 
 @media (max-width: 768px) {
-  .navbar {
-    padding: 0 12px;
-    height: 56px;
+  :root { --navbar-height: 58px; }
+  .navbar { 
+    padding: 0 14px;
+    background: rgba(10, 10, 18, 0.85) !important;
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
   }
-
-  .mobile-menu-btn {
-    display: block;
+  
+  .navbar-brand { gap: 8px; }
+  .brand-text { font-size: 15px; }
+  .brand-logo { width: 28px; height: 28px; }
+  
+  .mobile-menu-btn { display: flex; }
+  
+  /* ✅ LARGER SEARCH BAR ON MOBILE - FIXED OVERLAP */
+  .search-wrapper { 
+    max-width: 180px; 
+    min-width: 100px;
   }
-
-  .search-wrapper {
-    max-width: 140px;
-    min-width: 80px;
+  
+  .search-input { 
+    font-size: 13px; 
+    padding: 8px 38px 8px 14px;
+    height: 38px; 
   }
-
-  .search-input {
-    font-size: 12px;
-    padding: 6px 28px 6px 14px;
-    height: 34px;
+  
+  .search-icon-svg { 
+    right: 12px; 
+    width: 17px; 
+    height: 17px; 
   }
-
+  
   .navbar-menu {
-    display: none;
-    position: absolute;
-    top: 56px;
+    position: fixed;
+    top: var(--navbar-height);
     left: 0;
     right: 0;
-    background: rgba(8, 8, 20, 0.98);
-    backdrop-filter: blur(20px);
+    bottom: 0;
+    /* ✅ MATCHES HOME PAGE GRADIENT: Top-left black to Bottom-right navy blue */
+    background: linear-gradient(
+      135deg,
+      #0a0a12 0%,
+      #0d0d2b 30%,
+      #12123a 60%,
+      #18184a 85%,
+      #1a1a5a 100%
+    ) !important;
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
     flex-direction: column;
-    padding: 12px 16px;
+    padding: 16px 20px 24px;
+    gap: 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    gap: 2px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+    z-index: 9999 !important;
+    display: none !important;
+    animation: mobileMenuSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    height: auto;
+    max-height: 100vh;
+    width: 100%;
   }
 
   .navbar-menu.active {
-    display: flex;
+    display: flex !important;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: visible !important;
+    background: linear-gradient(
+      135deg,
+      #0a0a12 0%,
+      #0d0d2b 30%,
+      #12123a 60%,
+      #18184a 85%,
+      #1a1a5a 100%
+    ) !important;
   }
 
-  .nav-link,
+  @keyframes mobileMenuSlide {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .nav-link, 
   .dropdown-btn {
     width: 100%;
-    justify-content: center;
-    padding: 10px;
-    font-size: 14px;
+    justify-content: center !important;
+    padding: 12px 16px;
+    font-size: 15px;
     height: auto;
+    border-radius: 10px;
+    gap: 12px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: var(--text-primary) !important;
   }
 
-  .dropdown-wrapper {
-    width: 100%;
+  .nav-link:hover,
+  .dropdown-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
   }
 
+  .nav-link .nav-label { 
+    display: inline !important; 
+    font-size: 15px;
+    color: var(--text-primary) !important;
+  }
+  
+  .nav-link .nav-icon { 
+    font-size: 20px; 
+    width: 28px;
+    text-align: center;
+  }
+
+  .dropdown-wrapper { 
+    width: 100%; 
+  }
+
+  .dropdown-btn { 
+    justify-content: center !important;
+    padding: 12px 16px;
+  }
+  
+  .dropdown-btn .nav-label {
+    display: inline !important;
+    font-size: 15px;
+    color: var(--text-primary) !important;
+  }
+
+  /* ✅ Mobile Dropdown Menu - Same Gradient */
   .dropdown-menu {
-    position: static;
-    transform: none;
+    position: static !important;
+    transform: none !important;
     margin-top: 4px;
     width: 100%;
     box-shadow: none;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+    background: linear-gradient(
+      135deg,
+      rgba(10, 10, 18, 0.9) 0%,
+      rgba(13, 13, 43, 0.9) 30%,
+      rgba(18, 18, 58, 0.9) 60%,
+      rgba(24, 24, 74, 0.9) 85%,
+      rgba(26, 26, 90, 0.9) 100%
+    ) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    animation: none !important;
+    padding: 4px;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
   }
 
-  .profile-dropdown {
-    min-width: 100%;
+  .dropdown-wrapper:hover .dropdown-menu { 
+    transform: none !important; 
   }
 
   .dropdown-item {
-    padding: 8px 14px;
-    font-size: 13px;
-    justify-content: center;
+    padding: 10px 14px;
+    font-size: 14px;
+    gap: 12px;
+    border-radius: 8px;
+    justify-content: center !important;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.03) !important;
+    color: var(--text-primary) !important;
   }
 
-  .navbar-brand {
-    font-size: 16px;
+  .dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
   }
 
-  .user-avatar {
-    width: 26px;
-    height: 26px;
-    font-size: 11px;
+  .dropdown-item .dropdown-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
   }
 
-  .navbar-avatar-img {
-    width: 26px;
-    height: 26px;
+  .dropdown-item.logout-item {
+    color: #ff6b6b !important;
   }
 
-  .username {
-    font-size: 12px;
+  .dropdown-item.logout-item:hover {
+    background: rgba(255, 107, 107, 0.12) !important;
   }
 
-  .gems-display {
-    height: 24px;
-    padding: 0 5px;
+  .dropdown-divider {
+    margin: 4px 8px;
+    border-color: rgba(255, 255, 255, 0.06);
   }
 
-  .gems-display .gem-number {
-    font-size: 10px;
+  .profile-dropdown { 
+    min-width: 100%; 
   }
 
-  .gems-display .gem-icon {
-    font-size: 8px;
+  .profile-btn {
+    justify-content: center !important;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-radius: 10px;
+    color: var(--text-primary) !important;
   }
 
-  .shards-display {
-    height: 24px;
-    padding: 0 5px;
+  .profile-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
   }
 
-  .shards-display .shard-number {
-    font-size: 10px;
+  .user-avatar { 
+    width: 32px; 
+    height: 32px; 
+    font-size: 13px; 
   }
 
-  .shards-display .shard-icon {
-    font-size: 8px;
+  .username { 
+    font-size: 14px; 
+    max-width: 80px; 
+    color: var(--text-primary) !important;
+  }
+
+  .gems-badge { 
+    font-size: 11px; 
+    padding: 2px 8px; 
+    background: var(--accent-glow);
+    color: var(--accent);
+  }
+  
+  .profile-btn .dropdown-arrow-svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
   }
 
   .search-results {
     position: fixed;
-    top: 56px;
-    left: 10px;
-    right: 10px;
+    top: calc(var(--navbar-height) + 8px);
+    left: 12px;
+    right: 12px;
     max-height: 200px;
+    z-index: 10000 !important;
   }
 
-  .battle-btn,
-  .register-btn,
-  .friends-btn,
-  .referral-btn {
+  .nav-link.register-btn {
     width: 100%;
     justify-content: center;
-    padding: 10px;
+    padding: 12px;
     height: auto;
-    font-size: 14px;
-    background: none !important;
+    font-size: 15px;
+    border-radius: 10px;
+    margin-top: 4px;
+    background: linear-gradient(135deg, var(--accent), #5a52d5) !important;
+    color: #fff !important;
   }
 
-  .battle-btn {
-    color: #ffd700 !important;
-  }
-
-  .friends-btn {
-    color: #a29bfe !important;
-  }
-
-  .referral-btn {
-    color: #fd79a8 !important;
+  .nav-link.register-btn:hover {
+    background: linear-gradient(135deg, #7a73ff, #6a62e5) !important;
   }
 }
 
 @media (max-width: 480px) {
-  .navbar {
+  :root { --navbar-height: 52px; }
+  .navbar { 
     padding: 0 10px;
-    height: 50px;
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
   }
-
-  .navbar-brand {
-    font-size: 14px;
+  
+  .brand-text { font-size: 13px; }
+  .brand-logo { width: 24px; height: 24px; }
+  
+  /* ✅ EVEN LARGER SEARCH BAR FOR VERY SMALL SCREENS */
+  .search-wrapper { 
+    max-width: 130px; 
+    min-width: 80px;
   }
-
-  .search-wrapper {
-    max-width: 100px;
-    min-width: 60px;
+  
+  .search-input { 
+    font-size: 12px; 
+    padding: 6px 32px 6px 10px;
+    height: 34px; 
   }
-
-  .search-input {
-    font-size: 11px;
-    padding: 5px 22px 5px 12px;
-    height: 30px;
+  
+  .search-icon-svg { 
+    right: 10px; 
+    width: 15px; 
+    height: 15px; 
   }
-
-  .search-icon {
-    font-size: 11px;
-    right: 10px;
+  
+  .navbar-menu { 
+    padding: 12px 14px 20px; 
+    top: var(--navbar-height);
+    background: linear-gradient(
+      135deg,
+      #0a0a12 0%,
+      #0d0d2b 30%,
+      #12123a 60%,
+      #18184a 85%,
+      #1a1a5a 100%
+    ) !important;
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
   }
-
-  .navbar-menu {
-    top: 50px;
+  
+  .navbar-menu.active {
+    background: linear-gradient(
+      135deg,
+      #0a0a12 0%,
+      #0d0d2b 30%,
+      #12123a 60%,
+      #18184a 85%,
+      #1a1a5a 100%
+    ) !important;
   }
-
-  .nav-link,
-  .dropdown-btn {
-    font-size: 13px;
-    padding: 8px;
+  
+  .nav-link, .dropdown-btn { 
+    font-size: 14px; 
+    padding: 10px 12px; 
   }
-
-  .dropdown-item {
-    font-size: 12px;
-    padding: 6px 12px;
+  
+  .nav-link .nav-label { font-size: 14px; }
+  .nav-link .nav-icon { font-size: 18px; width: 24px; }
+  
+  .dropdown-item { 
+    font-size: 13px; 
+    padding: 8px 12px; 
   }
-
-  .user-avatar {
-    width: 22px;
-    height: 22px;
-    font-size: 10px;
+  
+  .dropdown-menu {
+    background: linear-gradient(
+      135deg,
+      rgba(10, 10, 18, 0.95) 0%,
+      rgba(13, 13, 43, 0.95) 30%,
+      rgba(18, 18, 58, 0.95) 60%,
+      rgba(24, 24, 74, 0.95) 85%,
+      rgba(26, 26, 90, 0.95) 100%
+    ) !important;
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
   }
-
-  .navbar-avatar-img {
-    width: 22px;
-    height: 22px;
-  }
-
-  .username {
-    font-size: 11px;
-  }
-
-  .gems-display {
-    height: 20px;
-    padding: 0 4px;
-    gap: 2px;
-    border-radius: 8px;
-  }
-
-  .gems-display .gem-number {
-    font-size: 9px;
-  }
-
-  .gems-display .gem-icon {
-    font-size: 7px;
-  }
-
-  .shards-display {
-    height: 20px;
-    padding: 0 4px;
-    gap: 2px;
-    border-radius: 8px;
-  }
-
-  .shards-display .shard-number {
-    font-size: 9px;
-  }
-
-  .shards-display .shard-icon {
-    font-size: 7px;
-  }
-
-  .mobile-menu-btn {
-    font-size: 20px;
-  }
-
+  
+  .user-avatar { width: 28px; height: 28px; font-size: 12px; }
+  .username { font-size: 13px; max-width: 60px; }
+  .gems-badge { font-size: 10px; padding: 1px 6px; }
+  .mobile-menu-btn svg { width: 20px; height: 20px; }
+  
   .search-results {
-    top: 50px;
-    left: 6px;
-    right: 6px;
+    top: calc(var(--navbar-height) + 6px);
+    left: 8px;
+    right: 8px;
     max-height: 160px;
   }
-
-  .search-result-item {
-    padding: 6px 10px;
-    gap: 8px;
-  }
-
-  .search-avatar {
-    width: 26px;
-    height: 26px;
-  }
-
-  .search-username {
-    font-size: 12px;
-  }
-
-  .search-stats {
-    font-size: 10px;
-  }
-
-  .battle-btn,
-  .register-btn,
-  .friends-btn,
-  .referral-btn {
-    font-size: 12px;
-    padding: 8px;
-    height: auto;
-    background: none !important;
-  }
-
-  .battle-btn {
-    color: #ffd700 !important;
-  }
-
-  .friends-btn {
-    color: #a29bfe !important;
-  }
-
-  .referral-btn {
-    color: #fd79a8 !important;
+  .search-result-item { padding: 6px 8px; gap: 6px; }
+  .search-avatar { width: 24px; height: 24px; }
+  .search-username { font-size: 12px; }
+  .search-stats { font-size: 10px; }
+  
+  .nav-link.register-btn {
+    font-size: 14px;
+    padding: 10px;
   }
 }

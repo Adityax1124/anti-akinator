@@ -1,106 +1,284 @@
-.leaderboard-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 30px 20px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+/* ============================================================
+   LEADERBOARD - PREMIUM GAMING STYLE (NAVY/BLUE/PURPLE THEME)
+   ============================================================ */
+
+/* ===== ROOT VARIABLES ===== */
+:root {
+  --lb-accent: #6c63ff;
+  --lb-accent-glow: rgba(108, 99, 255, 0.15);
+  --lb-gold: #ffd700;
+  --lb-gold-glow: rgba(255, 215, 0, 0.12);
+  --lb-card-bg: rgba(255, 255, 255, 0.03);
+  --lb-border: rgba(255, 255, 255, 0.06);
+  --lb-text-primary: #ffffff;
+  --lb-text-secondary: rgba(255, 255, 255, 0.75);
+  --lb-text-muted: rgba(255, 255, 255, 0.4);
 }
 
+/* ============================================================
+   CONTAINER - SMOOTH SLOW FADE IN (BOTTOM TO TOP)
+   ============================================================ */
+.leaderboard-container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 30px 24px 40px;
+  background: rgba(10, 10, 30, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  border: 1px solid rgba(108, 99, 255, 0.08);
+  box-shadow: 0 8px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(108, 99, 255, 0.05);
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.leaderboard-container.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   HEADER - PREMIUM NAVY/BLUE THEME
+   ============================================================ */
 .leaderboard-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
+  opacity: 0;
+  transform: translateY(35px);
+  transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s;
+}
+
+.leaderboard-container.fade-in .leaderboard-header {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .leaderboard-header h1 {
-  font-size: 36px;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  font-size: 38px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, #4f46e5, #818cf8, #a78bfa);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: shimmerBlue 6s linear infinite;
+  letter-spacing: -1px;
 }
 
-.leaderboard-header p {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 16px;
-  font-weight: 500;
+@keyframes shimmerBlue {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
+.leaderboard-header .leaderboard-subtitle {
+  color: var(--lb-text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  margin-top: 8px;
+  letter-spacing: 0.3px;
+  -webkit-text-fill-color: var(--lb-text-secondary);
+}
+
+/* ============================================================
+   PRIZE MESSAGE - ELEGANT NAVY/BLUE THEME
+   ============================================================ */
 .prize-message {
-  color: #ffd700 !important;
+  display: inline-block;
+  color: #a78bfa !important;
   font-size: 18px !important;
-  font-weight: 700 !important;
-  margin-bottom: 4px;
+  font-weight: 600 !important;
+  margin: 8px auto 4px;
+  padding: 10px 28px;
+  background: rgba(108, 99, 255, 0.08);
+  border: 1px solid rgba(108, 99, 255, 0.12);
+  border-radius: 100px;
+  backdrop-filter: blur(8px);
+  -webkit-text-fill-color: #a78bfa !important;
+  letter-spacing: 0.3px;
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(108, 99, 255, 0.05); }
+  50% { box-shadow: 0 0 40px rgba(108, 99, 255, 0.1); }
 }
 
 .prize-message strong {
-  color: #ff6b35;
+  color: #ffd700;
+  -webkit-text-fill-color: #ffd700;
+  font-weight: 700;
 }
 
+/* ============================================================
+   SEASON COUNTDOWN
+   ============================================================ */
 .season-countdown {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 16px;
-  margin-top: 8px;
+  color: var(--lb-text-muted);
+  font-size: 15px;
+  margin-top: 12px;
   font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .season-countdown strong {
-  color: #ffd700;
+  color: #818cf8;
   font-weight: 700;
+  -webkit-text-fill-color: #818cf8;
 }
 
+/* ============================================================
+   CARD - SLOW FADE (BOTTOM TO TOP)
+   ============================================================ */
 .leaderboard-card {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 18px;
+  padding: 20px 16px;
+  border: 1px solid rgba(108, 99, 255, 0.06);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transform: translateY(35px);
+  transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.6s;
 }
 
+.leaderboard-container.fade-in .leaderboard-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   LIST
+   ============================================================ */
 .leaderboard-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
+/* ============================================================
+   LEADERBOARD ITEM - SLOW STAGGERED FADE (BOTTOM TO TOP)
+   ============================================================ */
 .leaderboard-item {
   display: grid;
-  grid-template-columns: 50px 50px 1fr 100px 100px;
+  grid-template-columns: 44px 48px 1fr 90px 80px;
   padding: 10px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  opacity: 0;
+  transform: translateY(35px);
+  transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
 }
 
+.leaderboard-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delay for each item - SLOWER (0.15s apart) */
+.leaderboard-item:nth-child(1).visible { transition-delay: 0.15s; }
+.leaderboard-item:nth-child(2).visible { transition-delay: 0.30s; }
+.leaderboard-item:nth-child(3).visible { transition-delay: 0.45s; }
+.leaderboard-item:nth-child(4).visible { transition-delay: 0.60s; }
+.leaderboard-item:nth-child(5).visible { transition-delay: 0.75s; }
+.leaderboard-item:nth-child(6).visible { transition-delay: 0.90s; }
+.leaderboard-item:nth-child(7).visible { transition-delay: 1.05s; }
+.leaderboard-item:nth-child(8).visible { transition-delay: 1.20s; }
+.leaderboard-item:nth-child(9).visible { transition-delay: 1.35s; }
+.leaderboard-item:nth-child(10).visible { transition-delay: 1.50s; }
+.leaderboard-item:nth-child(11).visible { transition-delay: 1.65s; }
+.leaderboard-item:nth-child(12).visible { transition-delay: 1.80s; }
+.leaderboard-item:nth-child(13).visible { transition-delay: 1.95s; }
+.leaderboard-item:nth-child(14).visible { transition-delay: 2.10s; }
+.leaderboard-item:nth-child(15).visible { transition-delay: 2.25s; }
+
+/* Hover effect - SMOOTH */
+.leaderboard-item:hover {
+  background: rgba(108, 99, 255, 0.08);
+  border-color: rgba(108, 99, 255, 0.12);
+  transform: translateX(6px);
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ============================================================
+   HEADER ITEM
+   ============================================================ */
 .leaderboard-item.header {
-  background: transparent;
+  background: transparent !important;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--lb-text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(108, 99, 255, 0.08);
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  cursor: default;
 }
 
+.leaderboard-item.header:hover {
+  transform: none !important;
+  border-color: rgba(108, 99, 255, 0.08) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   TOP RANKED PLAYERS
+   ============================================================ */
 .leaderboard-item.top {
-  background: rgba(255, 215, 0, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  background: rgba(108, 99, 255, 0.04);
+  border: 1px solid rgba(108, 99, 255, 0.08);
+}
+
+.leaderboard-item.top:hover {
+  background: rgba(108, 99, 255, 0.08);
+  border-color: rgba(108, 99, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .leaderboard-item.top:first-child {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: #ffd700;
+  background: rgba(108, 99, 255, 0.06);
+  border-color: rgba(108, 99, 255, 0.15);
+  box-shadow: 0 0 30px rgba(108, 99, 255, 0.05);
 }
 
+.leaderboard-item.top:first-child:hover {
+  background: rgba(108, 99, 255, 0.10);
+  border-color: rgba(108, 99, 255, 0.25);
+}
+
+/* ============================================================
+   RANK
+   ============================================================ */
 .rank {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 15px;
   text-align: center;
+  color: var(--lb-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
+.rank.gold {
+  color: #ffd700;
+}
+.rank.silver {
+  color: #c0c0c0;
+}
+.rank.bronze {
+  color: #cd7f32;
+}
+
+/* ============================================================
+   AVATAR
+   ============================================================ */
 .avatar-col {
   display: flex;
   align-items: center;
@@ -108,58 +286,99 @@
 }
 
 .leaderboard-avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(108, 99, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.leaderboard-item:hover .leaderboard-avatar {
+  border-color: rgba(108, 99, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .leaderboard-avatar-placeholder {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2d2d5e, #1a1a2e);
+  background: linear-gradient(135deg, rgba(45, 45, 94, 0.6), rgba(26, 26, 46, 0.6));
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.05);
+  color: rgba(108, 99, 255, 0.5);
+  border: 2px solid rgba(108, 99, 255, 0.08);
 }
 
+/* ============================================================
+   PLAYER NAME
+   ============================================================ */
 .player {
-  font-weight: 500;
-  color: #fff;
+  font-weight: 600;
+  color: var(--lb-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 14px;
+  letter-spacing: -0.2px;
 }
 
+/* ============================================================
+   WINS
+   ============================================================ */
 .games {
-  color: #a29bfe;
+  color: #818cf8;
   text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 
+/* ============================================================
+   STREAK
+   ============================================================ */
 .streak {
-  color: #ff6b9d;
+  color: #f472b6;
   font-weight: 700;
   text-align: center;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 
+.streak.high {
+  color: #ffd700;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
 .leaderboard-empty {
   text-align: center;
-  padding: 40px;
-  color: rgba(255, 255, 255, 0.5);
+  padding: 60px 20px;
+  color: var(--lb-text-muted);
+  font-size: 16px;
+}
+
+.leaderboard-empty .empty-subtext {
+  font-size: 13px;
+  margin-top: 8px;
+  color: var(--lb-text-muted);
+  opacity: 0.7;
 }
 
 .leaderboard-error {
-  color: #e74c3c;
+  color: #f87171;
   text-align: center;
   padding: 12px;
+  font-weight: 500;
 }
 
+/* ============================================================
+   LOADING
+   ============================================================ */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -169,72 +388,146 @@
   gap: 16px;
 }
 
+.loading-container p {
+  color: var(--lb-text-muted);
+  font-size: 14px;
+}
+
 .loader {
   width: 40px;
   height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #00d4ff;
+  border: 3px solid rgba(108, 99, 255, 0.1);
+  border-top-color: #6c63ff;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* ===== RESPONSIVE ===== */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 768px) {
   .leaderboard-container {
-    padding: 20px 12px;
-    border-radius: 16px;
+    padding: 20px 14px 30px;
+    border-radius: 18px;
+    margin: 0 8px;
   }
 
   .leaderboard-header h1 {
     font-size: 28px;
   }
 
-  .leaderboard-item {
-    grid-template-columns: 40px 40px 1fr 60px 60px;
-    font-size: 13px;
-    padding: 8px 12px;
-    gap: 4px;
-  }
-
-  .leaderboard-avatar {
-    width: 26px;
-    height: 26px;
-  }
-
-  .leaderboard-avatar-placeholder {
-    width: 26px;
-    height: 26px;
+  .leaderboard-header .leaderboard-subtitle {
     font-size: 12px;
-  }
-
-  .rank {
-    font-size: 14px;
   }
 
   .prize-message {
     font-size: 15px !important;
+    padding: 8px 18px;
   }
 
   .season-countdown {
-    font-size: 14px;
+    font-size: 13px;
+  }
+
+  .leaderboard-card {
+    padding: 14px 10px;
+  }
+
+  .leaderboard-item {
+    grid-template-columns: 36px 38px 1fr 60px 55px;
+    font-size: 12px;
+    padding: 8px 10px;
+    gap: 4px;
+    border-radius: 8px;
+  }
+
+  .leaderboard-item.header {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding-bottom: 8px;
+    grid-template-columns: 36px 38px 1fr 60px 55px;
+  }
+
+  .leaderboard-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .leaderboard-avatar-placeholder {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .rank {
+    font-size: 13px;
+  }
+
+  .player {
+    font-size: 12px;
+  }
+
+  .games {
+    font-size: 12px;
+  }
+
+  .streak {
+    font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .leaderboard-container {
-    padding: 14px 8px;
+    padding: 14px 10px 24px;
+    border-radius: 14px;
+    margin: 0 4px;
+  }
+
+  .leaderboard-header h1 {
+    font-size: 22px;
+  }
+
+  .leaderboard-header .leaderboard-subtitle {
+    font-size: 10px;
+  }
+
+  .prize-message {
+    font-size: 13px !important;
+    padding: 6px 14px;
+  }
+
+  .season-countdown {
+    font-size: 11px;
+  }
+
+  .leaderboard-card {
+    padding: 10px 6px;
     border-radius: 12px;
   }
 
   .leaderboard-item {
-    grid-template-columns: 30px 30px 1fr 40px 40px;
-    font-size: 11px;
-    padding: 6px 8px;
+    grid-template-columns: 28px 30px 1fr 44px 40px;
+    font-size: 10px;
+    padding: 6px 6px;
     gap: 2px;
+    border-radius: 6px;
+  }
+
+  .leaderboard-item.header {
+    font-size: 9px;
+    letter-spacing: 0.3px;
+    padding-bottom: 6px;
+    grid-template-columns: 28px 30px 1fr 44px 40px;
+  }
+
+  .leaderboard-avatar {
+    width: 22px;
+    height: 22px;
+    border-width: 1.5px;
   }
 
   .leaderboard-avatar-placeholder {
@@ -244,18 +537,18 @@
   }
 
   .rank {
-    font-size: 12px;
+    font-size: 11px;
   }
 
-  .leaderboard-header h1 {
-    font-size: 22px;
+  .player {
+    font-size: 10px;
   }
 
-  .prize-message {
-    font-size: 13px !important;
+  .games {
+    font-size: 10px;
   }
 
-  .season-countdown {
-    font-size: 12px;
+  .streak {
+    font-size: 10px;
   }
 }
