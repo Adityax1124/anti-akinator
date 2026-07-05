@@ -92,7 +92,7 @@ const resendOTPValidation = [
 ];
 
 // ============================================================
-// REGISTER (with Device Lock + OTP)
+// REGISTER (OPTIMIZED - FASTER)
 // ============================================================
 router.post('/register', registerValidation, async (req, res) => {
   try {
@@ -190,7 +190,7 @@ router.post('/register', registerValidation, async (req, res) => {
     // ✅ Get current season
     const currentSeason = getCurrentSeason();
 
-    // ✅ Create user (isActive = false until email verified)
+    // ✅ Create user
     const user = new User({ 
       username: username.trim(), 
       email: email.toLowerCase().trim(), 
@@ -222,9 +222,6 @@ router.post('/register', registerValidation, async (req, res) => {
     // ✅ SAVE USER
     await user.save();
     console.log(`✅ [REGISTER] User ${user.username} saved successfully!`);
-    console.log(`✅ [REGISTER] Device Fingerprint: ${user.deviceFingerprint || 'None'}`);
-    console.log(`✅ [REGISTER] IP Address: ${user.ipAddress}`);
-    console.log(`✅ [REGISTER] referredBy: ${user.referredBy || 'None'}`);
 
     // ===== ✅ Create referral document if valid referral =====
     if (referrer) {
@@ -238,14 +235,13 @@ router.post('/register', registerValidation, async (req, res) => {
       await referralDoc.save();
       console.log(`📝 [REGISTER] Referral document created!`);
       
-      // ✅ Update referrer's referrals list
       referrer.referrals.push(user._id);
       referrer.referralStats.totalReferrals = (referrer.referralStats?.totalReferrals || 0) + 1;
       await referrer.save();
       console.log(`✅ [REGISTER] Added ${user.username} to ${referrer.username}'s referrals list`);
     }
 
-    // ===== ✅ SEND OTP =====
+    // ===== ✅ SEND OTP (ASYNC - DON'T WAIT) =====
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -260,11 +256,12 @@ router.post('/register', registerValidation, async (req, res) => {
     });
     await otpRecord.save();
 
-    // Send OTP email
-    await sendOTPEmail(user.email, otp, user.username);
+    // ✅ Send OTP email in background (don't await)
+    sendOTPEmail(user.email, otp, user.username)
+      .then(() => console.log(`📧 OTP sent to ${user.email}`))
+      .catch(err => console.error(`❌ Failed to send OTP to ${user.email}:`, err.message));
 
-    console.log(`📧 OTP sent to ${user.email}: ${otp}`);
-    console.log(`✅ [REGISTER] Registration complete for ${username} - Awaiting email verification`);
+    console.log(`✅ [REGISTER] Registration complete for ${username}`);
     console.log('========================================');
 
     // ✅ Return without token - user must verify first
@@ -321,7 +318,6 @@ router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
     const { email, otp } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Find OTP record
     const otpRecord = await OTP.findOne({
       email: normalizedEmail,
       isVerified: false
@@ -334,7 +330,6 @@ router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
       });
     }
 
-    // Check if OTP has expired
     if (otpRecord.expiresAt < new Date()) {
       await OTP.deleteOne({ _id: otpRecord._id });
       return res.status(400).json({
@@ -343,7 +338,6 @@ router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
       });
     }
 
-    // Check attempts
     if (otpRecord.attempts >= 5) {
       await OTP.deleteOne({ _id: otpRecord._id });
       return res.status(400).json({
@@ -352,7 +346,6 @@ router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
       });
     }
 
-    // Verify OTP
     if (otpRecord.otp !== otp) {
       otpRecord.attempts += 1;
       await otpRecord.save();
@@ -362,11 +355,9 @@ router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
       });
     }
 
-    // Mark OTP as verified
     otpRecord.isVerified = true;
     await otpRecord.save();
 
-    // ✅ Update user
     const user = await User.findById(otpRecord.userId);
     if (!user) {
       return res.status(404).json({
@@ -379,7 +370,6 @@ router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
     user.isActive = true;
     await user.save();
 
-    // ✅ Activate referral
     if (user.referredBy) {
       const referral = await Referral.findOne({
         referredUser: user._id,
@@ -393,13 +383,13 @@ router.post('/verify-otp', verifyOTPValidation, async (req, res) => {
       }
     }
 
-    // Send welcome email
-    await sendWelcomeEmail(normalizedEmail, user.username);
+    // ✅ Send welcome email in background
+    sendWelcomeEmail(normalizedEmail, user.username)
+      .then(() => console.log(`📧 Welcome email sent to ${normalizedEmail}`))
+      .catch(err => console.error(`❌ Failed to send welcome email:`, err.message));
 
-    // Delete used OTP
     await OTP.deleteOne({ _id: otpRecord._id });
 
-    // ✅ Generate JWT token
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -463,7 +453,6 @@ router.post('/resend-otp', resendOTPValidation, async (req, res) => {
     const { email } = req.body;
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user exists
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({
@@ -472,7 +461,6 @@ router.post('/resend-otp', resendOTPValidation, async (req, res) => {
       });
     }
 
-    // Check if user is already verified
     if (user.isEmailVerified) {
       return res.status(400).json({
         success: false,
@@ -480,7 +468,6 @@ router.post('/resend-otp', resendOTPValidation, async (req, res) => {
       });
     }
 
-    // Check if OTP was recently sent (rate limit - 60 seconds)
     const recentOTP = await OTP.findOne({
       email: normalizedEmail,
       createdAt: { $gt: new Date(Date.now() - 60 * 1000) }
@@ -493,14 +480,11 @@ router.post('/resend-otp', resendOTPValidation, async (req, res) => {
       });
     }
 
-    // Generate new OTP
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    // Delete old OTPs
     await OTP.deleteMany({ email: normalizedEmail });
 
-    // Save new OTP
     const otpRecord = new OTP({
       email: normalizedEmail,
       otp: otp,
@@ -509,8 +493,10 @@ router.post('/resend-otp', resendOTPValidation, async (req, res) => {
     });
     await otpRecord.save();
 
-    // Send OTP email
-    await sendOTPEmail(normalizedEmail, otp, user.username);
+    // ✅ Send OTP in background
+    sendOTPEmail(normalizedEmail, otp, user.username)
+      .then(() => console.log(`📧 New OTP sent to ${normalizedEmail}`))
+      .catch(err => console.error(`❌ Failed to send OTP:`, err.message));
 
     console.log(`📧 New OTP sent to ${normalizedEmail}: ${otp}`);
 
@@ -530,7 +516,7 @@ router.post('/resend-otp', resendOTPValidation, async (req, res) => {
 });
 
 // ============================================================
-// LOGIN (NO email verification check - login works normally)
+// LOGIN
 // ============================================================
 router.post('/login', loginValidation, async (req, res) => {
   try {
@@ -553,7 +539,6 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
-    // Check if account is locked
     if (user.isLocked && user.isLocked()) {
       return res.status(423).json({
         success: false,
@@ -561,7 +546,6 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
-    // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       await user.incrementFailedAttempts();
@@ -573,7 +557,6 @@ router.post('/login', loginValidation, async (req, res) => {
 
     await user.resetFailedAttempts();
 
-    // ===== CHECK IF 2FA IS ENABLED =====
     const twoFactor = await TwoFactor.findOne({ user: user._id });
 
     if (twoFactor && twoFactor.enabled) {
@@ -586,7 +569,6 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
-    // If no 2FA, proceed with normal login
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
