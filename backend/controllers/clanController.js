@@ -7,7 +7,6 @@ const User = require('../models/User');
 exports.createClan = async (req, res) => {
   try {
     const { name, description } = req.body;
-    // ✅ FIX: Get userId from req.user._id or req.user.id
     const userId = req.user._id || req.user.id;
 
     if (!userId) {
@@ -267,7 +266,7 @@ exports.getMyClan = async (req, res) => {
     }
 
     const members = await ClanMember.find({ clanId: clan._id })
-      .populate('userId', 'username shards')
+      .populate('userId', 'username shards gems')
       .lean();
 
     const memberCount = members.length;
@@ -275,8 +274,8 @@ exports.getMyClan = async (req, res) => {
       id: m.userId._id,
       username: m.userId.username,
       role: m.role,
-      diamondsDonated: m.diamondsDonated,
-      diamondsRequested: m.diamondsRequested
+      gemsDonated: m.diamondsDonated,
+      gemsRequested: m.diamondsRequested
     }));
 
     res.status(200).json({
@@ -303,15 +302,15 @@ exports.getClanMembers = async (req, res) => {
     const { clanId } = req.params;
 
     const members = await ClanMember.find({ clanId })
-      .populate('userId', 'username shards')
+      .populate('userId', 'username shards gems')
       .lean();
 
     const memberList = members.map(m => ({
       id: m.userId._id,
       username: m.userId.username,
       role: m.role,
-      diamondsDonated: m.diamondsDonated,
-      diamondsRequested: m.diamondsRequested
+      gemsDonated: m.diamondsDonated,
+      gemsRequested: m.diamondsRequested
     }));
 
     res.status(200).json({ members: memberList });
@@ -380,7 +379,7 @@ exports.sendChatMessage = async (req, res) => {
   }
 };
 
-// Donate Shards
+// ✅ Donate GEMS ONLY - 1 Gem = 2 Shards, No Self Donation
 exports.donateDiamonds = async (req, res) => {
   try {
     const { clanId, amount, targetUserId } = req.body;
@@ -391,7 +390,17 @@ exports.donateDiamonds = async (req, res) => {
     }
 
     if (amount < 1) {
-      return res.status(400).json({ message: 'Amount must be at least 1 shard' });
+      return res.status(400).json({ message: 'Amount must be at least 1 gem' });
+    }
+
+    // ✅ Prevent donating to yourself
+    const userIdStr = userId.toString();
+    const targetUserIdStr = targetUserId.toString();
+    
+    if (targetUserIdStr === userIdStr) {
+      return res.status(400).json({ 
+        message: '❌ You cannot donate to yourself! Please select another clan member.' 
+      });
     }
 
     // Check if donor is in clan
@@ -412,9 +421,15 @@ exports.donateDiamonds = async (req, res) => {
       return res.status(404).json({ message: 'Donor not found' });
     }
 
-    // Check if donor has enough shards
-    if (donor.shards < amount) {
-      return res.status(400).json({ message: 'Not enough shards' });
+    // ✅ 1 Gem = 2 Shards conversion rate
+    const GEM_TO_SHARD_RATE = 2;
+    const shardCost = amount * GEM_TO_SHARD_RATE;
+
+    // Check if donor has enough shards to pay for gems
+    if (donor.shards < shardCost) {
+      return res.status(400).json({ 
+        message: `Not enough shards. You have ${donor.shards} shards, need ${shardCost} shards for ${amount} gems (1 gem = 2 shards)` 
+      });
     }
 
     // Get target user
@@ -423,11 +438,15 @@ exports.donateDiamonds = async (req, res) => {
       return res.status(404).json({ message: 'Target not found' });
     }
 
-    // Transfer shards
-    donor.shards -= amount;
-    target.shards += amount;
+    // ✅ DEDUCT shards from donor (payment for gems)
+    donor.shards -= shardCost;
     await donor.save();
+    console.log(`💰 Deducted ${shardCost} shards from ${donor.username} for ${amount} gems. Remaining shards: ${donor.shards}`);
+
+    // ✅ ADD gems to target (NOT shards!)
+    target.gems += amount;
     await target.save();
+    console.log(`💎 Added ${amount} gems to ${target.username}. New gems total: ${target.gems}`);
 
     // Update clan member stats
     donorMember.diamondsDonated += amount;
@@ -441,15 +460,30 @@ exports.donateDiamonds = async (req, res) => {
       clanId,
       userId: donor._id,
       username: donor.username,
-      message: `🎁 Donated ${amount} 💎 to ${target.username}`,
+      message: `🎁 Donated ${amount} 💎 gems to ${target.username} (Cost: ${shardCost} shards)`,
       type: 'donation',
       diamondAmount: amount
     });
     await donationMessage.save();
 
+    // Emit socket event for real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`clan_${clanId}`).emit('clan-donation', {
+        from: donor.username,
+        to: target.username,
+        gems: amount,
+        shardCost: shardCost,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     res.status(200).json({ 
-      message: 'Shards donated successfully',
-      donatedAmount: amount
+      message: 'Gems donated successfully!',
+      donatedGems: amount,
+      shardCost: shardCost,
+      donorRemainingShards: donor.shards,
+      targetNewGems: target.gems
     });
   } catch (error) {
     console.error('Donate error:', error);
@@ -457,7 +491,7 @@ exports.donateDiamonds = async (req, res) => {
   }
 };
 
-// Request Shards
+// Request Gems
 exports.requestDiamonds = async (req, res) => {
   try {
     const { clanId, amount } = req.body;
@@ -468,7 +502,7 @@ exports.requestDiamonds = async (req, res) => {
     }
 
     if (amount < 1) {
-      return res.status(400).json({ message: 'Amount must be at least 1 shard' });
+      return res.status(400).json({ message: 'Amount must be at least 1 gem' });
     }
 
     // Check if user is in clan
@@ -487,7 +521,7 @@ exports.requestDiamonds = async (req, res) => {
       clanId,
       userId: user._id,
       username: user.username,
-      message: `📢 Requesting ${amount} 💎 shards`,
+      message: `📢 Requesting ${amount} 💎 gems (Costs ${amount * 2} shards to donate)`,
       type: 'request',
       diamondAmount: amount
     });
@@ -497,7 +531,7 @@ exports.requestDiamonds = async (req, res) => {
     await clanMember.save();
 
     res.status(200).json({ 
-      message: 'Shard request sent',
+      message: 'Gem request sent',
       requestAmount: amount
     });
   } catch (error) {
