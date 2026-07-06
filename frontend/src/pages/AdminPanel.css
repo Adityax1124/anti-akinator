@@ -268,6 +268,31 @@
   background-position: right 14px center;
   background-size: 16px;
   padding-right: 40px;
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* ✅ ADD THIS NEW BLOCK - Option text visible karne ke liye */
+.admin-form select.form-control option,
+.admin-form .form-control select option {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+
+/* ✅ Dark theme variant (agar dark background chahte ho) */
+.admin-form select.form-control option {
+  color: #ffffff !important;
+  background-color: #1a1a2e !important;
+  padding: 8px 12px;
+}
+
+/* ✅ Option hover effect */
+.admin-form select.form-control option:hover,
+.admin-form select.form-control option:focus {
+  background-color: rgba(108, 99, 255, 0.2) !important;
+  color: #ffffff !important;
 }
 
 .admin-form .form-row.checkboxes {

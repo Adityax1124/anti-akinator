@@ -26,6 +26,11 @@ const cardRoutes = require('./routes/card');
 const app = express();
 
 // ============================================================
+// ✅ PRO PLAN: MAX EVENT LISTENERS (WebSocket connections)
+// ============================================================
+require('events').EventEmitter.defaultMaxListeners = 100;
+
+// ============================================================
 // ✅ CRITICAL: SERVER TIMEOUT INCREASE
 // ============================================================
 const server = http.createServer(app);
@@ -55,7 +60,9 @@ const io = socketIO(server, {
     credentials: true
   },
   pingTimeout: 60000,
-  pingInterval: 25000
+  pingInterval: 25000,
+  maxHttpBufferSize: 1e8,
+  transports: ['websocket', 'polling']
 });
 
 // ✅ Pass io instance to app for use in controllers
@@ -192,13 +199,14 @@ app.use(cors({
 }));
 
 // ============================================================
-// RATE LIMITING
+// RATE LIMITING - PRO PLAN (Higher Limits)
 // ============================================================
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// ✅ PRO PLAN: 500 requests per minute (was 100)
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isDevelopment ? 1000 : 100,
+  max: isDevelopment ? 1000 : 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -215,9 +223,10 @@ const apiLimiter = rateLimit({
   }
 });
 
+// ✅ PRO PLAN: 50 login attempts per 15 min (was 10)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDevelopment ? 100 : 10,
+  max: isDevelopment ? 100 : 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -234,9 +243,10 @@ const authLimiter = rateLimit({
   }
 });
 
+// ✅ PRO PLAN: 200 game requests per minute (was 60)
 const gameLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isDevelopment ? 500 : 60,
+  max: isDevelopment ? 500 : 200,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -253,9 +263,10 @@ const gameLimiter = rateLimit({
   }
 });
 
+// ✅ PRO PLAN: 100 profile requests per minute (was 30)
 const profileLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isDevelopment ? 300 : 30,
+  max: isDevelopment ? 300 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -272,9 +283,10 @@ const profileLimiter = rateLimit({
   }
 });
 
+// ✅ PRO PLAN: 50 admin requests per minute (was 20)
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isDevelopment ? 200 : 20,
+  max: isDevelopment ? 200 : 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -691,6 +703,8 @@ console.log(`🔐 MongoDB SSL: ${isProduction ? 'Enabled' : 'Disabled (developme
 mongoose.connect(process.env.MONGODB_URI, {
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
+  maxPoolSize: 100,
+  minPoolSize: 10,
   ...(isProduction && {
     tls: true,
     tlsAllowInvalidCertificates: false,
@@ -699,7 +713,7 @@ mongoose.connect(process.env.MONGODB_URI, {
     tlsAllowInvalidCertificates: true,
   })
 })
-  .then(() => console.log('✅ Connected to MongoDB'))
+  .then(() => console.log('✅ Connected to MongoDB with maxPoolSize=100'))
   .catch(err => {
     console.error('❌ MongoDB connection error:', err);
     if (isProduction) process.exit(1);
@@ -746,4 +760,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`⚔️ Match routes loaded with socket events`);
   console.log(`🛡️ Clan routes loaded with socket events`);
   console.log(`⏰ Server timeout: 120 seconds`);
+  console.log(`📊 maxPoolSize: 100, maxListeners: 100, rate limits: 500/min`);
 });
