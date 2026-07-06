@@ -1183,6 +1183,9 @@ router.post('/leave', authMiddleware, async (req, res) => {
 
 // ============================================================
 // STEAL CARD
+// ✅ FIXED: Preserves the opponent's actual level & basePower
+// instead of resetting level to 1 and baking the leveled-up
+// power in as the new basePower.
 // ============================================================
 router.post('/steal', authMiddleware, async (req, res) => {
   try {
@@ -1265,6 +1268,17 @@ router.post('/steal', authMiddleware, async (req, res) => {
     const winnerUser = await User.findById(winnerData.user);
     const loserUser = await User.findById(loserData.user);
 
+    // ✅ NEW: Find the opponent's ACTUAL card in their live collection.
+    // This is the source of truth for level/basePower/currentPower —
+    // the match's `team` snapshot only stores the effective powerLevel,
+    // not the real base power or level, so we must go back to the User doc.
+    const loserCardIndex = loserUser
+      ? loserUser.cards.findIndex(c =>
+          c.characterId.toString() === stolenCard.characterId.toString()
+        )
+      : -1;
+    const actualStolenCard = loserCardIndex !== -1 ? loserUser.cards[loserCardIndex] : null;
+
     const winnerGems = gemRewards.winner || 20;
     if (winnerUser) {
       winnerUser.gems = (winnerUser.gems || 0) + winnerGems;
@@ -1273,16 +1287,21 @@ router.post('/steal', authMiddleware, async (req, res) => {
       );
 
       if (!alreadyHas) {
+        // ✅ FIX: Copy the real card data — level and basePower stay intact.
+        // Before: level was hardcoded to 1 and basePower was set to the
+        // leveled-up powerLevel (e.g. base 40 -> became base 43 at level 1).
+        // Now: we copy the opponent's actual level (e.g. 3) and actual
+        // basePower (40) / currentPower (43), so nothing gets collapsed.
         winnerUser.cards.push({
-          characterId: stolenCard.characterId,
-          characterName: stolenCard.characterName,
-          powerLevel: stolenCard.powerLevel,
-          basePower: stolenCard.powerLevel,
-          currentPower: stolenCard.powerLevel,
-          level: 1,
-          element: stolenCard.element || 'Fire',
-          rarity: stolenCard.rarity || 'Common',
-          image: stolenCard.image,
+          characterId: actualStolenCard?.characterId || stolenCard.characterId,
+          characterName: actualStolenCard?.characterName || stolenCard.characterName,
+          powerLevel: actualStolenCard?.basePower ?? actualStolenCard?.powerLevel ?? stolenCard.powerLevel,
+          basePower: actualStolenCard?.basePower ?? stolenCard.powerLevel,
+          currentPower: actualStolenCard?.currentPower ?? stolenCard.powerLevel,
+          level: actualStolenCard?.level ?? stolenCard.level ?? 1,
+          element: actualStolenCard?.element || stolenCard.element || 'Fire',
+          rarity: actualStolenCard?.rarity || stolenCard.rarity || 'Common',
+          image: actualStolenCard?.image || stolenCard.image,
           unlockedAt: new Date(),
           stolenFrom: loserData.user,
           stolenAt: new Date()
@@ -1299,11 +1318,10 @@ router.post('/steal', authMiddleware, async (req, res) => {
     const loserGems = gemRewards.loser || 5;
     if (loserUser) {
       loserUser.gems = (loserUser.gems || 0) + loserGems;
-      const cardIndexInCollection = loserUser.cards.findIndex(c =>
-        c.characterId.toString() === stolenCard.characterId.toString()
-      );
-      if (cardIndexInCollection !== -1) {
-        loserUser.cards.splice(cardIndexInCollection, 1);
+      // ✅ Use the same index we already found above, so the removal
+      // is guaranteed to target the exact same card we just copied.
+      if (loserCardIndex !== -1) {
+        loserUser.cards.splice(loserCardIndex, 1);
       }
       await loserUser.save();
     }
