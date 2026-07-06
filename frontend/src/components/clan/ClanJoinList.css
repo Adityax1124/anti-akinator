@@ -1,0 +1,225 @@
+:root {
+  --cjl-accent: #6c63ff;
+  --cjl-accent-2: #a89bff;
+  --cjl-accent-3: #00d9c0;
+  --cjl-glass: rgba(255, 255, 255, 0.025);
+  --cjl-glass-hover: rgba(255, 255, 255, 0.045);
+  --cjl-border-soft: rgba(255, 255, 255, 0.06);
+  --cjl-border-accent: rgba(108, 99, 255, 0.35);
+  --cjl-text-secondary: rgba(255, 255, 255, 0.62);
+  --cjl-text-muted: rgba(255, 255, 255, 0.35);
+}
+
+.clan-join-list {
+  padding: 6px 0;
+}
+
+.clan-join-list .back-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--cjl-border-soft);
+  border-radius: 10px;
+  color: var(--cjl-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  margin-bottom: 20px;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.clan-join-list .back-btn:hover {
+  transform: translateX(-4px);
+  background: var(--cjl-glass-hover);
+  color: #fff;
+  border-color: var(--cjl-border-accent);
+}
+
+.clan-join-list h2 {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  text-align: center;
+  letter-spacing: -0.6px;
+}
+
+.clan-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.clan-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clan-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.clan-grid::-webkit-scrollbar-thumb {
+  background: var(--cjl-accent);
+  border-radius: 10px;
+}
+
+.clan-card {
+  background: var(--cjl-glass);
+  border: 1px solid var(--cjl-border-soft);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.clan-card:hover {
+  background: var(--cjl-glass-hover);
+  transform: translateX(6px);
+  border-color: var(--cjl-border-accent);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.clan-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.clan-card-header h3 {
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.member-count {
+  color: var(--cjl-accent-2);
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(108, 99, 255, 0.08);
+  border: 1px solid rgba(108, 99, 255, 0.18);
+  padding: 5px 14px;
+  border-radius: 50px;
+  white-space: nowrap;
+}
+
+.clan-description {
+  color: var(--cjl-text-secondary);
+  font-size: 14px;
+  margin: 8px 0 16px;
+  line-height: 1.55;
+}
+
+.join-clan-btn {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, var(--cjl-accent-3), #00a891);
+  border: none;
+  border-radius: 10px;
+  color: #06070a;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.join-clan-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(0, 217, 192, 0.3);
+}
+
+.join-clan-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--cjl-text-muted);
+}
+
+.no-clans {
+  text-align: center;
+  padding: 50px 20px;
+  background: var(--cjl-glass);
+  border: 1px solid var(--cjl-border-soft);
+  border-radius: 18px;
+}
+
+.no-clans p {
+  color: var(--cjl-text-secondary);
+  font-size: 16px;
+}
+
+.sub-text {
+  font-size: 13px !important;
+  color: var(--cjl-text-muted) !important;
+  margin-top: 8px;
+}
+
+.clan-join-loading {
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.clan-join-loading p {
+  color: var(--cjl-text-muted);
+  margin-top: 14px;
+  font-size: 13.5px;
+}
+
+.loader {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto;
+  border: 3px solid rgba(108, 99, 255, 0.12);
+  border-top-color: var(--cjl-accent);
+  border-radius: 50%;
+  animation: cjlSpin 0.8s linear infinite;
+}
+
+@keyframes cjlSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.btn-loading {
+  display: inline-block;
+  animation: cjlPulse 1s infinite;
+}
+
+@keyframes cjlPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.error-message {
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  color: #fca5a5;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 13.5px;
+}
+
+@media (max-width: 768px) {
+  .clan-join-list h2 {
+    font-size: 20px;
+  }
+
+  .clan-card {
+    padding: 16px;
+  }
+
+  .clan-card-header h3 {
+    font-size: 15px;
+  }
+
+  .join-clan-btn {
+    padding: 12px;
+  }
+}

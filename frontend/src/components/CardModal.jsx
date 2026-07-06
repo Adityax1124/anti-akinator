@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/axios';
 import './CardModal.css';
 
@@ -7,7 +8,6 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Get upgrade info
   const getUpgradeInfo = (level) => {
     const upgradeData = {
       1: { cost: 10, powerIncrease: 1, nextLevel: 2 },
@@ -31,20 +31,15 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
 
   const handleUpgrade = async () => {
     if (!canUpgrade) return;
-    
+
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      // ✅ Debug log
-      console.log('🔍 [UPGRADE] Sending characterId:', card.characterId);
-      
       const response = await api.post('/cards/upgrade', {
         characterId: card.characterId
       });
-
-      console.log('🔍 [UPGRADE] Response:', response.data);
 
       if (response.data.success) {
         setSuccess(response.data.message);
@@ -55,14 +50,12 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
         }, 1500);
       }
     } catch (err) {
-      console.error('❌ [UPGRADE] Error:', err);
       setError(err.response?.data?.message || 'Failed to upgrade card');
     } finally {
       setLoading(false);
     }
   };
 
-  // Get rarity color
   const getRarityColor = (rarity) => {
     const colors = {
       'Common': '#a0a0a0',
@@ -74,7 +67,6 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
     return colors[rarity] || '#a0a0a0';
   };
 
-  // Get element emoji
   const getElementEmoji = (element) => {
     const emojis = {
       'Fire': '🔥',
@@ -85,7 +77,6 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
     return emojis[element] || '❓';
   };
 
-  // Get rarity stars
   const getRarityStars = (rarity) => {
     const stars = {
       'Common': '⭐',
@@ -99,13 +90,11 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
 
   const rarityColor = getRarityColor(card.rarity);
 
-  return (
+  const modalContent = (
     <div className="card-modal-overlay" onClick={onClose}>
       <div className="card-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Close Button */}
         <button className="modal-close" onClick={onClose}>✕</button>
 
-        {/* Card Image */}
         <div className="modal-card-image" style={{ borderColor: rarityColor }}>
           {card.image ? (
             <img src={card.image} alt={card.characterName} className="modal-card-img" />
@@ -120,7 +109,6 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
           </div>
         </div>
 
-        {/* Card Info */}
         <div className="modal-card-info">
           <h2 className="modal-card-name">{card.characterName || 'Unknown'}</h2>
           <div className="modal-card-rarity" style={{ color: rarityColor }}>
@@ -132,7 +120,6 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="modal-stats">
           <div className="modal-stat">
             <span className="stat-label">Current Power</span>
@@ -152,36 +139,37 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="modal-progress">
           <div className="progress-label">
             <span>Progress to Level 10</span>
             <span>{Math.round((currentLevel / 10) * 100)}%</span>
           </div>
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${(currentLevel / 10) * 100}%` }}
             />
           </div>
         </div>
 
-        {/* Upgrade Section */}
         {!isMaxLevel ? (
           <div className="modal-upgrade">
             <div className="upgrade-info">
               <div className="upgrade-detail">
+                <div className="upgrade-icon">🔼</div>
                 <span className="upgrade-label">Next Level</span>
                 <span className="upgrade-value">{upgradeInfo.nextLevel}</span>
               </div>
               <div className="upgrade-detail">
-                <span className="upgrade-label">Power Increase</span>
-                <span className="upgrade-value">+{upgradeInfo.powerIncrease}</span>
+                <div className="upgrade-icon">⚡</div>
+                <span className="upgrade-label">Power</span>
+                <span className="upgrade-value power">+{upgradeInfo.powerIncrease}</span>
               </div>
               <div className="upgrade-detail">
+                <div className="upgrade-icon">💎</div>
                 <span className="upgrade-label">Cost</span>
                 <span className={`upgrade-value ${canUpgrade ? 'affordable' : 'expensive'}`}>
-                  💎 {upgradeInfo.cost}
+                  {upgradeInfo.cost}
                 </span>
               </div>
             </div>
@@ -212,13 +200,14 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
           </div>
         )}
 
-        {/* Footer */}
         <div className="modal-footer">
           <button className="modal-close-btn" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CardModal;

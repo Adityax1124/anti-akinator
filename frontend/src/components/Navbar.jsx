@@ -1,52 +1,82 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/axios';
 import ReferralModal from './ReferralModal';
 import FriendModal from './FriendModal';
+import ClanModal from './clan/ClanModal';
+import axios from '../api/axios';
 import './Navbar.css';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [showSearch, setShowSearch] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isFriendModalOpen, setIsFriendModalOpen] = useState(false);
+  const [isClanModalOpen, setIsClanModalOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
-  const searchRef = useRef(null);
+  const [hoveredDropdown, setHoveredDropdown] = useState(null);
+  
+  // ✅ NEW: Clan state
+  const [isInClan, setIsInClan] = useState(false);
+  const [clanData, setClanData] = useState(null);
+  const [checkingClan, setCheckingClan] = useState(true);
 
-  const leaderboardRef = useRef(null);
+  const cardsRef = useRef(null);
+  const shopRef = useRef(null);
   const communityRef = useRef(null);
+  const clanRef = useRef(null);
+  const leaderboardRef = useRef(null);
   const profileRef = useRef(null);
 
-  // Close dropdowns when route changes
+  // ✅ NEW: Check if user is in a clan
+  useEffect(() => {
+    checkClanStatus();
+  }, [isAuthenticated]);
+
+  const checkClanStatus = async () => {
+    if (!isAuthenticated) {
+      setIsInClan(false);
+      setCheckingClan(false);
+      return;
+    }
+
+    try {
+      setCheckingClan(true);
+      const response = await axios.get('/clan/my-clan');
+      setIsInClan(true);
+      setClanData(response.data.clan);
+      console.log('✅ User is in clan:', response.data.clan.name);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setIsInClan(false);
+        setClanData(null);
+        console.log('ℹ️ User is not in a clan');
+      } else {
+        console.error('❌ Error checking clan status:', error);
+        setIsInClan(false);
+      }
+    } finally {
+      setCheckingClan(false);
+    }
+  };
+
   useEffect(() => {
     setMobileMenuOpen(false);
     setOpenDropdown(null);
+    setHoveredDropdown(null);
   }, [location.pathname]);
 
-  // Close search on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSearch(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Handle click outside dropdowns
   useEffect(() => {
     const handleClickOutsideDropdown = (event) => {
       if (openDropdown) {
         const dropdownRefs = {
-          leaderboard: leaderboardRef,
+          cards: cardsRef,
+          shop: shopRef,
           community: communityRef,
+          clan: clanRef,
+          leaderboard: leaderboardRef,
           profile: profileRef
         };
         const currentRef = dropdownRefs[openDropdown];
@@ -59,18 +89,13 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutsideDropdown);
   }, [openDropdown]);
 
-  // Toggle dropdown on click
   const toggleDropdown = (dropdown) => {
     setOpenDropdown(openDropdown === dropdown ? null : dropdown);
   };
 
-  // Close all dropdowns
   const closeAllDropdowns = () => {
     setOpenDropdown(null);
-    setMobileMenuOpen(false);
-  };
-
-  const closeMobileMenu = () => {
+    setHoveredDropdown(null);
     setMobileMenuOpen(false);
   };
 
@@ -86,43 +111,43 @@ const Navbar = () => {
     setIsReferralModalOpen(true);
   };
 
-  const closeReferralModal = () => {
-    setIsReferralModalOpen(false);
-  };
+  const closeReferralModal = () => setIsReferralModalOpen(false);
 
   const openFriendModal = () => {
     closeAllDropdowns();
     setIsFriendModalOpen(true);
   };
 
-  const closeFriendModal = () => {
-    setIsFriendModalOpen(false);
-  };
+  const closeFriendModal = () => setIsFriendModalOpen(false);
 
-  const handleSearch = async (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+  // ✅ UPDATED: Clan button handler - Check if in clan
+  const handleClanClick = () => {
+    closeAllDropdowns();
+    
+    if (checkingClan) {
+      console.log('⏳ Still checking clan status...');
+      return;
+    }
 
-    if (query.length >= 2) {
-      try {
-        const response = await api.get(`/profile/search?q=${query}`);
-        setSearchResults(response.data.users);
-        setShowSearch(true);
-      } catch (error) {
-        console.error('Search error:', error);
-      }
+    if (isInClan) {
+      console.log('🛡️ User is in clan, navigating to clan page');
+      navigate('/clan');
     } else {
-      setSearchResults([]);
-      setShowSearch(false);
+      console.log('🛡️ User is not in clan, opening modal');
+      setIsClanModalOpen(true);
     }
   };
 
-  const handleViewProfile = (username) => {
-    setShowSearch(false);
-    setSearchQuery('');
-    setSearchResults([]);
-    closeAllDropdowns();
-    navigate(`/profile/${username}`);
+  const closeClanModal = () => setIsClanModalOpen(false);
+
+  // ✅ UPDATED: After clan action, refresh status and navigate
+  const handleClanAction = (clan) => {
+    console.log('🛡️ Clan action completed:', clan);
+    closeClanModal();
+    // Refresh clan status
+    checkClanStatus();
+    // Navigate to clan page
+    navigate('/clan');
   };
 
   const handleLogout = () => {
@@ -132,150 +157,80 @@ const Navbar = () => {
   };
 
   const profilePhotoUrl = user?.equipped?.profilePhoto?.imageUrl;
-  const userGems = user?.gems || 0;
 
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname === path;
+
+  const dimActive = hoveredDropdown !== null || openDropdown !== null || mobileMenuOpen;
 
   return (
     <>
-      <nav className={`navbar ${openDropdown ? 'dropdown-open' : ''}`}>
+      <nav className={`navbar ${dimActive ? 'dim-active' : ''}`}>
         <div className="navbar-container">
-          {/* Logo */}
           <Link to="/" className="navbar-brand" onClick={closeAllDropdowns}>
             <img src="/anime-logo.jpg" alt="Anti-Akinator" className="brand-logo" />
             <span className="brand-text">Anti-Akinator</span>
           </Link>
 
-          {/* Search */}
-          <div className="search-wrapper" ref={searchRef}>
-            <div className="search-container">
-              <svg className="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search players..."
-                value={searchQuery}
-                onChange={handleSearch}
-                onFocus={() => searchQuery.length >= 2 && setShowSearch(true)}
-              />
-            </div>
-
-            {showSearch && searchResults.length > 0 && (
-              <div className="search-results">
-                {searchResults.map((result) => (
-                  <div 
-                    key={result._id} 
-                    className="search-result-item"
-                    onClick={() => handleViewProfile(result.username)}
-                  >
-                    {result.equipped?.profilePhoto?.imageUrl ? (
-                      <img 
-                        src={result.equipped.profilePhoto.imageUrl} 
-                        alt={result.username} 
-                        className="search-avatar"
-                      />
-                    ) : (
-                      <div className="search-avatar-placeholder">
-                        {result.username.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="search-user-info">
-                      <span className="search-username">{result.username}</span>
-                      <span className="search-stats">🎮 {result.stats?.gamesWon || 0} wins</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {showSearch && searchQuery.length >= 2 && searchResults.length === 0 && (
-              <div className="search-results">
-                <div className="search-no-results">No players found</div>
-              </div>
-            )}
-          </div>
-
-          {/* Nav Links */}
           <div className={`navbar-menu ${mobileMenuOpen ? 'active' : ''}`}>
             {isAuthenticated ? (
               <>
-                <Link 
-                  to="/collection" 
-                  className={`nav-link ${isActive('/collection') ? 'active' : ''}`} 
-                  onClick={closeAllDropdowns}
+                <div
+                  className="dropdown-wrapper"
+                  ref={cardsRef}
+                  onMouseEnter={() => setHoveredDropdown('cards')}
+                  onMouseLeave={() => setHoveredDropdown(null)}
                 >
-                  <span className="nav-icon">📁</span>
-                  <span className="nav-label">Collection</span>
-                </Link>
-
-                <Link 
-                  to="/match" 
-                  className={`nav-link battle-btn ${isActive('/match') ? 'active' : ''}`} 
-                  onClick={closeAllDropdowns}
-                >
-                  <span className="nav-icon">⚔️</span>
-                  <span className="nav-label">Battle</span>
-                </Link>
-
-                <Link 
-                  to="/shop" 
-                  className={`nav-link ${isActive('/shop') ? 'active' : ''}`} 
-                  onClick={closeAllDropdowns}
-                >
-                  <span className="nav-icon">🛒</span>
-                  <span className="nav-label">Shop</span>
-                </Link>
-
-                <Link 
-                  to="/buy-shards" 
-                  className={`nav-link ${isActive('/buy-shards') ? 'active' : ''}`} 
-                  onClick={closeAllDropdowns}
-                >
-                  <span className="nav-icon">🎴</span>
-                  <span className="nav-label">Buy Shards</span>
-                </Link>
-
-                {/* ===== LEADERBOARD DROPDOWN ===== */}
-                <div 
-                  className="dropdown-wrapper" 
-                  ref={leaderboardRef}
-                >
-                  <button 
-                    className={`nav-link dropdown-btn ${openDropdown === 'leaderboard' ? 'active' : ''}`}
-                    onClick={() => toggleDropdown('leaderboard')}
-                  >
-                    <span className="nav-icon">🏆</span>
-                    <span className="nav-label">Leaderboard</span>
-                    <svg className={`dropdown-arrow-svg ${openDropdown === 'leaderboard' ? 'rotated' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <button className={`nav-link dropdown-btn ${openDropdown === 'cards' ? 'active' : ''}`} onClick={() => toggleDropdown('cards')}>
+                    <span className="nav-icon">🃏</span>
+                    <span className="nav-label">Cards</span>
+                    <svg className={`dropdown-arrow-svg ${openDropdown === 'cards' ? 'rotated' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </button>
-                  <div className={`dropdown-menu ${openDropdown === 'leaderboard' ? 'open' : ''}`}>
-                    <Link to="/leaderboard" className="dropdown-item" onClick={closeAllDropdowns}>
-                      <span className="dropdown-icon">📊</span>
-                      Global Leaderboard
+                  <div className={`dropdown-menu ${openDropdown === 'cards' ? 'open' : ''}`}>
+                    <Link to="/collection" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">📁</span>
+                      Collection
                     </Link>
-                    <Link to="/season-winners" className="dropdown-item" onClick={closeAllDropdowns}>
-                      <span className="dropdown-icon">🏅</span>
-                      Season Winners
+                    <Link to="/match" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">⚔️</span>
+                      Battle
                     </Link>
                   </div>
                 </div>
 
-                {/* ===== COMMUNITY DROPDOWN ===== */}
-                <div 
-                  className="dropdown-wrapper" 
-                  ref={communityRef}
+                <div
+                  className="dropdown-wrapper"
+                  ref={shopRef}
+                  onMouseEnter={() => setHoveredDropdown('shop')}
+                  onMouseLeave={() => setHoveredDropdown(null)}
                 >
-                  <button 
-                    className={`nav-link dropdown-btn ${openDropdown === 'community' ? 'active' : ''}`}
-                    onClick={() => toggleDropdown('community')}
-                  >
+                  <button className={`nav-link dropdown-btn ${openDropdown === 'shop' ? 'active' : ''}`} onClick={() => toggleDropdown('shop')}>
+                    <span className="nav-icon">🛒</span>
+                    <span className="nav-label">Shop</span>
+                    <svg className={`dropdown-arrow-svg ${openDropdown === 'shop' ? 'rotated' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div className={`dropdown-menu ${openDropdown === 'shop' ? 'open' : ''}`}>
+                    <Link to="/shop" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">🛍️</span>
+                      Shop
+                    </Link>
+                    <Link to="/buy-shards" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">🎴</span>
+                      Buy Shards
+                    </Link>
+                  </div>
+                </div>
+
+                <div
+                  className="dropdown-wrapper"
+                  ref={communityRef}
+                  onMouseEnter={() => setHoveredDropdown('community')}
+                  onMouseLeave={() => setHoveredDropdown(null)}
+                >
+                  <button className={`nav-link dropdown-btn ${openDropdown === 'community' ? 'active' : ''}`} onClick={() => toggleDropdown('community')}>
                     <span className="nav-icon">👥</span>
                     <span className="nav-label">Community</span>
                     <svg className={`dropdown-arrow-svg ${openDropdown === 'community' ? 'rotated' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -294,26 +249,64 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {user?.role === 'admin' && (
-                  <Link 
-                    to="/admin" 
-                    className={`nav-link admin-link ${isActive('/admin') ? 'active' : ''}`} 
-                    onClick={closeAllDropdowns}
+                {/* ✅ UPDATED: Clan Button with check */}
+                <div
+                  className="dropdown-wrapper"
+                  ref={clanRef}
+                  onMouseEnter={() => setHoveredDropdown('clan')}
+                  onMouseLeave={() => setHoveredDropdown(null)}
+                >
+                  <button 
+                    className="nav-link" 
+                    onClick={handleClanClick}
+                    disabled={checkingClan}
                   >
+                    <span className="nav-icon">🛡️</span>
+                    <span className="nav-label">
+                      {checkingClan ? 'Loading...' : isInClan ? clanData?.name || 'Clan' : 'Clan'}
+                    </span>
+                  </button>
+                </div>
+
+                <div
+                  className="dropdown-wrapper"
+                  ref={leaderboardRef}
+                  onMouseEnter={() => setHoveredDropdown('leaderboard')}
+                  onMouseLeave={() => setHoveredDropdown(null)}
+                >
+                  <button className={`nav-link dropdown-btn ${openDropdown === 'leaderboard' ? 'active' : ''}`} onClick={() => toggleDropdown('leaderboard')}>
+                    <span className="nav-icon">🏆</span>
+                    <span className="nav-label">Leaderboard</span>
+                    <svg className={`dropdown-arrow-svg ${openDropdown === 'leaderboard' ? 'rotated' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div className={`dropdown-menu ${openDropdown === 'leaderboard' ? 'open' : ''}`}>
+                    <Link to="/leaderboard" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">📊</span>
+                      Global Leaderboard
+                    </Link>
+                    <Link to="/season-winners" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">🏅</span>
+                      Season Winners
+                    </Link>
+                  </div>
+                </div>
+
+                {user?.role === 'admin' && (
+                  <Link to="/admin" className={`nav-link admin-link ${isActive('/admin') ? 'active' : ''}`} onClick={closeAllDropdowns}>
                     <span className="nav-icon">⚙️</span>
                     <span className="nav-label">Admin</span>
                   </Link>
                 )}
 
-                {/* ===== PROFILE DROPDOWN ===== */}
-                <div 
-                  className="dropdown-wrapper profile-wrapper" 
+                <div
+                  className="dropdown-wrapper profile-wrapper"
                   ref={profileRef}
+                  onMouseEnter={() => setHoveredDropdown('profile')}
+                  onMouseLeave={() => setHoveredDropdown(null)}
                 >
-                  <button 
-                    className={`nav-link dropdown-btn profile-btn ${openDropdown === 'profile' ? 'active' : ''}`}
-                    onClick={() => toggleDropdown('profile')}
-                  >
+                  <button className={`nav-link dropdown-btn profile-btn ${openDropdown === 'profile' ? 'active' : ''}`} onClick={() => toggleDropdown('profile')}>
                     <span className="user-avatar">
                       {profilePhotoUrl ? (
                         <img src={profilePhotoUrl} alt={user.username} className="navbar-avatar-img" />
@@ -322,7 +315,6 @@ const Navbar = () => {
                       )}
                     </span>
                     <span className="username">{user?.username}</span>
-                    <span className="gems-badge">💎{userGems}</span>
                     <svg className={`dropdown-arrow-svg ${openDropdown === 'profile' ? 'rotated' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
@@ -330,7 +322,11 @@ const Navbar = () => {
                   <div className={`dropdown-menu profile-dropdown ${openDropdown === 'profile' ? 'open' : ''}`}>
                     <Link to="/profile" className="dropdown-item" onClick={closeAllDropdowns}>
                       <span className="dropdown-icon">👤</span>
-                      My Profile
+                      Profile
+                    </Link>
+                    <Link to="/settings" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">⚙️</span>
+                      Settings
                     </Link>
                     <hr className="dropdown-divider" />
                     <button className="dropdown-item logout-item" onClick={() => { closeAllDropdowns(); handleLogout(); }}>
@@ -342,17 +338,13 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link to="/login" className="nav-link" onClick={closeAllDropdowns}>Login</Link>
+                <Link to="/login" className="nav-link login-btn" onClick={closeAllDropdowns}>Login</Link>
                 <Link to="/register" className="nav-link register-btn" onClick={closeAllDropdowns}>Register</Link>
               </>
             )}
           </div>
 
-          <button 
-            className="mobile-menu-btn" 
-            onClick={toggleMobileMenu}
-            aria-label="Toggle menu"
-          >
+          <button className="mobile-menu-btn" onClick={toggleMobileMenu} aria-label="Toggle menu">
             {mobileMenuOpen ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -369,14 +361,15 @@ const Navbar = () => {
         </div>
       </nav>
 
-      <ReferralModal 
-        isOpen={isReferralModalOpen} 
-        onClose={closeReferralModal} 
-      />
+      <div className={`page-dim-overlay ${dimActive ? 'active' : ''}`}></div>
 
-      <FriendModal 
-        isOpen={isFriendModalOpen} 
-        onClose={closeFriendModal} 
+      <ReferralModal isOpen={isReferralModalOpen} onClose={closeReferralModal} />
+      <FriendModal isOpen={isFriendModalOpen} onClose={closeFriendModal} />
+      
+      <ClanModal 
+        isOpen={isClanModalOpen} 
+        onClose={closeClanModal}
+        onClanAction={handleClanAction}
       />
     </>
   );

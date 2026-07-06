@@ -10,12 +10,10 @@ const AdminPanel = () => {
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('characters');
 
-  // Season Reset State
   const [resetting, setResetting] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
   const [resetSuccess, setResetSuccess] = useState(null);
 
-  // Character state
   const [characters, setCharacters] = useState([]);
   const [charForm, setCharForm] = useState({
     name: '',
@@ -24,7 +22,6 @@ const AdminPanel = () => {
     description: '',
     crucialHint: '',
     powerLevel: 25,
-    // ✅ NEW: Element, Rarity, BasePower
     element: 'Fire',
     rarity: 'Common',
     basePower: 25,
@@ -49,7 +46,6 @@ const AdminPanel = () => {
   });
   const [editingCharId, setEditingCharId] = useState(null);
 
-  // Banner state
   const [banners, setBanners] = useState([]);
   const [bannerForm, setBannerForm] = useState({
     name: '',
@@ -63,7 +59,6 @@ const AdminPanel = () => {
   });
   const [editingBannerId, setEditingBannerId] = useState(null);
 
-  // Title state
   const [titles, setTitles] = useState([]);
   const [titleForm, setTitleForm] = useState({
     name: '',
@@ -77,7 +72,6 @@ const AdminPanel = () => {
   });
   const [editingTitleId, setEditingTitleId] = useState(null);
 
-  // Profile Photo state
   const [photos, setPhotos] = useState([]);
   const [photoForm, setPhotoForm] = useState({
     name: '',
@@ -91,7 +85,6 @@ const AdminPanel = () => {
   });
   const [editingPhotoId, setEditingPhotoId] = useState(null);
 
-  // ===== SHOP STATE =====
   const [shopItems, setShopItems] = useState([]);
   const [shopForm, setShopForm] = useState({
     itemType: 'banner',
@@ -108,7 +101,6 @@ const AdminPanel = () => {
   });
   const [editingShopId, setEditingShopId] = useState(null);
 
-  // Stats state
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
 
@@ -150,9 +142,8 @@ const AdminPanel = () => {
     }
   };
 
-  // ===== SEASON RESET HANDLER =====
   const handleResetSeason = async () => {
-    if (!window.confirm('⚠️ Are you sure you want to reset the season?\n\nThis will:\n- Save current season winner\n- Reset all players\' season stats to 0\n- Start a new season\n\nThis action CANNOT be undone!')) {
+    if (!window.confirm('Are you sure you want to reset the season?\n\nThis will:\n- Save current season winner\n- Reset all players\' season stats to 0\n- Start a new season\n\nThis action CANNOT be undone!')) {
       return;
     }
 
@@ -162,7 +153,7 @@ const AdminPanel = () => {
 
     try {
       const response = await api.post('/admin/reset-season');
-      
+
       if (response.data.success) {
         setResetSuccess(true);
         setResetMessage(response.data.message);
@@ -179,40 +170,34 @@ const AdminPanel = () => {
     }
   };
 
-  // ===================== CHARACTER CRUD =====================
-
   const handleCharChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
-    // ✅ HANDLE POWER LEVEL
+
     if (name === 'powerLevel') {
       setCharForm(prev => ({ ...prev, powerLevel: parseFloat(value) || 25 }));
       return;
     }
-    
-    // ✅ HANDLE ELEMENT
+
     if (name === 'element') {
       setCharForm(prev => ({ ...prev, element: value }));
       return;
     }
-    
-    // ✅ HANDLE RARITY
+
     if (name === 'rarity') {
       setCharForm(prev => ({ ...prev, rarity: value }));
       return;
     }
-    
-    // ✅ HANDLE BASE POWER
+
     if (name === 'basePower') {
       setCharForm(prev => ({ ...prev, basePower: parseFloat(value) || 25 }));
       return;
     }
-    
+
     if (name === 'crucialHint') {
       setCharForm(prev => ({ ...prev, crucialHint: value }));
       return;
     }
-    
+
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setCharForm(prev => ({
@@ -224,12 +209,12 @@ const AdminPanel = () => {
       }));
       return;
     }
-    
+
     if (type === 'checkbox') {
       setCharForm(prev => ({ ...prev, [name]: checked }));
       return;
     }
-    
+
     setCharForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -250,7 +235,6 @@ const AdminPanel = () => {
     setSuccess('');
 
     try {
-      // ✅ Include element, rarity, basePower in payload
       const payload = {
         ...charForm,
         element: charForm.element || 'Fire',
@@ -260,10 +244,10 @@ const AdminPanel = () => {
 
       if (editingCharId) {
         await api.put(`/admin/characters/${editingCharId}`, payload);
-        setSuccess('✅ Character updated successfully!');
+        setSuccess('Character updated successfully!');
       } else {
         await api.post('/admin/characters', payload);
-        setSuccess('✅ Character added successfully!');
+        setSuccess('Character added successfully!');
       }
       resetCharForm();
       fetchAllData();
@@ -344,14 +328,13 @@ const AdminPanel = () => {
     if (!window.confirm('Delete this character?')) return;
     try {
       await api.delete(`/admin/characters/${id}`);
-      setSuccess('✅ Character deleted');
+      setSuccess('Character deleted');
       fetchAllData();
     } catch (err) {
       setError('Failed to delete');
     }
   };
 
-  // ===================== BANNER CRUD =====================
   const handleBannerChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
@@ -380,7 +363,7 @@ const AdminPanel = () => {
 
     try {
       const form = { ...bannerForm };
-      
+
       if (form.unlockCondition.totalGuesses) {
         form.unlockCondition.totalGuesses = Number(form.unlockCondition.totalGuesses);
       }
@@ -393,10 +376,10 @@ const AdminPanel = () => {
 
       if (editingBannerId) {
         await api.put(`/admin/banners/${editingBannerId}`, form);
-        setSuccess('✅ Banner updated successfully!');
+        setSuccess('Banner updated successfully!');
       } else {
         await api.post('/admin/banners', form);
-        setSuccess('✅ Banner added successfully!');
+        setSuccess('Banner added successfully!');
       }
       resetBannerForm();
       fetchAllData();
@@ -439,14 +422,13 @@ const AdminPanel = () => {
     if (!window.confirm('Delete this banner?')) return;
     try {
       await api.delete(`/admin/banners/${id}`);
-      setSuccess('✅ Banner deleted');
+      setSuccess('Banner deleted');
       fetchAllData();
     } catch (err) {
       setError('Failed to delete');
     }
   };
 
-  // ===================== TITLE CRUD =====================
   const handleTitleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
@@ -483,10 +465,10 @@ const AdminPanel = () => {
 
       if (editingTitleId) {
         await api.put(`/admin/titles/${editingTitleId}`, form);
-        setSuccess('✅ Title updated successfully!');
+        setSuccess('Title updated successfully!');
       } else {
         await api.post('/admin/titles', form);
-        setSuccess('✅ Title added successfully!');
+        setSuccess('Title added successfully!');
       }
       resetTitleForm();
       fetchAllData();
@@ -529,14 +511,13 @@ const AdminPanel = () => {
     if (!window.confirm('Delete this title?')) return;
     try {
       await api.delete(`/admin/titles/${id}`);
-      setSuccess('✅ Title deleted');
+      setSuccess('Title deleted');
       fetchAllData();
     } catch (err) {
       setError('Failed to delete');
     }
   };
 
-  // ===================== PROFILE PHOTO CRUD =====================
   const handlePhotoChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
@@ -554,10 +535,10 @@ const AdminPanel = () => {
     try {
       if (editingPhotoId) {
         await api.put(`/admin/profile-photos/${editingPhotoId}`, photoForm);
-        setSuccess('✅ Profile photo updated successfully!');
+        setSuccess('Profile photo updated successfully!');
       } else {
         await api.post('/admin/profile-photos', photoForm);
-        setSuccess('✅ Profile photo added successfully!');
+        setSuccess('Profile photo added successfully!');
       }
       resetPhotoForm();
       fetchAllData();
@@ -600,14 +581,13 @@ const AdminPanel = () => {
     if (!window.confirm('Delete this profile photo?')) return;
     try {
       await api.delete(`/admin/profile-photos/${id}`);
-      setSuccess('✅ Profile photo deleted');
+      setSuccess('Profile photo deleted');
       fetchAllData();
     } catch (err) {
       setError('Failed to delete');
     }
   };
 
-  // ===================== SHOP CRUD =====================
   const handleShopChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
@@ -636,11 +616,9 @@ const AdminPanel = () => {
           rarity: 'Rare',
           isActive: true
         };
-        
-        console.log('📤 Creating banner:', bannerData);
+
         const bannerRes = await api.post('/admin/banners', bannerData);
         itemId = bannerRes.data.banner._id;
-        console.log('✅ Banner created:', itemId);
       }
 
       if (shopForm.itemType === 'profilePhoto' && shopForm.newPhotoName && shopForm.newPhotoImageUrl) {
@@ -673,10 +651,10 @@ const AdminPanel = () => {
 
       if (editingShopId) {
         await api.put(`/admin/shop-items/${editingShopId}`, payload);
-        setSuccess('✅ Shop item updated successfully!');
+        setSuccess('Shop item updated successfully!');
       } else {
         await api.post('/admin/shop-items', payload);
-        setSuccess('✅ Shop item added successfully!');
+        setSuccess('Shop item added successfully!');
       }
       resetShopForm();
       fetchAllData();
@@ -725,19 +703,18 @@ const AdminPanel = () => {
     if (!window.confirm('Remove this item from shop?')) return;
     try {
       await api.delete(`/admin/shop-items/${id}`);
-      setSuccess('✅ Shop item removed');
+      setSuccess('Shop item removed');
       fetchAllData();
     } catch (err) {
       setError('Failed to remove');
     }
   };
 
-  // ===================== RENDER =====================
   if (user?.role !== 'admin') {
     return (
       <div className="admin-container">
         <div className="admin-error">
-          <h2>⛔ Access Denied</h2>
+          <h2>Access Denied</h2>
           <p>This page is for administrators only.</p>
         </div>
       </div>
@@ -758,54 +735,54 @@ const AdminPanel = () => {
   return (
     <div className="admin-container fade-in">
       <div className="admin-header">
-        <h1 className="admin-title">👑 Admin Panel</h1>
+        <h1 className="admin-title">Admin Panel</h1>
         <div className="admin-tabs">
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'characters' ? 'active' : ''}`}
             onClick={() => setActiveTab('characters')}
           >
-            <span className="tab-icon">📚</span> Characters
+            Characters
             <span className="tab-badge">{characters.length}</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'banners' ? 'active' : ''}`}
             onClick={() => setActiveTab('banners')}
           >
-            <span className="tab-icon">🎨</span> Banners
+            Banners
             <span className="tab-badge">{banners.length}</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'titles' ? 'active' : ''}`}
             onClick={() => setActiveTab('titles')}
           >
-            <span className="tab-icon">🏷️</span> Titles
+            Titles
             <span className="tab-badge">{titles.length}</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'photos' ? 'active' : ''}`}
             onClick={() => setActiveTab('photos')}
           >
-            <span className="tab-icon">📸</span> Photos
+            Photos
             <span className="tab-badge">{photos.length}</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
             onClick={() => setActiveTab('shop')}
           >
-            <span className="tab-icon">🛒</span> Shop
+            Shop
             <span className="tab-badge">{shopItems.length}</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
           >
-            <span className="tab-icon">👥</span> Users
+            Users
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
             onClick={() => setActiveTab('stats')}
           >
-            <span className="tab-icon">📊</span> Stats
+            Stats
           </button>
         </div>
       </div>
@@ -813,7 +790,6 @@ const AdminPanel = () => {
       {error && <div className="admin-alert error">{error}</div>}
       {success && <div className="admin-alert success">{success}</div>}
 
-      {/* ===== SEASON RESET BUTTON ===== */}
       <div className="season-reset-wrapper">
         <button
           onClick={handleResetSeason}
@@ -821,7 +797,7 @@ const AdminPanel = () => {
           className="season-reset-btn"
           title="Reset Season (Admin Only)"
         >
-          {resetting ? '⏳' : '🔒 Reset'}
+          {resetting ? 'Resetting...' : 'Reset Season'}
         </button>
         {resetMessage && (
           <div className={`reset-toast ${resetSuccess ? 'success' : 'error'}`}>
@@ -830,51 +806,49 @@ const AdminPanel = () => {
         )}
       </div>
 
-      {/* ==================== CHARACTER TAB ==================== */}
       {activeTab === 'characters' && (
         <div className="admin-section">
           <div className="admin-form-card">
-            <h2>{editingCharId ? '✏️ Edit Character' : '➕ Add New Character'}</h2>
+            <h2>{editingCharId ? 'Edit Character' : 'Add New Character'}</h2>
             <form onSubmit={submitCharacter} className="admin-form">
               <div className="form-row">
                 <div className="form-group">
                   <label>Name *</label>
-                  <input 
-                    type="text" 
-                    name="name" 
-                    className="form-control" 
-                    value={charForm.name} 
-                    onChange={handleCharChange} 
-                    required 
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={charForm.name}
+                    onChange={handleCharChange}
+                    required
                     placeholder="e.g., Luffy"
                   />
                 </div>
                 <div className="form-group">
                   <label>Anime *</label>
-                  <input 
-                    type="text" 
-                    name="anime" 
-                    className="form-control" 
-                    value={charForm.anime} 
-                    onChange={handleCharChange} 
-                    required 
+                  <input
+                    type="text"
+                    name="anime"
+                    className="form-control"
+                    value={charForm.anime}
+                    onChange={handleCharChange}
+                    required
                     placeholder="e.g., One Piece"
                   />
                 </div>
               </div>
 
-              {/* ✅ POWER LEVEL INPUT */}
               <div className="form-group">
-                <label>⚡ Power Level (1-50) *</label>
+                <label>Power Level (1-50) *</label>
                 <div className="power-level-input">
-                  <input 
-                    type="range" 
-                    name="powerLevel" 
+                  <input
+                    type="range"
+                    name="powerLevel"
                     className="power-slider"
-                    min="0.5" 
-                    max="50" 
-                    step="0.5" 
-                    value={charForm.powerLevel} 
+                    min="0.5"
+                    max="50"
+                    step="0.5"
+                    value={charForm.powerLevel}
                     onChange={handleCharChange}
                   />
                   <span className="power-value">{charForm.powerLevel}</span>
@@ -882,52 +856,50 @@ const AdminPanel = () => {
                 <small className="form-hint">Higher power = more valuable card in battles</small>
               </div>
 
-              {/* ✅ ELEMENT DROPDOWN - NEW */}
               <div className="form-row">
                 <div className="form-group">
-                  <label>🔥 Element</label>
-                  <select 
-                    name="element" 
-                    className="form-control" 
-                    value={charForm.element} 
+                  <label>Element</label>
+                  <select
+                    name="element"
+                    className="form-control"
+                    value={charForm.element}
                     onChange={handleCharChange}
                     required
                   >
-                    <option value="Fire">🔥 Fire</option>
-                    <option value="Water">💧 Water</option>
-                    <option value="Wind">🌪️ Wind</option>
-                    <option value="Earth">🌍 Earth</option>
+                    <option value="Fire">Fire</option>
+                    <option value="Water">Water</option>
+                    <option value="Wind">Wind</option>
+                    <option value="Earth">Earth</option>
                   </select>
                   <small className="form-hint">Determines battle advantage</small>
                 </div>
-                
+
                 <div className="form-group">
-                  <label>⭐ Rarity</label>
-                  <select 
-                    name="rarity" 
-                    className="form-control" 
-                    value={charForm.rarity} 
+                  <label>Rarity</label>
+                  <select
+                    name="rarity"
+                    className="form-control"
+                    value={charForm.rarity}
                     onChange={handleCharChange}
                     required
                   >
-                    <option value="Common">⭐ Common</option>
-                    <option value="Uncommon">⭐⭐ Uncommon</option>
-                    <option value="Rare">⭐⭐⭐ Rare</option>
-                    <option value="Epic">⭐⭐⭐⭐ Epic</option>
-                    <option value="Legendary">⭐⭐⭐⭐⭐ Legendary</option>
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Legendary">Legendary</option>
                   </select>
                   <small className="form-hint">Higher rarity = better base stats</small>
                 </div>
               </div>
 
-              {/* ✅ BASE POWER (auto-calculated) */}
               <div className="form-group">
-                <label>📊 Base Power (for upgrades)</label>
-                <input 
-                  type="number" 
-                  name="basePower" 
-                  className="form-control" 
-                  value={charForm.basePower} 
+                <label>Base Power (for upgrades)</label>
+                <input
+                  type="number"
+                  name="basePower"
+                  className="form-control"
+                  value={charForm.basePower}
                   onChange={handleCharChange}
                   min="0.5"
                   max="50"
@@ -939,35 +911,35 @@ const AdminPanel = () => {
 
               <div className="form-group">
                 <label>Image URL</label>
-                <input 
-                  type="text" 
-                  name="image" 
-                  className="form-control" 
-                  value={charForm.image} 
-                  onChange={handleCharChange} 
+                <input
+                  type="text"
+                  name="image"
+                  className="form-control"
+                  value={charForm.image}
+                  onChange={handleCharChange}
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
               <div className="form-group">
                 <label>Crucial Hint</label>
-                <input 
-                  type="text" 
-                  name="crucialHint" 
-                  className="form-control" 
-                  value={charForm.crucialHint || ''} 
-                  onChange={handleCharChange} 
+                <input
+                  type="text"
+                  name="crucialHint"
+                  className="form-control"
+                  value={charForm.crucialHint || ''}
+                  onChange={handleCharChange}
                   placeholder="e.g., This character ate a Devil Fruit"
                 />
               </div>
               <div className="form-group">
                 <label>Description *</label>
-                <textarea 
-                  name="description" 
-                  className="form-control" 
-                  rows="3" 
-                  value={charForm.description} 
-                  onChange={handleCharChange} 
-                  required 
+                <textarea
+                  name="description"
+                  className="form-control"
+                  rows="3"
+                  value={charForm.description}
+                  onChange={handleCharChange}
+                  required
                   placeholder="Brief description of the character"
                 />
               </div>
@@ -983,12 +955,12 @@ const AdminPanel = () => {
                 </div>
                 <div className="form-group">
                   <label>Species</label>
-                  <input 
-                    type="text" 
-                    name="traits.species" 
-                    className="form-control" 
-                    value={charForm.traits.species} 
-                    onChange={handleCharChange} 
+                  <input
+                    type="text"
+                    name="traits.species"
+                    className="form-control"
+                    value={charForm.traits.species}
+                    onChange={handleCharChange}
                     placeholder="e.g., Human, Saiyan, Demon"
                   />
                 </div>
@@ -996,54 +968,54 @@ const AdminPanel = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Age</label>
-                  <input 
-                    type="number" 
-                    name="traits.age" 
-                    className="form-control" 
-                    value={charForm.traits.age} 
-                    onChange={handleCharChange} 
+                  <input
+                    type="number"
+                    name="traits.age"
+                    className="form-control"
+                    value={charForm.traits.age}
+                    onChange={handleCharChange}
                     placeholder="e.g., 19"
                   />
                 </div>
                 <div className="form-group">
                   <label>Occupation</label>
-                  <input 
-                    type="text" 
-                    name="traits.occupation" 
-                    className="form-control" 
-                    value={charForm.traits.occupation} 
-                    onChange={handleCharChange} 
+                  <input
+                    type="text"
+                    name="traits.occupation"
+                    className="form-control"
+                    value={charForm.traits.occupation}
+                    onChange={handleCharChange}
                     placeholder="e.g., Pirate, Ninja"
                   />
                 </div>
               </div>
               <div className="form-group">
                 <label>Powers (comma separated)</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={charForm.traits.powers.join(', ')} 
-                  onChange={(e) => handleCharArray(e, 'powers')} 
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.powers.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'powers')}
                   placeholder="e.g., Gum-Gum Fruit, Haki"
                 />
               </div>
               <div className="form-group">
                 <label>Personality (comma separated)</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={charForm.traits.personality.join(', ')} 
-                  onChange={(e) => handleCharArray(e, 'personality')} 
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.personality.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'personality')}
                   placeholder="e.g., Carefree, Determined, Loyal"
                 />
               </div>
               <div className="form-group">
                 <label>Affiliations (comma separated)</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={charForm.traits.affiliations.join(', ')} 
-                  onChange={(e) => handleCharArray(e, 'affiliations')} 
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.affiliations.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'affiliations')}
                   placeholder="e.g., Straw Hat Pirates"
                 />
               </div>
@@ -1059,11 +1031,11 @@ const AdminPanel = () => {
               </div>
               <div className="form-group">
                 <label>Key Events (comma separated)</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={charForm.traits.keyEvents.join(', ')} 
-                  onChange={(e) => handleCharArray(e, 'keyEvents')} 
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.keyEvents.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'keyEvents')}
                   placeholder="e.g., Ate the Gum-Gum Fruit, Defeated Kaido"
                 />
               </div>
@@ -1089,7 +1061,7 @@ const AdminPanel = () => {
           </div>
 
           <div className="admin-list-card">
-            <h2>📚 All Characters ({characters.length})</h2>
+            <h2>All Characters ({characters.length})</h2>
             {characters.length === 0 ? <p className="empty-message">No characters added.</p> : (
               <div className="character-grid">
                 {characters.map(char => (
@@ -1098,24 +1070,21 @@ const AdminPanel = () => {
                     <div className="char-info">
                       <h3>{char.name}</h3>
                       <p className="char-anime">{char.anime}</p>
-                      <p className="char-power">⚡ Power: {char.powerLevel || 25}</p>
-                      
-                      {/* ✅ SHOW ELEMENT & RARITY */}
+                      <p className="char-power">Power: {char.powerLevel || 25}</p>
+
                       <div className="char-badges">
                         <span className={`element-badge ${char.element?.toLowerCase()}`}>
-                          {char.element === 'Fire' ? '🔥' : 
-                           char.element === 'Water' ? '💧' : 
-                           char.element === 'Wind' ? '🌪️' : '🌍'} {char.element || 'Fire'}
+                          {char.element || 'Fire'}
                         </span>
                         <span className={`rarity-badge ${char.rarity?.toLowerCase()}`}>
                           {char.rarity || 'Common'}
                         </span>
                       </div>
-                      
+
                       <p className="char-desc">{char.description?.substring(0, 80)}...</p>
                       <div className="char-actions">
-                        <button className="btn btn-secondary btn-sm" onClick={() => editCharacter(char)}>✏️ Edit</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => deleteCharacter(char._id)}>🗑️</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => editCharacter(char)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteCharacter(char._id)}>Delete</button>
                       </div>
                     </div>
                   </div>
@@ -1126,46 +1095,45 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ==================== BANNER TAB ==================== */}
       {activeTab === 'banners' && (
         <div className="admin-section">
           <div className="admin-form-card">
-            <h2>{editingBannerId ? '✏️ Edit Banner' : '➕ Add New Banner'}</h2>
+            <h2>{editingBannerId ? 'Edit Banner' : 'Add New Banner'}</h2>
             <form onSubmit={submitBanner} className="admin-form">
               <div className="form-row">
                 <div className="form-group">
                   <label>Banner Name *</label>
-                  <input 
-                    type="text" 
-                    name="name" 
-                    className="form-control" 
-                    value={bannerForm.name} 
-                    onChange={handleBannerChange} 
-                    required 
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={bannerForm.name}
+                    onChange={handleBannerChange}
+                    required
                     placeholder="e.g., Legendary Pirate"
                   />
                 </div>
                 <div className="form-group">
                   <label>GIF URL *</label>
-                  <input 
-                    type="text" 
-                    name="gifUrl" 
-                    className="form-control" 
-                    value={bannerForm.gifUrl} 
-                    onChange={handleBannerChange} 
-                    placeholder="https://example.com/banner.gif" 
-                    required 
+                  <input
+                    type="text"
+                    name="gifUrl"
+                    className="form-control"
+                    value={bannerForm.gifUrl}
+                    onChange={handleBannerChange}
+                    placeholder="https://example.com/banner.gif"
+                    required
                   />
                 </div>
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <input 
-                  type="text" 
-                  name="description" 
-                  className="form-control" 
-                  value={bannerForm.description} 
-                  onChange={handleBannerChange} 
+                <input
+                  type="text"
+                  name="description"
+                  className="form-control"
+                  value={bannerForm.description}
+                  onChange={handleBannerChange}
                   placeholder="Brief description of this banner"
                 />
               </div>
@@ -1174,7 +1142,7 @@ const AdminPanel = () => {
                   <label>Unlock Type</label>
                   <select name="unlockType" className="form-control" value={bannerForm.unlockType} onChange={handleBannerChange}>
                     <option value="total_guesses">Total Guesses</option>
-                    <option value="anime_guesses">Anime‑specific Guesses</option>
+                    <option value="anime_guesses">Anime-specific Guesses</option>
                     <option value="season_rank">Season Rank</option>
                   </select>
                 </div>
@@ -1205,32 +1173,32 @@ const AdminPanel = () => {
                 <div className="form-group">
                   <label>Condition</label>
                   {bannerForm.unlockType === 'total_guesses' && (
-                    <input 
-                      type="number" 
-                      name="cond.totalGuesses" 
-                      className="form-control" 
-                      value={bannerForm.unlockCondition.totalGuesses || ''} 
-                      onChange={handleBannerChange} 
+                    <input
+                      type="number"
+                      name="cond.totalGuesses"
+                      className="form-control"
+                      value={bannerForm.unlockCondition.totalGuesses || ''}
+                      onChange={handleBannerChange}
                       placeholder="e.g., 100"
                       min="1"
                     />
                   )}
                   {bannerForm.unlockType === 'anime_guesses' && (
                     <>
-                      <input 
-                        type="text" 
-                        name="cond.anime" 
-                        className="form-control" 
-                        value={bannerForm.unlockCondition.anime || ''} 
-                        onChange={handleBannerChange} 
+                      <input
+                        type="text"
+                        name="cond.anime"
+                        className="form-control"
+                        value={bannerForm.unlockCondition.anime || ''}
+                        onChange={handleBannerChange}
                         placeholder="e.g., One Piece"
                       />
-                      <input 
-                        type="number" 
-                        name="cond.count" 
-                        className="form-control" 
-                        value={bannerForm.unlockCondition.count || ''} 
-                        onChange={handleBannerChange} 
+                      <input
+                        type="number"
+                        name="cond.count"
+                        className="form-control"
+                        value={bannerForm.unlockCondition.count || ''}
+                        onChange={handleBannerChange}
                         placeholder="e.g., 30"
                         min="1"
                         style={{ marginTop: 6 }}
@@ -1238,12 +1206,12 @@ const AdminPanel = () => {
                     </>
                   )}
                   {bannerForm.unlockType === 'season_rank' && (
-                    <input 
-                      type="number" 
-                      name="cond.seasonRank" 
-                      className="form-control" 
-                      value={bannerForm.unlockCondition.seasonRank || ''} 
-                      onChange={handleBannerChange} 
+                    <input
+                      type="number"
+                      name="cond.seasonRank"
+                      className="form-control"
+                      value={bannerForm.unlockCondition.seasonRank || ''}
+                      onChange={handleBannerChange}
                       placeholder="e.g., 1"
                       min="1"
                     />
@@ -1263,7 +1231,7 @@ const AdminPanel = () => {
           </div>
 
           <div className="admin-list-card">
-            <h2>🎨 All Banners ({banners.length})</h2>
+            <h2>All Banners ({banners.length})</h2>
             {banners.length === 0 ? <p className="empty-message">No banners added.</p> : (
               <div className="banner-admin-grid">
                 {banners.map(b => (
@@ -1277,8 +1245,8 @@ const AdminPanel = () => {
                         <span>{b.unlockType}</span>
                       </div>
                       <div className="char-actions">
-                        <button className="btn btn-secondary btn-sm" onClick={() => editBanner(b)}>✏️</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => deleteBanner(b._id)}>🗑️</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => editBanner(b)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteBanner(b._id)}>Delete</button>
                       </div>
                     </div>
                   </div>
@@ -1289,46 +1257,45 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ==================== TITLE TAB ==================== */}
       {activeTab === 'titles' && (
         <div className="admin-section">
           <div className="admin-form-card">
-            <h2>{editingTitleId ? '✏️ Edit Title' : '➕ Add New Title'}</h2>
+            <h2>{editingTitleId ? 'Edit Title' : 'Add New Title'}</h2>
             <form onSubmit={submitTitle} className="admin-form">
               <div className="form-row">
                 <div className="form-group">
                   <label>Title ID (internal) *</label>
-                  <input 
-                    type="text" 
-                    name="name" 
-                    className="form-control" 
-                    value={titleForm.name} 
-                    onChange={handleTitleChange} 
-                    required 
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={titleForm.name}
+                    onChange={handleTitleChange}
+                    required
                     placeholder="e.g., the_rookie"
                   />
                 </div>
                 <div className="form-group">
                   <label>Display Name *</label>
-                  <input 
-                    type="text" 
-                    name="displayName" 
-                    className="form-control" 
-                    value={titleForm.displayName} 
-                    onChange={handleTitleChange} 
-                    placeholder="e.g., The Rookie" 
-                    required 
+                  <input
+                    type="text"
+                    name="displayName"
+                    className="form-control"
+                    value={titleForm.displayName}
+                    onChange={handleTitleChange}
+                    placeholder="e.g., The Rookie"
+                    required
                   />
                 </div>
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <input 
-                  type="text" 
-                  name="description" 
-                  className="form-control" 
-                  value={titleForm.description} 
-                  onChange={handleTitleChange} 
+                <input
+                  type="text"
+                  name="description"
+                  className="form-control"
+                  value={titleForm.description}
+                  onChange={handleTitleChange}
                   placeholder="Brief description of this title"
                 />
               </div>
@@ -1356,7 +1323,7 @@ const AdminPanel = () => {
                   <label>Unlock Type</label>
                   <select name="unlockType" className="form-control" value={titleForm.unlockType} onChange={handleTitleChange}>
                     <option value="total_guesses">Total Guesses</option>
-                    <option value="anime_guesses">Anime‑specific Guesses</option>
+                    <option value="anime_guesses">Anime-specific Guesses</option>
                     <option value="season_rank">Season Rank</option>
                     <option value="win_streak">Win Streak</option>
                   </select>
@@ -1364,32 +1331,32 @@ const AdminPanel = () => {
                 <div className="form-group">
                   <label>Condition</label>
                   {titleForm.unlockType === 'total_guesses' && (
-                    <input 
-                      type="number" 
-                      name="cond.totalGuesses" 
-                      className="form-control" 
-                      value={titleForm.unlockCondition.totalGuesses || ''} 
-                      onChange={handleTitleChange} 
+                    <input
+                      type="number"
+                      name="cond.totalGuesses"
+                      className="form-control"
+                      value={titleForm.unlockCondition.totalGuesses || ''}
+                      onChange={handleTitleChange}
                       placeholder="e.g., 100"
                       min="1"
                     />
                   )}
                   {titleForm.unlockType === 'anime_guesses' && (
                     <>
-                      <input 
-                        type="text" 
-                        name="cond.anime" 
-                        className="form-control" 
-                        value={titleForm.unlockCondition.anime || ''} 
-                        onChange={handleTitleChange} 
+                      <input
+                        type="text"
+                        name="cond.anime"
+                        className="form-control"
+                        value={titleForm.unlockCondition.anime || ''}
+                        onChange={handleTitleChange}
                         placeholder="e.g., One Piece"
                       />
-                      <input 
-                        type="number" 
-                        name="cond.count" 
-                        className="form-control" 
-                        value={titleForm.unlockCondition.count || ''} 
-                        onChange={handleTitleChange} 
+                      <input
+                        type="number"
+                        name="cond.count"
+                        className="form-control"
+                        value={titleForm.unlockCondition.count || ''}
+                        onChange={handleTitleChange}
                         placeholder="e.g., 50"
                         min="1"
                         style={{ marginTop: 6 }}
@@ -1397,23 +1364,23 @@ const AdminPanel = () => {
                     </>
                   )}
                   {titleForm.unlockType === 'season_rank' && (
-                    <input 
-                      type="number" 
-                      name="cond.seasonRank" 
-                      className="form-control" 
-                      value={titleForm.unlockCondition.seasonRank || ''} 
-                      onChange={handleTitleChange} 
+                    <input
+                      type="number"
+                      name="cond.seasonRank"
+                      className="form-control"
+                      value={titleForm.unlockCondition.seasonRank || ''}
+                      onChange={handleTitleChange}
                       placeholder="e.g., 1"
                       min="1"
                     />
                   )}
                   {titleForm.unlockType === 'win_streak' && (
-                    <input 
-                      type="number" 
-                      name="cond.streak" 
-                      className="form-control" 
-                      value={titleForm.unlockCondition.streak || ''} 
-                      onChange={handleTitleChange} 
+                    <input
+                      type="number"
+                      name="cond.streak"
+                      className="form-control"
+                      value={titleForm.unlockCondition.streak || ''}
+                      onChange={handleTitleChange}
                       placeholder="e.g., 10"
                       min="1"
                     />
@@ -1433,12 +1400,12 @@ const AdminPanel = () => {
           </div>
 
           <div className="admin-list-card">
-            <h2>🏷️ All Titles ({titles.length})</h2>
+            <h2>All Titles ({titles.length})</h2>
             {titles.length === 0 ? <p className="empty-message">No titles added.</p> : (
               <div className="title-admin-grid">
                 {titles.map(t => (
                   <div key={t._id} className="title-admin-card">
-                    <div className="title-preview" style={{ color: t.rarity === 'Legendary' ? '#f59e0b' : t.rarity === 'Epic' ? '#a855f7' : t.rarity === 'Rare' ? '#4a9eff' : t.rarity === 'Uncommon' ? '#4ecdc4' : '#a0a0a0' }}>
+                    <div className="title-preview" style={{ color: t.rarity === 'Legendary' ? '#f5a623' : t.rarity === 'Epic' ? '#a89bff' : t.rarity === 'Rare' ? '#6cb1ff' : t.rarity === 'Uncommon' ? '#00d9c0' : '#b3b3b3' }}>
                       {t.displayType === 'prefix' ? `[${t.displayName}] Username` : `Username [${t.displayName}]`}
                     </div>
                     <div className="title-meta">
@@ -1446,8 +1413,8 @@ const AdminPanel = () => {
                       <span>{t.unlockType}</span>
                     </div>
                     <div className="char-actions">
-                      <button className="btn btn-secondary btn-sm" onClick={() => editTitle(t)}>✏️</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteTitle(t._id)}>🗑️</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => editTitle(t)}>Edit</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => deleteTitle(t._id)}>Delete</button>
                     </div>
                   </div>
                 ))}
@@ -1457,34 +1424,33 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ==================== PROFILE PHOTO TAB ==================== */}
       {activeTab === 'photos' && (
         <div className="admin-section">
           <div className="admin-form-card">
-            <h2>{editingPhotoId ? '✏️ Edit Profile Photo' : '➕ Add Profile Photo'}</h2>
+            <h2>{editingPhotoId ? 'Edit Profile Photo' : 'Add Profile Photo'}</h2>
             <form onSubmit={submitPhoto} className="admin-form">
               <div className="form-row">
                 <div className="form-group">
                   <label>Photo Name *</label>
-                  <input 
-                    type="text" 
-                    name="name" 
-                    className="form-control" 
-                    value={photoForm.name} 
-                    onChange={handlePhotoChange} 
-                    required 
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={photoForm.name}
+                    onChange={handlePhotoChange}
+                    required
                     placeholder="e.g., Shinobu Portrait"
                   />
                 </div>
                 <div className="form-group">
                   <label>Character Name *</label>
-                  <input 
-                    type="text" 
-                    name="characterName" 
-                    className="form-control" 
-                    value={photoForm.characterName} 
-                    onChange={handlePhotoChange} 
-                    required 
+                  <input
+                    type="text"
+                    name="characterName"
+                    className="form-control"
+                    value={photoForm.characterName}
+                    onChange={handlePhotoChange}
+                    required
                     placeholder="e.g., Shinobu"
                   />
                 </div>
@@ -1492,49 +1458,49 @@ const AdminPanel = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Image URL *</label>
-                  <input 
-                    type="text" 
-                    name="imageUrl" 
-                    className="form-control" 
-                    value={photoForm.imageUrl} 
-                    onChange={handlePhotoChange} 
-                    placeholder="https://example.com/image.jpg" 
-                    required 
+                  <input
+                    type="text"
+                    name="imageUrl"
+                    className="form-control"
+                    value={photoForm.imageUrl}
+                    onChange={handlePhotoChange}
+                    placeholder="https://example.com/image.jpg"
+                    required
                   />
                 </div>
                 <div className="form-group">
                   <label>Anime *</label>
-                  <input 
-                    type="text" 
-                    name="anime" 
-                    className="form-control" 
-                    value={photoForm.anime} 
-                    onChange={handlePhotoChange} 
-                    required 
+                  <input
+                    type="text"
+                    name="anime"
+                    className="form-control"
+                    value={photoForm.anime}
+                    onChange={handlePhotoChange}
+                    required
                     placeholder="e.g., One Piece"
                   />
                 </div>
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <input 
-                  type="text" 
-                  name="description" 
-                  className="form-control" 
-                  value={photoForm.description} 
-                  onChange={handlePhotoChange} 
+                <input
+                  type="text"
+                  name="description"
+                  className="form-control"
+                  value={photoForm.description}
+                  onChange={handlePhotoChange}
                   placeholder="Brief description of the character"
                 />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Character ID (optional – if you want to link to existing character)</label>
-                  <input 
-                    type="text" 
-                    name="characterId" 
-                    className="form-control" 
-                    value={photoForm.characterId} 
-                    onChange={handlePhotoChange} 
+                  <label>Character ID (optional)</label>
+                  <input
+                    type="text"
+                    name="characterId"
+                    className="form-control"
+                    value={photoForm.characterId}
+                    onChange={handlePhotoChange}
                     placeholder="Character _id"
                   />
                 </div>
@@ -1562,7 +1528,7 @@ const AdminPanel = () => {
           </div>
 
           <div className="admin-list-card">
-            <h2>📸 All Profile Photos ({photos.length})</h2>
+            <h2>All Profile Photos ({photos.length})</h2>
             {photos.length === 0 ? <p className="empty-message">No profile photos added.</p> : (
               <div className="photo-admin-grid">
                 {photos.map(p => (
@@ -1570,11 +1536,11 @@ const AdminPanel = () => {
                     <div className="photo-preview" style={{ backgroundImage: `url(${p.imageUrl})` }} />
                     <div className="photo-info">
                       <h4>{p.name}</h4>
-                      <p>{p.characterName} • {p.anime}</p>
+                      <p>{p.characterName} - {p.anime}</p>
                       <span className={`rarity-${p.rarity?.toLowerCase()}`}>{p.rarity}</span>
                       <div className="char-actions">
-                        <button className="btn btn-secondary btn-sm" onClick={() => editPhoto(p)}>✏️</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => deletePhoto(p._id)}>🗑️</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => editPhoto(p)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deletePhoto(p._id)}>Delete</button>
                       </div>
                     </div>
                   </div>
@@ -1585,11 +1551,10 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ==================== SHOP TAB ==================== */}
       {activeTab === 'shop' && (
         <div className="admin-section">
           <div className="admin-form-card">
-            <h2>{editingShopId ? '✏️ Edit Shop Item' : '➕ Add Item to Shop'}</h2>
+            <h2>{editingShopId ? 'Edit Shop Item' : 'Add Item to Shop'}</h2>
             <form onSubmit={submitShopItem} className="admin-form">
               <div className="form-row">
                 <div className="form-group">
@@ -1601,12 +1566,12 @@ const AdminPanel = () => {
                 </div>
                 <div className="form-group">
                   <label>Price (in Shards) *</label>
-                  <input 
-                    type="number" 
-                    name="price" 
-                    className="form-control" 
-                    value={shopForm.price} 
-                    onChange={handleShopChange} 
+                  <input
+                    type="number"
+                    name="price"
+                    className="form-control"
+                    value={shopForm.price}
+                    onChange={handleShopChange}
                     placeholder="e.g., 500"
                     min="10"
                     required
@@ -1626,28 +1591,28 @@ const AdminPanel = () => {
                     </select>
                     <small className="form-hint">Select an existing banner OR create a new one using the fields below</small>
                   </div>
-                  
+
                   <div className="form-row">
                     <div className="form-group">
                       <label>New Banner Name</label>
-                      <input 
-                        type="text" 
-                        name="newBannerName" 
-                        className="form-control" 
-                        value={shopForm.newBannerName || ''} 
-                        onChange={handleShopChange} 
+                      <input
+                        type="text"
+                        name="newBannerName"
+                        className="form-control"
+                        value={shopForm.newBannerName || ''}
+                        onChange={handleShopChange}
                         placeholder="e.g., Gear 5 Luffy"
                       />
                       <small className="form-hint">Leave empty if selecting existing banner</small>
                     </div>
                     <div className="form-group">
                       <label>Banner GIF URL *</label>
-                      <input 
-                        type="text" 
-                        name="newBannerGifUrl" 
-                        className="form-control" 
-                        value={shopForm.newBannerGifUrl || ''} 
-                        onChange={handleShopChange} 
+                      <input
+                        type="text"
+                        name="newBannerGifUrl"
+                        className="form-control"
+                        value={shopForm.newBannerGifUrl || ''}
+                        onChange={handleShopChange}
                         placeholder="https://example.com/banner.gif"
                       />
                       <small className="form-hint">Must end with .gif or .webp</small>
@@ -1666,28 +1631,28 @@ const AdminPanel = () => {
                     </select>
                     <small className="form-hint">Select an existing photo OR create a new one using the fields below</small>
                   </div>
-                  
+
                   <div className="form-row">
                     <div className="form-group">
                       <label>New Photo Name</label>
-                      <input 
-                        type="text" 
-                        name="newPhotoName" 
-                        className="form-control" 
-                        value={shopForm.newPhotoName || ''} 
-                        onChange={handleShopChange} 
+                      <input
+                        type="text"
+                        name="newPhotoName"
+                        className="form-control"
+                        value={shopForm.newPhotoName || ''}
+                        onChange={handleShopChange}
                         placeholder="e.g., Luffy Portrait"
                       />
                       <small className="form-hint">Leave empty if selecting existing photo</small>
                     </div>
                     <div className="form-group">
                       <label>Photo Image URL *</label>
-                      <input 
-                        type="text" 
-                        name="newPhotoImageUrl" 
-                        className="form-control" 
-                        value={shopForm.newPhotoImageUrl || ''} 
-                        onChange={handleShopChange} 
+                      <input
+                        type="text"
+                        name="newPhotoImageUrl"
+                        className="form-control"
+                        value={shopForm.newPhotoImageUrl || ''}
+                        onChange={handleShopChange}
                         placeholder="https://example.com/image.jpg"
                       />
                       <small className="form-hint">Must be a valid image URL</small>
@@ -1700,8 +1665,8 @@ const AdminPanel = () => {
                 <div className="form-group">
                   <label>Status</label>
                   <select name="isActive" className="form-control" value={shopForm.isActive} onChange={handleShopChange}>
-                    <option value={true}>🟢 Active</option>
-                    <option value={false}>🔴 Inactive</option>
+                    <option value={true}>Active</option>
+                    <option value={false}>Inactive</option>
                   </select>
                 </div>
               </div>
@@ -1716,22 +1681,22 @@ const AdminPanel = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Start Date</label>
-                    <input 
-                      type="date" 
-                      name="startDate" 
-                      className="form-control" 
-                      value={shopForm.startDate} 
-                      onChange={handleShopChange} 
+                    <input
+                      type="date"
+                      name="startDate"
+                      className="form-control"
+                      value={shopForm.startDate}
+                      onChange={handleShopChange}
                     />
                   </div>
                   <div className="form-group">
                     <label>End Date</label>
-                    <input 
-                      type="date" 
-                      name="endDate" 
-                      className="form-control" 
-                      value={shopForm.endDate} 
-                      onChange={handleShopChange} 
+                    <input
+                      type="date"
+                      name="endDate"
+                      className="form-control"
+                      value={shopForm.endDate}
+                      onChange={handleShopChange}
                     />
                   </div>
                 </div>
@@ -1751,7 +1716,7 @@ const AdminPanel = () => {
           </div>
 
           <div className="admin-list-card">
-            <h2>🛒 Shop Items ({shopItems.length})</h2>
+            <h2>Shop Items ({shopItems.length})</h2>
             {shopItems.length === 0 ? (
               <p className="empty-message">No items in shop.</p>
             ) : (
@@ -1766,20 +1731,20 @@ const AdminPanel = () => {
                         <img src={item.itemId.imageUrl} alt={item.itemId.name} className="shop-admin-photo" />
                       )}
                       <div className="shop-admin-badges">
-                        {item.isActive ? '🟢 Active' : '🔴 Inactive'}
-                        {item.isLimited && ' ⏳ Limited'}
+                        {item.isActive ? 'Active' : 'Inactive'}
+                        {item.isLimited && ' - Limited'}
                       </div>
                     </div>
                     <div className="shop-admin-info">
                       <h4>{item.itemId?.name || 'Unknown'}</h4>
                       <p>{item.itemType}</p>
-                      <p className="shop-admin-price">🎴 {item.price} Shards</p>
+                      <p className="shop-admin-price">{item.price} Shards</p>
                       {item.isLimited && item.endDate && (
-                        <p className="shop-admin-date">📅 Until: {new Date(item.endDate).toLocaleDateString()}</p>
+                        <p className="shop-admin-date">Until: {new Date(item.endDate).toLocaleDateString()}</p>
                       )}
                       <div className="char-actions">
-                        <button className="btn btn-secondary btn-sm" onClick={() => editShopItem(item)}>✏️</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => deleteShopItem(item._id)}>🗑️</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => editShopItem(item)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteShopItem(item._id)}>Delete</button>
                       </div>
                     </div>
                   </div>
@@ -1790,11 +1755,10 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ==================== USERS TAB ==================== */}
       {activeTab === 'users' && (
         <div className="admin-section">
           <div className="admin-list-card">
-            <h2>👥 Registered Users ({users.length})</h2>
+            <h2>Registered Users ({users.length})</h2>
             {users.length === 0 ? <p className="empty-message">No users yet.</p> : (
               <div className="user-table-wrapper">
                 <table className="user-table">
@@ -1819,7 +1783,7 @@ const AdminPanel = () => {
                         <td>{u.stats?.gamesPlayed || 0}</td>
                         <td>{u.stats?.gamesWon || 0}</td>
                         <td>{u.stats?.winStreak || 0}</td>
-                        <td><span className="gems-badge">{u.gems || 0} 💎</span></td>
+                        <td><span className="gems-badge">{u.gems || 0}</span></td>
                         <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))}
@@ -1831,7 +1795,6 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ==================== STATS TAB ==================== */}
       {activeTab === 'stats' && stats && (
         <div className="admin-section">
           <div className="stats-grid">
@@ -1858,7 +1821,7 @@ const AdminPanel = () => {
           </div>
 
           <div className="admin-list-card">
-            <h2>🏆 Top Players</h2>
+            <h2>Top Players</h2>
             {stats.topPlayers?.length === 0 ? <p className="empty-message">No players yet.</p> : (
               <div className="top-players-list">
                 {stats.topPlayers?.map((player, index) => (
@@ -1867,7 +1830,7 @@ const AdminPanel = () => {
                     <span className="name">{player.username}</span>
                     <span className="wins">{player.stats?.gamesWon || 0} wins</span>
                     <span className="best">Streak: {player.stats?.winStreak || 0}</span>
-                    {player.gems > 0 && <span className="gems">💎 {player.gems}</span>}
+                    {player.gems > 0 && <span className="gems">{player.gems}</span>}
                   </div>
                 ))}
               </div>

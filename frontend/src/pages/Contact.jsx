@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './LegalPages.css';
 
 const Contact = () => {
+  const [isVisible, setIsVisible] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -10,6 +11,10 @@ const Contact = () => {
   });
   const [status, setStatus] = useState('');
 
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -17,28 +22,50 @@ const Contact = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setStatus('Opening email client...');
-    
+
     const mailtoLink = `mailto:akinator.anti@gmail.com?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`)}`;
     window.location.href = mailtoLink;
     setStatus('Email client opened!');
   };
 
   return (
-    <div className="legal-container contact-page">
-      <h1>📧 Contact Us</h1>
-      <p className="contact-subtitle">
-        Have questions, feedback, or issues? We'd love to hear from you!
-      </p>
+    <div className={`legal-page ${isVisible ? 'visible' : ''}`}>
+      <div className="legal-bg-noise"></div>
+      <div className="legal-bg-grid"></div>
+
+      <section className="legal-hero">
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
+        <div className="legal-hero-content">
+          <div className="legal-badge">
+            <span className="legal-badge-dot"></span>
+            Get in Touch
+          </div>
+          <h1 className="legal-title">
+            <span className="legal-title-gradient">Contact Us</span>
+          </h1>
+          <p className="legal-date">We usually respond within 24-48 hours</p>
+        </div>
+      </section>
 
       <div className="contact-grid">
-        <div className="contact-info">
-          <h3>📬 Get in Touch</h3>
-          <p><strong>Email:</strong> <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a></p>
-          <p><strong>Response Time:</strong> 24-48 hours</p>
-          <p><strong>Location:</strong> India</p>
+        <div className="contact-info-card">
+          <h3>Get in Touch</h3>
+          <div className="contact-info-row">
+            <strong>Email</strong>
+            <a href="mailto:akinator.anti@gmail.com">akinator.anti@gmail.com</a>
+          </div>
+          <div className="contact-info-row">
+            <strong>Response Time</strong>
+            24-48 hours
+          </div>
+          <div className="contact-info-row">
+            <strong>Location</strong>
+            India
+          </div>
         </div>
 
-        <form className="contact-form" onSubmit={handleSubmit}>
+        <form className="contact-form-card" onSubmit={handleSubmit}>
           <input
             type="text"
             name="name"
@@ -71,8 +98,10 @@ const Contact = () => {
             onChange={handleChange}
             required
           />
-          <button type="submit">Send Message</button>
-          {status && <p className="status">{status}</p>}
+          <button type="submit" className="contact-submit-btn">
+            <span>Send Message</span>
+          </button>
+          {status && <p className="contact-status">{status}</p>}
         </form>
       </div>
     </div>

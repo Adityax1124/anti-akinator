@@ -27,16 +27,15 @@ const Profile = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showcasePhotos, setShowcasePhotos] = useState(Array(10).fill(null));
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    setIsVisible(true);
     fetchProfileData();
   }, []);
 
-  // ============================================================
-  // RARITY FUNCTIONS
-  // ============================================================
   const getRarityColor = (rarity) => {
-    switch(rarity) {
+    switch (rarity) {
       case 'Common': return '#a0a0a0';
       case 'Uncommon': return '#4ecdc4';
       case 'Rare': return '#4a9eff';
@@ -47,7 +46,7 @@ const Profile = () => {
   };
 
   const getRarityEmoji = (rarity) => {
-    switch(rarity) {
+    switch (rarity) {
       case 'Common': return '⬜';
       case 'Uncommon': return '🟩';
       case 'Rare': return '🟦';
@@ -57,17 +56,14 @@ const Profile = () => {
     }
   };
 
-  // ============================================================
-  // FETCH PROFILE DATA
-  // ============================================================
   const fetchProfileData = async () => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
-    
+
     try {
       const timestamp = Date.now();
-      
+
       const [profileRes, historyRes] = await Promise.all([
         api.get('/profile/me', { params: { _t: timestamp } }),
         api.get('/game/history', { params: { _t: timestamp } })
@@ -75,7 +71,7 @@ const Profile = () => {
 
       const userData = profileRes.data.user;
       setProfileUser(userData);
-      
+
       setEquipped({
         banner: userData.equipped?.banner || null,
         title: userData.equipped?.title || null,
@@ -83,12 +79,8 @@ const Profile = () => {
       });
 
       setHistory(historyRes.data.games || []);
-      
-      // Load photos for showcase
+
       await loadPhotos();
-      
-      console.log('✅ Profile loaded successfully');
-      
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setError('Failed to load profile data');
@@ -97,9 +89,6 @@ const Profile = () => {
     }
   };
 
-  // ============================================================
-  // LAZY LOAD FUNCTIONS
-  // ============================================================
   const loadBanners = async () => {
     if (bannersLoaded) return;
     try {
@@ -129,8 +118,7 @@ const Profile = () => {
       const photos = res.data.photos || [];
       setProfilePhotos(photos);
       setPhotosLoaded(true);
-      
-      // Load showcase from localStorage
+
       const savedShowcase = localStorage.getItem(`showcase_${user?.username}`);
       if (savedShowcase) {
         try {
@@ -163,9 +151,6 @@ const Profile = () => {
     }
   };
 
-  // ============================================================
-  // SHOWCASE FUNCTIONS
-  // ============================================================
   const saveShowcase = (newShowcase) => {
     setShowcasePhotos(newShowcase);
     const ids = newShowcase.map(p => p?._id || null);
@@ -187,7 +172,7 @@ const Profile = () => {
       newShowcase[slotIndex] = photo;
       saveShowcase(newShowcase);
     }
-    
+
     setSelectedSlotIndex(null);
     setShowPhotoModal(false);
   };
@@ -198,35 +183,27 @@ const Profile = () => {
     saveShowcase(newShowcase);
   };
 
-  // ============================================================
-  // SHOWCASE CLICK HANDLER
-  // ============================================================
   const handleShowcaseClick = async (index, photo) => {
     if (photo) {
-      // Remove photo from slot
       if (window.confirm(`Remove "${photo.name}" from this slot?`)) {
         removeShowcasePhoto(index);
       }
     } else {
-      // Add photo to empty slot - FIRST FETCH DATA
-      await loadPhotos(true);  // ← Force refresh data
+      await loadPhotos(true);
       setSelectedSlotIndex(index);
       setShowPhotoModal(true);
     }
   };
 
-  // ============================================================
-  // EQUIP FUNCTIONS
-  // ============================================================
   const equipBanner = async (bannerId) => {
     try {
       setLoading(true);
       setError('');
       const response = await api.post('/profile/equip-banner', { bannerId });
-      
+
       if (response.data.success) {
         setShowBannerModal(false);
-        setSuccessMessage('✅ Banner equipped successfully!');
+        setSuccessMessage('Banner equipped successfully');
         await fetchProfileData();
         await refreshUser();
         await loadBanners();
@@ -247,10 +224,10 @@ const Profile = () => {
       setLoading(true);
       setError('');
       const response = await api.post('/profile/equip-title', { titleId });
-      
+
       if (response.data.success) {
         setShowTitleModal(false);
-        setSuccessMessage('✅ Title equipped successfully!');
+        setSuccessMessage('Title equipped successfully');
         await fetchProfileData();
         await refreshUser();
         await loadTitles();
@@ -271,10 +248,10 @@ const Profile = () => {
       setLoading(true);
       setError('');
       const response = await api.post('/profile/equip-photo', { photoId });
-      
+
       if (response.data.success) {
         setShowPhotoModal(false);
-        setSuccessMessage('✅ Profile photo equipped successfully!');
+        setSuccessMessage('Profile photo equipped successfully');
         await fetchProfileData();
         await refreshUser();
         await loadPhotos(true);
@@ -290,9 +267,6 @@ const Profile = () => {
     }
   };
 
-  // ============================================================
-  // MODAL OPEN HANDLERS
-  // ============================================================
   const openBannerModal = () => {
     loadBanners();
     setShowBannerModal(true);
@@ -308,11 +282,8 @@ const Profile = () => {
     setShowPhotoModal(true);
   };
 
-  // ============================================================
-  // HELPER FUNCTIONS
-  // ============================================================
   const getStatusEmoji = (status) => {
-    switch(status) {
+    switch (status) {
       case 'won': return '🎉';
       case 'lost': return '😔';
       case 'abandoned': return '🏳️';
@@ -321,7 +292,7 @@ const Profile = () => {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'won': return 'status-won';
       case 'lost': return 'status-lost';
       case 'abandoned': return 'status-abandoned';
@@ -330,7 +301,7 @@ const Profile = () => {
   };
 
   const getStatusText = (status) => {
-    switch(status) {
+    switch (status) {
       case 'won': return 'WON';
       case 'lost': return 'LOST';
       case 'abandoned': return 'ABANDONED';
@@ -338,9 +309,6 @@ const Profile = () => {
     }
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
   if (loading) {
     return (
       <div className="profile-container">
@@ -365,50 +333,33 @@ const Profile = () => {
   const unlockedBanners = banners.filter(b => b.isUnlocked);
   const unlockedTitles = titles.filter(t => t.isUnlocked);
   const unlockedPhotos = profilePhotos.filter(p => p.isUnlocked);
-  
-  // Filter photos for search
-  const filteredPhotos = profilePhotos.filter(p => 
+
+  const filteredPhotos = profilePhotos.filter(p =>
     p.isUnlocked && p.name?.toLowerCase().includes(photoSearchTerm.toLowerCase())
   );
 
   return (
-    <div className="profile-container fade-in">
-      {/* ===== SUCCESS MESSAGE ===== */}
+    <div className={`profile-container ${isVisible ? 'visible' : ''}`}>
+      <div className="bg-noise"></div>
+      <div className="bg-grid"></div>
+
       {successMessage && (
-        <div className="profile-success-message" style={{
-          background: '#4caf50',
-          color: 'white',
-          padding: '12px 20px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          textAlign: 'center'
-        }}>
-          {successMessage}
-        </div>
+        <div className="profile-alert profile-alert-success">{successMessage}</div>
       )}
 
-      {/* ===== ERROR MESSAGE ===== */}
       {error && (
-        <div className="profile-error-message" style={{
-          background: '#f44336',
-          color: 'white',
-          padding: '12px 20px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          textAlign: 'center'
-        }}>
-          {error}
-        </div>
+        <div className="profile-alert profile-alert-error">{error}</div>
       )}
 
-      {/* ===== PROFILE BANNER ===== */}
-      <div 
+      <div
         className="profile-banner"
         style={equippedBanner?.gifUrl ? { backgroundImage: `url(${equippedBanner.gifUrl})` } : {}}
       >
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
         <div className="banner-overlay"></div>
-        
-        <button 
+
+        <button
           className="banner-edit-btn"
           onClick={openBannerModal}
           title="Change Banner"
@@ -418,13 +369,13 @@ const Profile = () => {
 
         <div className="banner-bottom-row">
           <div className="banner-left">
-            <div 
+            <div
               className="profile-photo-large"
               onClick={openPhotoModal}
-              style={equippedPhoto?.imageUrl ? { 
-                backgroundImage: `url(${equippedPhoto.imageUrl})`, 
-                backgroundSize: 'cover', 
-                backgroundPosition: 'center' 
+              style={equippedPhoto?.imageUrl ? {
+                backgroundImage: `url(${equippedPhoto.imageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
               } : {}}
             >
               {!equippedPhoto?.imageUrl && (
@@ -437,7 +388,7 @@ const Profile = () => {
 
             <div className="banner-user-info">
               <h1 className="banner-username">{username}</h1>
-              <div 
+              <div
                 className="title-display"
                 onClick={openTitleModal}
                 style={{ color: equippedTitle ? getRarityColor(equippedTitle.rarity) : 'rgba(255,255,255,0.4)' }}
@@ -477,7 +428,6 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ===== ACHIEVEMENT STATS ===== */}
       <div className="profile-stats-grid">
         <div className="stat-card">
           <div className="stat-number">{unlockedBanners.length}</div>
@@ -497,16 +447,15 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ===== TOP 10 PROFILE PHOTOS ===== */}
       <div className="profile-photos-section">
         <div className="photos-section-header">
           <h2>📸 Top Profile Photos</h2>
           <span className="photos-count">{showcasePhotos.filter(p => p !== null).length} / 10</span>
         </div>
-        
+
         <div className="top-photos-grid">
           {showcasePhotos.map((photo, index) => (
-            <div 
+            <div
               key={index}
               className={`top-photo-item ${photo ? 'unlocked' : 'empty'}`}
               onClick={() => handleShowcaseClick(index, photo)}
@@ -514,12 +463,12 @@ const Profile = () => {
             >
               {photo ? (
                 <>
-                  <div 
-                    className="top-photo-preview" 
-                    style={photo.imageUrl ? { 
-                      backgroundImage: `url(${photo.imageUrl})`, 
-                      backgroundSize: 'cover', 
-                      backgroundPosition: 'center' 
+                  <div
+                    className="top-photo-preview"
+                    style={photo.imageUrl ? {
+                      backgroundImage: `url(${photo.imageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
                     } : {}}
                   >
                     <div className="photo-equipped-badge">📷</div>
@@ -546,7 +495,6 @@ const Profile = () => {
         <p className="showcase-hint">💡 Click an empty slot to add a photo • Click a filled slot to remove it</p>
       </div>
 
-      {/* ===== GAME HISTORY ===== */}
       <div className="profile-history">
         <h2>📜 Game History</h2>
         {history.length === 0 ? (
@@ -581,7 +529,6 @@ const Profile = () => {
         )}
       </div>
 
-      {/* ===== BANNER MODAL ===== */}
       {showBannerModal && (
         <div className="modal-overlay" onClick={() => setShowBannerModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -593,8 +540,8 @@ const Profile = () => {
               {banners.map((banner) => {
                 const isEquipped = equippedBanner?._id === banner._id || equipped.banner === banner._id;
                 return (
-                  <div 
-                    key={banner._id} 
+                  <div
+                    key={banner._id}
                     className={`banner-item ${banner.isUnlocked ? '' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
                     onClick={() => banner.isUnlocked && equipBanner(banner._id)}
                   >
@@ -635,7 +582,6 @@ const Profile = () => {
         </div>
       )}
 
-      {/* ===== TITLE MODAL ===== */}
       {showTitleModal && (
         <div className="modal-overlay" onClick={() => setShowTitleModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -647,8 +593,8 @@ const Profile = () => {
               {titles.map((title) => {
                 const isEquipped = equippedTitle?._id === title._id || equipped.title === title._id;
                 return (
-                  <div 
-                    key={title._id} 
+                  <div
+                    key={title._id}
                     className={`title-item ${title.isUnlocked ? '' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
                     onClick={() => title.isUnlocked && equipTitle(title._id)}
                   >
@@ -673,7 +619,6 @@ const Profile = () => {
         </div>
       )}
 
-      {/* ===== PHOTO MODAL ===== */}
       {showPhotoModal && (
         <div className="modal-overlay" onClick={() => {
           setShowPhotoModal(false);
@@ -687,11 +632,11 @@ const Profile = () => {
                 setSelectedSlotIndex(null);
               }}>✕</button>
             </div>
-            
+
             {selectedSlotIndex !== null && (
               <p className="modal-hint">Choose a photo to add to slot {selectedSlotIndex + 1}</p>
             )}
-            
+
             <div className="photo-search-container">
               <input
                 type="text"
@@ -701,7 +646,7 @@ const Profile = () => {
                 onChange={(e) => setPhotoSearchTerm(e.target.value)}
               />
               {photoSearchTerm && (
-                <button 
+                <button
                   className="photo-search-clear"
                   onClick={() => setPhotoSearchTerm('')}
                 >
@@ -709,28 +654,26 @@ const Profile = () => {
                 </button>
               )}
             </div>
-            
+
             <div className="photo-grid">
               {(photoSearchTerm ? filteredPhotos : profilePhotos.filter(p => p.isUnlocked)).map((photo) => {
                 const isEquipped = equippedPhoto?._id === photo._id || equipped.profilePhoto === photo._id;
                 return (
-                  <div 
-                    key={photo._id} 
+                  <div
+                    key={photo._id}
                     className={`photo-item ${isEquipped ? 'equipped' : ''}`}
                     onClick={() => {
                       if (selectedSlotIndex !== null) {
-                        // Setting photo for showcase slot
                         setShowcasePhoto(selectedSlotIndex, photo._id);
                       } else {
-                        // Equipping as main profile photo
                         equipPhoto(photo._id);
                       }
                     }}
                   >
-                    <div className="photo-preview" style={photo.imageUrl ? { 
-                      backgroundImage: `url(${photo.imageUrl})`, 
-                      backgroundSize: 'cover', 
-                      backgroundPosition: 'center' 
+                    <div className="photo-preview" style={photo.imageUrl ? {
+                      backgroundImage: `url(${photo.imageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
                     } : {}}>
                       {isEquipped && (
                         <div className="photo-equipped-badge">✅</div>
@@ -750,7 +693,7 @@ const Profile = () => {
                 );
               })}
             </div>
-            
+
             {photoSearchTerm && filteredPhotos.length === 0 && (
               <div className="photo-search-empty">No photos found matching "{photoSearchTerm}"</div>
             )}

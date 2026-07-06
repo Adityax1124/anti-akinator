@@ -1,32 +1,41 @@
-/* ============================================================
-   TEAM GAME PAGE
-   ============================================================ */
+:root {
+  --tg-accent: #6c63ff;
+  --tg-accent-2: #a89bff;
+  --tg-accent-3: #00d9c0;
+  --tg-gold: #ffd66b;
+  --tg-glass: rgba(255, 255, 255, 0.025);
+  --tg-glass-hover: rgba(255, 255, 255, 0.045);
+  --tg-border-soft: rgba(255, 255, 255, 0.06);
+  --tg-border-accent: rgba(108, 99, 255, 0.35);
+  --tg-text-secondary: rgba(255, 255, 255, 0.62);
+  --tg-text-muted: rgba(255, 255, 255, 0.35);
+}
 
 .team-game-page {
+  position: relative;
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
   min-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: rgba(16, 16, 32, 0.7);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.005));
+  backdrop-filter: blur(24px);
+  border-radius: 24px;
+  border: 1px solid var(--tg-border-soft);
 }
 
-/* ===== HEADER ===== */
 .team-game-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+  padding: 14px 18px;
+  background: var(--tg-glass);
+  border-radius: 16px;
   margin-bottom: 16px;
   flex-wrap: wrap;
-  gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 10px;
+  border: 1px solid var(--tg-border-soft);
 }
 
 .team-game-header .header-left {
@@ -37,41 +46,43 @@
 
 .team-game-header .btn-leave {
   background: rgba(255, 255, 255, 0.05);
-  border: none;
-  color: #888;
-  padding: 6px 14px;
-  border-radius: 8px;
+  border: 1px solid var(--tg-border-soft);
+  color: var(--tg-text-secondary);
+  padding: 7px 16px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 600;
 }
 
 .team-game-header .btn-leave:hover {
-  background: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
-}
-
-.team-game-header .room-code-display {
-  color: #ffd700;
-  font-weight: 600;
-  font-size: 14px;
+  background: rgba(244, 63, 94, 0.1);
+  color: #fca5a5;
+  border-color: rgba(244, 63, 94, 0.2);
 }
 
 .team-game-header .header-center .team-name {
-  color: #ddd;
+  color: var(--tg-text-secondary);
   font-size: 14px;
 }
 
 .team-game-header .header-center .team-name strong {
-  color: #ffd700;
+  color: var(--tg-accent-2);
+}
+
+.team-game-header .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .team-game-header .header-right .question-count {
-  color: #888;
-  font-size: 14px;
+  color: var(--tg-text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
 }
 
-/* ===== BODY ===== */
 .team-game-body {
   flex: 1;
   display: flex;
@@ -79,101 +90,103 @@
   min-height: 400px;
 }
 
-/* ===== MESSAGES ===== */
 .team-game-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 16px;
   max-height: 400px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--tg-border-soft);
+  border-radius: 16px;
+  margin-bottom: 14px;
 }
 
 .team-game-messages::-webkit-scrollbar {
   width: 6px;
 }
 .team-game-messages::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 10px;
 }
 .team-game-messages::-webkit-scrollbar-thumb {
-  background: #6c63ff;
+  background: var(--tg-accent);
   border-radius: 10px;
 }
 
 .empty-state {
   text-align: center;
-  color: #666;
+  color: var(--tg-text-muted);
   padding: 40px 20px;
 }
 
 .empty-state p:first-child {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 17px;
+  color: var(--tg-text-secondary);
   margin-bottom: 8px;
 }
 
 .empty-state p:last-child {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--tg-text-muted);
 }
 
 .msg {
-  padding: 10px 14px;
-  margin-bottom: 6px;
-  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 12px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
+  background: var(--tg-glass);
+  border: 1px solid var(--tg-border-soft);
 }
 
 .msg.question {
-  background: rgba(108, 99, 255, 0.08);
-  border-left: 3px solid #6c63ff;
+  background: rgba(108, 99, 255, 0.06);
+  border-left: 2px solid var(--tg-accent);
 }
 
 .msg .msg-answer {
-  color: #00d4ff;
-  margin-top: 4px;
+  color: var(--tg-accent-3);
+  margin-top: 5px;
   padding-left: 16px;
 }
 
 .msg.guess-correct {
-  background: rgba(0, 184, 148, 0.12);
-  border-left: 3px solid #00b894;
+  background: rgba(0, 217, 192, 0.08);
+  border-left: 2px solid var(--tg-accent-3);
 }
 
 .msg.guess-wrong {
-  background: rgba(231, 76, 60, 0.06);
-  border-left: 3px solid #e74c3c;
+  background: rgba(244, 63, 94, 0.05);
+  border-left: 2px solid #f43f5e;
 }
 
 .msg .character-reveal {
-  color: #ffd700;
+  color: var(--tg-gold);
   font-weight: 700;
   font-size: 18px;
-  margin: 4px 0;
+  margin: 6px 0;
 }
 
 .msg .reward-text {
-  color: #51cf66;
-  margin-top: 4px;
+  color: #6ee7a8;
+  margin-top: 5px;
 }
 
 .limit-warning {
   text-align: center;
-  color: #ff6b6b;
+  color: #fca5a5;
   padding: 12px;
-  background: rgba(255, 107, 107, 0.05);
-  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.06);
+  border: 1px solid rgba(244, 63, 94, 0.18);
+  border-radius: 12px;
   margin: 8px 0;
 }
 
-/* ===== INPUT AREA ===== */
 .team-game-input-area {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 8px 0;
 }
 
@@ -184,23 +197,23 @@
 
 .input-row input {
   flex: 1;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tg-border-soft);
+  border-radius: 12px;
   color: #fff;
   font-size: 14px;
   transition: all 0.3s ease;
 }
 
 .input-row input:focus {
-  border-color: #6c63ff;
+  border-color: var(--tg-border-accent);
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .input-row input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--tg-text-muted);
 }
 
 .input-row input:disabled {
@@ -208,43 +221,39 @@
   cursor: not-allowed;
 }
 
-.input-row .input-ask:focus {
-  border-color: #6c63ff;
-}
-
 .input-row .input-guess:focus {
-  border-color: #00b894;
+  border-color: rgba(0, 217, 192, 0.4);
 }
 
 .input-row .btn {
-  padding: 10px 24px;
+  padding: 12px 26px;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   white-space: nowrap;
   font-size: 14px;
 }
 
 .input-row .btn-ask {
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  background: linear-gradient(135deg, var(--tg-accent), #5a52d5);
   color: #fff;
 }
 
 .input-row .btn-ask:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
+  box-shadow: 0 8px 26px rgba(108, 99, 255, 0.3);
 }
 
 .input-row .btn-guess {
-  background: linear-gradient(135deg, #00b894, #00a381);
-  color: #fff;
+  background: linear-gradient(135deg, var(--tg-accent-3), #00a891);
+  color: #06070a;
 }
 
 .input-row .btn-guess:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 184, 148, 0.3);
+  box-shadow: 0 8px 26px rgba(0, 217, 192, 0.3);
 }
 
 .input-row .btn:disabled {
@@ -253,27 +262,28 @@
   transform: none !important;
 }
 
-/* ===== RESULT ===== */
 .team-game-result {
   text-align: center;
-  padding: 30px 20px;
+  padding: 34px 20px;
 }
 
 .team-game-result .result-icon {
-  font-size: 56px;
+  font-size: 54px;
   display: block;
   margin-bottom: 8px;
 }
 
 .team-game-result h2 {
   color: #fff;
-  font-size: 28px;
+  font-size: 26px;
+  font-weight: 800;
   margin-bottom: 4px;
+  letter-spacing: -0.5px;
 }
 
 .team-game-result .character-name {
-  color: #ffd700;
-  font-size: 24px;
+  color: var(--tg-gold);
+  font-size: 22px;
   font-weight: 700;
   margin: 8px 0;
 }
@@ -285,48 +295,71 @@
   border-radius: 16px;
   margin: 12px auto;
   display: block;
-  border: 3px solid rgba(255, 215, 0, 0.2);
+  border: 2px solid var(--tg-border-soft);
 }
 
 .team-game-result .reward-text {
-  color: #51cf66;
-  font-size: 18px;
+  color: #6ee7a8;
+  font-size: 17px;
   margin: 8px 0;
 }
 
 .team-game-result .players-text {
-  color: #888;
+  color: var(--tg-text-muted);
   font-size: 14px;
   margin-bottom: 16px;
 }
 
+.team-game-result.timeout {
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  background: rgba(244, 63, 94, 0.04);
+  border-radius: 20px;
+}
+
+.timeout-message {
+  color: #fca5a5;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 4px 0 12px;
+}
+
+.timeout-text {
+  color: var(--tg-text-secondary);
+  font-size: 14.5px;
+  margin: 8px 0 16px;
+}
+
+.timeout-text strong {
+  color: var(--tg-gold);
+}
+
 .team-game-result .btn {
-  padding: 12px 32px;
+  padding: 13px 32px;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  background: linear-gradient(135deg, var(--tg-accent), #5a52d5);
   color: #fff;
-  font-size: 16px;
+  font-size: 15.5px;
 }
 
 .team-game-result .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 34px rgba(108, 99, 255, 0.35);
 }
 
-/* ===== FOOTER ===== */
 .team-game-footer {
   display: flex;
   justify-content: center;
-  gap: 24px;
-  padding: 10px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 20px;
+  padding: 12px 0;
+  border-top: 1px solid var(--tg-border-soft);
   margin-top: 12px;
-  color: #555;
-  font-size: 13px;
+  color: var(--tg-text-muted);
+  font-size: 12.5px;
+  flex-wrap: wrap;
 }
 
 .team-game-footer span {
@@ -335,7 +368,11 @@
   gap: 4px;
 }
 
-/* ===== LOADING ===== */
+.team-game-footer .timer-info {
+  color: var(--tg-text-muted);
+  font-size: 12px;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -345,265 +382,50 @@
 }
 
 .loader {
-  width: 48px;
-  height: 48px;
-  border: 4px solid rgba(255, 255, 255, 0.05);
-  border-top: 4px solid #6c63ff;
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(108, 99, 255, 0.12);
+  border-top-color: var(--tg-accent);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: tgSpin 0.8s linear infinite;
 }
 
-@keyframes spin {
+@keyframes tgSpin {
   to { transform: rotate(360deg); }
 }
 
 .loading-container p {
-  color: #888;
+  color: var(--tg-text-muted);
   margin-top: 16px;
 }
 
-/* ===== ERROR ===== */
 .error-container {
   text-align: center;
   padding: 40px;
 }
 
 .error-container h2 {
-  color: #ff6b6b;
-  margin-bottom: 16px;
+  color: #fca5a5;
+  margin-bottom: 18px;
+  font-weight: 800;
 }
 
 .error-container .btn {
-  padding: 10px 28px;
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  padding: 11px 28px;
+  background: linear-gradient(135deg, var(--tg-accent), #5a52d5);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
 }
 
 .error-container .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
+  box-shadow: 0 8px 26px rgba(108, 99, 255, 0.3);
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .team-game-page {
-    padding: 12px;
-  }
-  
-  .team-game-header {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-  
-  .team-game-header .header-left {
-    justify-content: center;
-  }
-  
-  .team-game-messages {
-    max-height: 300px;
-  }
-  
-  .input-row {
-    flex-direction: column;
-  }
-  
-  .input-row .btn {
-    width: 100%;
-  }
-  
-  .team-game-footer {
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-}
-
-@media (max-width: 480px) {
-  .team-game-page {
-    padding: 8px;
-  }
-  
-  .team-game-messages {
-    max-height: 250px;
-    padding: 8px;
-  }
-  
-  .msg {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-  
-  .team-game-header .room-code-display {
-    font-size: 12px;
-  }
-  
-  .team-game-result .character-name {
-    font-size: 20px;
-  }
-}
-/* ============================================================
-   VOICE CONTROLS
-   ============================================================ */
-
-.voice-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 12px;
-}
-
-.voice-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  position: relative;
-}
-
-.voice-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.voice-btn.active {
-  border-color: rgba(108, 99, 255, 0.3);
-  background: rgba(108, 99, 255, 0.1);
-  color: #6c63ff;
-}
-
-.voice-btn .speaking-indicator {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #00b894;
-  animation: pulse 0.8s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.5; }
-}
-
-.voice-participants {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.04);
-  padding: 2px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-/* ===== VOICE STATUS IN FOOTER ===== */
-.voice-status {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
-  padding: 2px 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.voice-status.speaking {
-  color: #00b894;
-  border-color: rgba(0, 184, 148, 0.2);
-  background: rgba(0, 184, 148, 0.05);
-}
-
-/* ============================================================
-   RESPONSIVE - VOICE CONTROLS
-   ============================================================ */
-@media (max-width: 768px) {
-  .voice-controls {
-    gap: 4px;
-    margin-right: 8px;
-  }
-
-  .voice-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 14px;
-  }
-
-  .voice-participants {
-    font-size: 10px;
-    padding: 1px 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .voice-btn {
-    width: 26px;
-    height: 26px;
-    font-size: 12px;
-  }
-
-  .voice-participants {
-    display: none;
-  }
-}
-
-/* ===== VOICE PARTICIPANTS INDICATORS ===== */
-.voice-participants {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 8px;
-}
-
-.participant-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  font-size: 10px;
-  transition: all 0.3s ease;
-  opacity: 0.4;
-}
-
-.participant-dot.speaking {
-  opacity: 1;
-  animation: pulse-dot 0.5s ease-in-out infinite alternate;
-}
-
-@keyframes pulse-dot {
-  from {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  to {
-    transform: scale(1.3);
-    opacity: 1;
-  }
-}
-
-.voice-count {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
-  margin-left: 4px;
-}
-
-.voice-status.active {
-  color: #51cf66;
-}
-
-/* ===== VOICE CONTROLS IN HEADER ===== */
 .voice-controls {
   display: flex;
   align-items: center;
@@ -615,9 +437,9 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--tg-border-soft);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--tg-text-muted);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -628,14 +450,14 @@
 }
 
 .voice-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--tg-text-secondary);
 }
 
 .voice-btn.active {
+  border-color: var(--tg-border-accent);
   background: rgba(108, 99, 255, 0.12);
-  border-color: rgba(108, 99, 255, 0.2);
-  color: #6c63ff;
+  color: var(--tg-accent-2);
 }
 
 .voice-btn .speaking-indicator {
@@ -645,85 +467,175 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #51cf66;
-  animation: pulse-dot 0.5s ease-in-out infinite alternate;
+  background: #6ee7a8;
+  animation: tgPulseDot 0.5s ease-in-out infinite alternate;
 }
 
-/* ===== TIMER DISPLAY ===== */
-.timer-display {
-  font-size: 18px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
-  font-family: 'Courier New', monospace;
-  padding: 4px 12px;
-  border-radius: 8px;
+@keyframes tgPulseDot {
+  from { transform: scale(1); opacity: 0.5; }
+  to { transform: scale(1.3); opacity: 1; }
+}
+
+.voice-participants {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.participant-dot {
+  display: inline-block;
+  font-size: 10px;
+  opacity: 0.4;
+  transition: all 0.3s ease;
+}
+
+.participant-dot.speaking {
+  opacity: 1;
+  animation: tgPulseDot 0.5s ease-in-out infinite alternate;
+}
+
+.voice-count {
+  font-size: 11px;
+  color: var(--tg-text-muted);
+  margin-left: 4px;
+}
+
+.voice-status {
+  font-size: 11px;
+  color: var(--tg-text-muted);
+  padding: 3px 12px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--tg-border-soft);
+}
+
+.voice-status.active {
+  color: #6ee7a8;
+  border-color: rgba(110, 231, 168, 0.2);
+  background: rgba(110, 231, 168, 0.06);
+}
+
+.voice-status.error {
+  color: #fca5a5;
+  border-color: rgba(244, 63, 94, 0.2);
+  background: rgba(244, 63, 94, 0.06);
+}
+
+.timer-display {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--tg-text-secondary);
+  font-family: 'Courier New', monospace;
+  padding: 5px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tg-border-soft);
   transition: all 0.3s ease;
   min-width: 60px;
   text-align: center;
 }
 
 .timer-display.warning {
-  color: #ffd93d;
-  border-color: rgba(255, 217, 61, 0.2);
-  background: rgba(255, 217, 61, 0.05);
-  animation: pulse-warning 1s ease-in-out infinite;
+  color: var(--tg-gold);
+  border-color: rgba(255, 214, 107, 0.25);
+  background: rgba(255, 214, 107, 0.06);
+  animation: tgPulseWarning 1s ease-in-out infinite;
 }
 
 .timer-display.danger {
-  color: #ff6b6b;
-  border-color: rgba(255, 107, 107, 0.3);
-  background: rgba(255, 107, 107, 0.08);
-  animation: pulse-danger 0.5s ease-in-out infinite;
+  color: #fca5a5;
+  border-color: rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.08);
+  animation: tgPulseDanger 0.5s ease-in-out infinite;
 }
 
-@keyframes pulse-warning {
+@keyframes tgPulseWarning {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
 
-@keyframes pulse-danger {
+@keyframes tgPulseDanger {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
 }
 
-/* ===== TIMER INFO IN EMPTY STATE ===== */
 .timer-info {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--tg-text-muted);
   margin-top: 4px;
 }
 
 .timer-info strong {
-  color: #ffd700;
+  color: var(--tg-gold);
 }
 
-/* ===== RESULT - TIMEOUT ===== */
-.team-game-result.timeout {
-  border-color: rgba(255, 107, 107, 0.2);
-  background: rgba(255, 107, 107, 0.05);
+@media (max-width: 768px) {
+  .team-game-page {
+    padding: 12px;
+  }
+
+  .team-game-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .team-game-header .header-left {
+    justify-content: center;
+  }
+
+  .team-game-messages {
+    max-height: 300px;
+  }
+
+  .input-row {
+    flex-direction: column;
+  }
+
+  .input-row .btn {
+    width: 100%;
+  }
+
+  .team-game-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .voice-controls {
+    gap: 4px;
+    margin-right: 8px;
+  }
+
+  .voice-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
 }
 
-.timeout-message {
-  color: #ff6b6b;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 4px 0 12px;
-}
+@media (max-width: 480px) {
+  .team-game-page {
+    padding: 8px;
+    border-radius: 18px;
+  }
 
-.timeout-text {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 15px;
-  margin: 8px 0 16px;
-}
+  .team-game-messages {
+    max-height: 250px;
+    padding: 10px;
+  }
 
-.timeout-text strong {
-  color: #ffd700;
-}
+  .msg {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
 
-/* ===== FOOTER TIMER ===== */
-.team-game-footer .timer-info {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 12px;
+  .team-game-result .character-name {
+    font-size: 19px;
+  }
+
+  .voice-participants {
+    display: none;
+  }
 }

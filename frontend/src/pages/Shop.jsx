@@ -13,15 +13,32 @@ const Shop = () => {
   const [success, setSuccess] = useState('');
   const [purchasing, setPurchasing] = useState(null);
   const [activeTab, setActiveTab] = useState('banners');
-  
-  // ===== REFS FOR INTERSECTION OBSERVER =====
+  const [isVisible, setIsVisible] = useState(false);
   const itemRefs = useRef([]);
 
   useEffect(() => {
+    setIsVisible(true);
     fetchShopItems();
   }, []);
 
-  // ===== INTERSECTION OBSERVER FOR STAGGERED ANIMATIONS =====
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    const sections = document.querySelectorAll('.shop-reveal');
+    sections.forEach((section) => observer.observe(section));
+
+    return () => sections.forEach((section) => observer.unobserve(section));
+  }, [loading]);
+
   useEffect(() => {
     if (!loading && items.length > 0) {
       const observer = new IntersectionObserver(
@@ -32,21 +49,14 @@ const Shop = () => {
             }
           });
         },
-        {
-          threshold: 0.1,
-          rootMargin: '0px 0px -50px 0px',
-        }
+        { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
       );
 
       itemRefs.current.forEach((item) => {
         if (item) observer.observe(item);
       });
 
-      return () => {
-        if (observer) {
-          observer.disconnect();
-        }
-      };
+      return () => observer.disconnect();
     }
   }, [loading, items, activeTab]);
 
@@ -54,11 +64,9 @@ const Shop = () => {
     setLoading(true);
     try {
       const response = await api.get('/shop/items?_t=' + Date.now());
-      console.log('📦 Shop items response:', response.data);
       setItems(response.data.items || []);
       setError('');
     } catch (err) {
-      console.error('Fetch shop error:', err);
       setError('Failed to load shop items');
     } finally {
       setLoading(false);
@@ -85,7 +93,7 @@ const Shop = () => {
   };
 
   const getRarityColor = (rarity) => {
-    switch(rarity) {
+    switch (rarity) {
       case 'Common': return '#a0a0a0';
       case 'Uncommon': return '#4ecdc4';
       case 'Rare': return '#4a9eff';
@@ -96,7 +104,7 @@ const Shop = () => {
   };
 
   const getRarityEmoji = (rarity) => {
-    switch(rarity) {
+    switch (rarity) {
       case 'Common': return '⬜';
       case 'Uncommon': return '🟩';
       case 'Rare': return '🟦';
@@ -106,7 +114,6 @@ const Shop = () => {
     }
   };
 
-  // ===== CORS PROXY HELPER =====
   const getProxiedUrl = (url) => {
     if (!url) return '';
     if (url.includes('pinimg.com')) {
@@ -115,43 +122,34 @@ const Shop = () => {
     return url;
   };
 
-  // ===== FORMAT TIME REMAINING =====
   const getTimeRemaining = (endDate) => {
     if (!endDate) return null;
     const now = new Date();
     const end = new Date(endDate);
     const diff = end - now;
-    
+
     if (diff <= 0) return 'Expired';
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
   };
 
-  // ===== FILTER ITEMS BY TYPE =====
-  const bannerItems = items.filter(item => item.itemType === 'banner');
-  const photoItems = items.filter(item => item.itemType === 'profilePhoto');
-
-  // Get current items based on active tab
+  const bannerItems = items.filter((item) => item.itemType === 'banner');
+  const photoItems = items.filter((item) => item.itemType === 'profilePhoto');
   const currentItems = activeTab === 'banners' ? bannerItems : photoItems;
-
-  // Debug logging
-  console.log('📊 Total items:', items.length);
-  console.log('📊 Banner items:', bannerItems.length);
-  console.log('📊 Photo items:', photoItems.length);
-  console.log('📊 Active tab:', activeTab);
-  console.log('📊 Current items:', currentItems.length);
 
   if (loading) {
     return (
-      <div className="shop-container">
-        <div className="loading-container">
-          <div className="loader"></div>
+      <div className="shop-page">
+        <div className="bg-noise"></div>
+        <div className="bg-grid"></div>
+        <div className="shop-loading">
+          <div className="shop-loader"></div>
           <p>Loading shop...</p>
         </div>
       </div>
@@ -159,49 +157,59 @@ const Shop = () => {
   }
 
   return (
-    <div className="shop-container fade-in">
-      <div className="shop-header">
-        <h1>🛒 Premium Shop</h1>
-        <p className="shop-subtitle">Spend your shards on exclusive items!</p>
-        <div className="shards-display">
-          🎴 Your Shards: <strong>{user?.shards || 0}</strong>
+    <div className={`shop-page ${isVisible ? 'visible' : ''}`}>
+      <div className="bg-noise"></div>
+      <div className="bg-grid"></div>
+
+      <section className="shop-hero">
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
+        <div className="shop-hero-content">
+          <div className="hero-badge">
+            <span className="badge-dot"></span>
+            Exclusive Cosmetics
+          </div>
+          <h1 className="shop-title">
+            <span className="shop-title-gradient">Premium Shop</span>
+          </h1>
+          <p className="shop-subtitle">Spend your shards on exclusive banners and photos</p>
+          <div className="shards-display">
+            <span className="shards-icon">🎴</span>
+            <span>Your Shards</span>
+            <strong>{user?.shards || 0}</strong>
+          </div>
         </div>
-      </div>
+      </section>
 
       {error && <div className="shop-alert error">{error}</div>}
       {success && <div className="shop-alert success">{success}</div>}
 
-      {/* ===== TABS ===== */}
-      <div className="shop-tabs">
+      <div className="shop-tabs shop-reveal">
         <button
           className={`shop-tab-btn ${activeTab === 'banners' ? 'active' : ''}`}
           onClick={() => {
-            console.log('🔄 Switching to Banners tab');
             setActiveTab('banners');
-            // Reset refs for new items
             itemRefs.current = [];
           }}
         >
-          🎨 Banners <span className="tab-count">{bannerItems.length}</span>
+          <span>🎨 Banners</span>
+          <span className="tab-count">{bannerItems.length}</span>
         </button>
         <button
           className={`shop-tab-btn ${activeTab === 'photos' ? 'active' : ''}`}
           onClick={() => {
-            console.log('🔄 Switching to Photos tab');
             setActiveTab('photos');
-            // Reset refs for new items
             itemRefs.current = [];
           }}
         >
-          📸 Photos <span className="tab-count">{photoItems.length}</span>
+          <span>📸 Photos</span>
+          <span className="tab-count">{photoItems.length}</span>
         </button>
       </div>
 
       {currentItems.length === 0 ? (
-        <div className="shop-empty">
-          <span className="empty-icon">
-            {activeTab === 'banners' ? '🎨' : '📸'}
-          </span>
+        <div className="shop-empty shop-reveal">
+          <span className="empty-icon">{activeTab === 'banners' ? '🎨' : '📸'}</span>
           <h3>No {activeTab === 'banners' ? 'banners' : 'photos'} available</h3>
           <p>Check back later for new exclusive {activeTab === 'banners' ? 'banners' : 'photos'}!</p>
         </div>
@@ -217,21 +225,21 @@ const Shop = () => {
             const isUrgent = isLimited && timeRemaining && timeRemaining.includes('h') && !timeRemaining.includes('d');
 
             return (
-              <div 
-                key={item._id || index} 
-                ref={el => {
-                  if (el) {
-                    itemRefs.current[index] = el;
-                  }
+              <div
+                key={item._id || index}
+                ref={(el) => {
+                  if (el) itemRefs.current[index] = el;
                 }}
                 className={`shop-item-card ${isOwned ? 'owned' : ''}`}
+                style={{ transitionDelay: `${(index % 10) * 0.07}s` }}
               >
+                <div className="shop-item-card-border"></div>
                 <div className="shop-item-preview">
                   {item.itemType === 'banner' ? (
                     <div className="shop-banner-preview">
-                      <img 
-                        src={item.item?.gifUrl} 
-                        alt={item.item?.name || 'Banner'} 
+                      <img
+                        src={item.item?.gifUrl}
+                        alt={item.item?.name || 'Banner'}
                         className="shop-banner-img"
                         referrerPolicy="no-referrer"
                         crossOrigin="anonymous"
@@ -242,9 +250,9 @@ const Shop = () => {
                       />
                     </div>
                   ) : (
-                    <img 
-                      src={getProxiedUrl(item.item?.imageUrl)} 
-                      alt={item.item?.name} 
+                    <img
+                      src={getProxiedUrl(item.item?.imageUrl)}
+                      alt={item.item?.name}
                       className="shop-photo-preview"
                       referrerPolicy="no-referrer"
                       crossOrigin="anonymous"
@@ -254,24 +262,16 @@ const Shop = () => {
                       }}
                     />
                   )}
-                  
-                  {/* Badges */}
-                  <div className="shop-item-badge exclusive">✨ EXCLUSIVE</div>
-                  
-                  {isLimited && !isExpired && !isNotStarted && (
-                    <div className="shop-item-badge limited">⏳ LIMITED</div>
-                  )}
-                  {isOwned && (
-                    <div className="shop-item-badge owned">✅ OWNED</div>
-                  )}
-                  {isExpired && (
-                    <div className="shop-item-badge expired">⛔ EXPIRED</div>
-                  )}
-                  {isNotStarted && (
-                    <div className="shop-item-badge coming">📅 COMING SOON</div>
-                  )}
 
-                  {/* Timer Badge - Prominent */}
+                  <div className="shop-item-badge exclusive">✨ Exclusive</div>
+
+                  {isLimited && !isExpired && !isNotStarted && (
+                    <div className="shop-item-badge limited">⏳ Limited</div>
+                  )}
+                  {isOwned && <div className="shop-item-badge owned">✅ Owned</div>}
+                  {isExpired && <div className="shop-item-badge expired">⛔ Expired</div>}
+                  {isNotStarted && <div className="shop-item-badge coming">📅 Coming Soon</div>}
+
                   {isLimited && !isExpired && !isNotStarted && timeRemaining && (
                     <div className="shop-item-timer-badge">
                       <span className="timer-icon">⏳</span>
@@ -285,8 +285,8 @@ const Shop = () => {
                 <div className="shop-item-info">
                   <h3 className="shop-item-name">{item.item?.name || 'Unknown'}</h3>
                   {item.item?.rarity && (
-                    <span 
-                      className="shop-item-rarity" 
+                    <span
+                      className="shop-item-rarity"
                       style={{ color: getRarityColor(item.item.rarity) }}
                     >
                       {getRarityEmoji(item.item.rarity)} {item.item.rarity}
@@ -313,7 +313,7 @@ const Shop = () => {
                   ) : !canAfford ? (
                     `Need ${item.price - (user?.shards || 0)} more 🎴`
                   ) : (
-                    `Buy Now ${item.price} 🎴`
+                    `Buy Now · ${item.price} 🎴`
                   )}
                 </button>
               </div>

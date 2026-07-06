@@ -1,32 +1,39 @@
-/* ============================================================
-   TEAM PLAY - Premium Modern Design
-   ============================================================ */
+:root {
+  --tp-accent: #6c63ff;
+  --tp-accent-2: #a89bff;
+  --tp-accent-3: #00d9c0;
+  --tp-gold: #ffd66b;
+  --tp-glass: rgba(255, 255, 255, 0.025);
+  --tp-glass-hover: rgba(255, 255, 255, 0.045);
+  --tp-border-soft: rgba(255, 255, 255, 0.06);
+  --tp-border-accent: rgba(108, 99, 255, 0.35);
+  --tp-text-primary: #ffffff;
+  --tp-text-secondary: rgba(255, 255, 255, 0.62);
+  --tp-text-muted: rgba(255, 255, 255, 0.35);
+}
 
-/* ===== MODAL OVERLAY ===== */
 .team-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(24px);
+  inset: 0;
+  background: rgba(6, 7, 10, 0.75);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.35s ease;
+  animation: tpFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 20px;
 }
 
-@keyframes fadeIn {
+@keyframes tpFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-/* ===== MODAL ===== */
 .team-modal {
-  background: linear-gradient(165deg, rgba(20, 20, 50, 0.97), rgba(10, 10, 30, 0.99));
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(28px);
   border-radius: 28px;
   padding: 2.5rem 2.5rem 2rem;
   max-width: 540px;
@@ -34,13 +41,13 @@
   max-height: 92vh;
   overflow-y: auto;
   overflow-x: hidden;
-  position: relative;
-  animation: slideUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--tp-border-soft);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  isolation: isolate;
+  animation: tpSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes slideUp {
+@keyframes tpSlideUp {
   from {
     transform: translateY(40px) scale(0.96);
     opacity: 0;
@@ -58,38 +65,36 @@
   background: transparent;
 }
 .team-modal::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.4);
+  background: var(--tp-accent);
   border-radius: 10px;
 }
 
-/* ===== CLOSE BUTTON ===== */
 .team-modal-close {
   position: absolute;
   top: 18px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.04);
-  border: none;
-  font-size: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tp-border-soft);
+  font-size: 15px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.25);
-  transition: all 0.35s ease;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  color: #fff;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 300;
   z-index: 2;
 }
 
 .team-modal-close:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(108, 99, 255, 0.15);
+  border-color: var(--tp-border-accent);
+  color: var(--tp-accent-2);
   transform: rotate(90deg);
 }
 
-/* ===== HEADER ===== */
 .team-modal .modal-header {
   text-align: center;
   margin-bottom: 2rem;
@@ -97,15 +102,16 @@
 }
 
 .team-modal .modal-header .icon-wrapper {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 68px;
   height: 68px;
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 184, 148, 0.1));
+  background: rgba(108, 99, 255, 0.08);
   border-radius: 50%;
   margin-bottom: 12px;
-  border: 1px solid rgba(108, 99, 255, 0.08);
+  border: 1px solid rgba(108, 99, 255, 0.2);
 }
 
 .team-modal .modal-header .icon-wrapper .icon {
@@ -115,35 +121,40 @@
 .team-modal .modal-header h2 {
   font-size: 28px;
   font-weight: 800;
-  color: #fff;
   margin: 0 0 4px;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #fff 60%, rgba(255, 255, 255, 0.6));
+  letter-spacing: -0.6px;
+  background: linear-gradient(120deg, #ffffff, var(--tp-accent-2), var(--tp-accent), #ffffff);
+  background-size: 250% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: tpShimmer 6s linear infinite;
+}
+
+@keyframes tpShimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 250% center; }
 }
 
 .team-modal .modal-header p {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--tp-text-muted);
   font-size: 14px;
   margin: 0;
-  letter-spacing: 0.3px;
 }
 
-/* ===== PENDING INVITES SECTION ===== */
 .pending-invites-section {
-  background: rgba(108, 99, 255, 0.05);
-  border: 1px solid rgba(108, 99, 255, 0.1);
-  border-radius: 12px;
-  padding: 12px 16px;
+  background: rgba(108, 99, 255, 0.06);
+  border: 1px solid rgba(108, 99, 255, 0.16);
+  border-radius: 16px;
+  padding: 14px 16px;
   margin-bottom: 16px;
 }
 
 .pending-invites-section h4 {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  color: var(--tp-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -152,23 +163,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  border: 1px solid rgba(108, 99, 255, 0.08);
-  animation: slideIn 0.3s ease;
+  padding: 12px 14px;
+  background: var(--tp-glass);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--tp-border-soft);
+  animation: tpSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes tpSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .pending-invite-item:last-child {
@@ -178,7 +183,7 @@
 .invite-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
 }
 
@@ -188,43 +193,43 @@
 }
 
 .invite-from strong {
-  color: #6c63ff;
+  color: var(--tp-accent-2);
 }
 
 .invite-room {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--tp-text-muted);
 }
 
 .invite-players {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--tp-text-muted);
 }
 
 .invite-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .invite-btn {
-  padding: 6px 16px;
+  padding: 7px 18px;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12.5px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .invite-btn.accept-invite {
-  background: linear-gradient(135deg, #00b894, #00a381);
-  color: #fff;
+  background: linear-gradient(135deg, var(--tp-accent-3), #00a891);
+  color: #06070a;
 }
 
 .invite-btn.accept-invite:hover:not(:disabled) {
   transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 217, 192, 0.3);
 }
 
 .invite-btn.accept-invite:disabled {
@@ -234,14 +239,14 @@
 
 .invite-btn.decline-invite {
   background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--tp-text-secondary);
+  border: 1px solid var(--tp-border-soft);
 }
 
 .invite-btn.decline-invite:hover:not(:disabled) {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
-  border-color: rgba(255, 107, 107, 0.2);
+  background: rgba(244, 63, 94, 0.1);
+  color: #fca5a5;
+  border-color: rgba(244, 63, 94, 0.2);
 }
 
 .invite-btn.decline-invite:disabled {
@@ -249,7 +254,6 @@
   cursor: not-allowed;
 }
 
-/* ===== OPTIONS GRID ===== */
 .team-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -257,46 +261,34 @@
   margin-bottom: 1.4rem;
 }
 
+.team-option-single {
+  grid-column: 1 / -1;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
 .team-option {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  background: var(--tp-glass);
+  border: 1px solid var(--tp-border-soft);
   border-radius: 18px;
   padding: 1.6rem 1.2rem 1.4rem;
   text-align: center;
-  transition: all 0.35s ease;
-  cursor: default;
-  position: relative;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   overflow: hidden;
 }
 
-.team-option::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.03), rgba(0, 184, 148, 0.02));
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
-
-.team-option:hover::before {
-  opacity: 1;
-}
-
 .team-option:hover {
-  border-color: rgba(108, 99, 255, 0.2);
+  border-color: var(--tp-border-accent);
+  background: var(--tp-glass-hover);
   transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
 }
 
 .team-option .opt-icon {
   font-size: 28px;
   display: block;
   margin-bottom: 8px;
-  position: relative;
-  z-index: 1;
 }
 
 .team-option h3 {
@@ -304,42 +296,36 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0 0 3px;
-  position: relative;
-  z-index: 1;
 }
 
 .team-option .opt-desc {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--tp-text-muted);
   font-size: 12px;
   margin: 0 0 14px;
-  line-height: 1.4;
-  position: relative;
-  z-index: 1;
+  line-height: 1.5;
 }
 
 .team-option .btn {
   width: 100%;
-  padding: 10px 0;
+  padding: 11px 0;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  transition: all 0.35s ease;
-  position: relative;
-  z-index: 1;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   letter-spacing: 0.3px;
 }
 
 .team-option .btn-primary {
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  background: linear-gradient(135deg, var(--tp-accent), #5a52d5);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(108, 99, 255, 0.25);
 }
 
 .team-option .btn-primary:hover:not(:disabled) {
   transform: scale(1.03);
-  box-shadow: 0 8px 32px rgba(108, 99, 255, 0.35);
+  box-shadow: 0 10px 32px rgba(108, 99, 255, 0.4);
 }
 
 .team-option .btn-primary:disabled {
@@ -348,101 +334,21 @@
   transform: none !important;
 }
 
-/* ===== JOIN SECTION ===== */
-.join-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.join-wrapper .join-label {
-  color: rgba(255, 255, 255, 0.25);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-weight: 600;
-}
-
-.join-room-input {
-  display: flex !important;
-  gap: 10px !important;
-  align-items: center !important;
-  width: 100% !important;
-}
-
-.join-room-input input {
-  flex: 1 !important;
-  padding: 12px 16px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 2px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 12px !important;
-  color: #fff !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  letter-spacing: 1.5px !important;
-  text-transform: uppercase !important;
-  outline: none !important;
-  width: 100% !important;
-  font-family: monospace !important;
-  min-width: 0 !important;
-}
-
-.join-room-input input:focus {
-  border-color: #6c63ff !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1) !important;
-}
-
-.join-room-input input::placeholder {
-  color: rgba(255, 255, 255, 0.2) !important;
-  letter-spacing: 0 !important;
-  text-transform: none !important;
-  font-weight: 400 !important;
-  font-family: inherit !important;
-}
-
-.join-room-input .btn-secondary {
-  padding: 12px 24px !important;
-  background: linear-gradient(135deg, #6c63ff, #5a52d5) !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 12px !important;
-  font-weight: 700 !important;
-  font-size: 14px !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-  min-width: 80px !important;
-}
-
-.join-room-input .btn-secondary:hover:not(:disabled) {
-  transform: scale(1.02) !important;
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3) !important;
-}
-
-.join-room-input .btn-secondary:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-}
-
-/* ===== ERROR ===== */
 .team-modal .auth-error {
-  background: rgba(255, 107, 107, 0.06);
-  border: 1px solid rgba(255, 107, 107, 0.1);
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.22);
   border-radius: 12px;
   padding: 12px 16px;
-  color: #ff6b6b;
+  color: #fca5a5;
   font-size: 13px;
   text-align: center;
   margin-bottom: 1rem;
-  backdrop-filter: blur(8px);
 }
 
-/* ===== INFO BOX ===== */
 .team-info {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 14px;
+  background: var(--tp-glass);
+  border: 1px solid var(--tp-border-soft);
+  border-radius: 16px;
   padding: 14px 18px;
   margin-top: 6px;
 }
@@ -451,7 +357,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 0;
+  padding: 5px 0;
 }
 
 .team-info .info-row .info-icon {
@@ -462,20 +368,17 @@
 }
 
 .team-info .info-row p {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--tp-text-secondary);
   font-size: 13px;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .team-info .info-row p strong {
-  color: #ffd700;
-  font-weight: 600;
+  color: var(--tp-gold);
+  font-weight: 700;
 }
 
-/* ============================================================
-   TEAM LOBBY
-   ============================================================ */
 .team-lobby {
   padding: 0;
 }
@@ -489,73 +392,10 @@
   font-size: 24px;
   color: #fff;
   margin: 0;
-  font-weight: 700;
-}
-
-.team-lobby .lobby-header p {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 13px;
-  margin: 2px 0 0;
-}
-
-/* ===== ROOM CODE ===== */
-.room-code-section {
-  text-align: center;
-  margin-bottom: 1.4rem;
-}
-
-.room-code-section .label {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-  font-weight: 700;
-}
-
-.room-code-display {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  background: rgba(255, 215, 0, 0.04);
-  border: 1.5px solid rgba(255, 215, 0, 0.08);
-  border-radius: 14px;
-  padding: 12px 24px;
-  margin-top: 4px;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.room-code-display .code {
-  font-size: 24px;
   font-weight: 800;
-  color: #ffd700;
-  letter-spacing: 4px;
-  font-family: 'Courier New', monospace;
-  word-break: break-all;
+  letter-spacing: -0.5px;
 }
 
-.room-code-display .copy-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: none;
-  color: rgba(255, 255, 255, 0.3);
-  padding: 4px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-  font-family: inherit;
-}
-
-.room-code-display .copy-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-/* ===== PLAYERS LIST ===== */
 .players-list {
   margin: 0 0 1.2rem;
 }
@@ -568,16 +408,16 @@
 }
 
 .players-list .players-header h4 {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--tp-text-muted);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   margin: 0;
 }
 
 .players-list .players-header .count {
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--tp-text-muted);
   font-size: 11px;
 }
 
@@ -585,33 +425,33 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 16px;
+  background: var(--tp-glass);
+  border: 1px solid var(--tp-border-soft);
   border-radius: 12px;
-  margin-bottom: 4px;
-  border: 1px solid transparent;
-  transition: all 0.25s ease;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
 }
 
 .player-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tp-glass-hover);
 }
 
 .player-item .player-name {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--tp-text-secondary);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .player-item .player-name .host-badge {
-  background: rgba(255, 215, 0, 0.12);
-  color: #ffd700;
+  background: rgba(108, 99, 255, 0.12);
+  color: var(--tp-accent-2);
   font-size: 8px;
   font-weight: 700;
-  padding: 1px 10px;
+  padding: 2px 10px;
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -619,17 +459,16 @@
 
 .player-item .player-status {
   font-size: 10px;
-  color: rgba(81, 207, 102, 0.5);
-  font-weight: 600;
+  color: #6ee7a8;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .player-item .player-status.waiting {
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--tp-text-muted);
 }
 
-/* ===== INVITE SECTION ===== */
 .invite-section {
   margin: 0.8rem 0;
   position: relative;
@@ -637,19 +476,19 @@
 
 .invite-toggle-btn {
   width: 100%;
-  padding: 10px;
+  padding: 11px;
   background: rgba(108, 99, 255, 0.08);
-  border: 1px solid rgba(108, 99, 255, 0.15);
-  border-radius: 10px;
-  color: #6c63ff;
-  font-weight: 600;
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  border-radius: 12px;
+  color: var(--tp-accent-2);
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .invite-toggle-btn:hover {
-  background: rgba(108, 99, 255, 0.15);
+  background: rgba(108, 99, 255, 0.16);
 }
 
 .invite-dropdown {
@@ -657,28 +496,29 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: rgba(16, 16, 32, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: rgba(10, 10, 16, 0.98);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--tp-border-soft);
+  border-radius: 14px;
   padding: 8px;
   max-height: 200px;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
 }
 
 .invite-dropdown::-webkit-scrollbar {
   width: 4px;
 }
 .invite-dropdown::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.3);
+  background: rgba(108, 99, 255, 0.4);
   border-radius: 10px;
 }
 
 .invite-empty {
   text-align: center;
   padding: 16px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--tp-text-muted);
   font-size: 13px;
 }
 
@@ -697,8 +537,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border-radius: 10px;
+  transition: all 0.25s ease;
 }
 
 .invite-item:hover {
@@ -706,9 +546,9 @@
 }
 
 .invite-friend-name {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--tp-text-secondary);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -716,40 +556,40 @@
 
 .invite-badge.online {
   font-size: 10px;
-  color: #51cf66;
-  background: rgba(81, 207, 102, 0.1);
+  color: #6ee7a8;
+  background: rgba(110, 231, 168, 0.1);
   padding: 1px 8px;
   border-radius: 4px;
 }
 
 .invite-badge.in-room {
   font-size: 10px;
-  color: #ffd93d;
-  background: rgba(255, 217, 61, 0.1);
+  color: var(--tp-gold);
+  background: rgba(255, 214, 107, 0.1);
   padding: 1px 8px;
   border-radius: 4px;
 }
 
 .invite-friend-btn {
-  padding: 4px 16px;
+  padding: 5px 18px;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: 700;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  background: linear-gradient(135deg, var(--tp-accent), #5a52d5);
   color: #fff;
 }
 
 .invite-friend-btn:hover:not(.disabled) {
   transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(108, 99, 255, 0.35);
 }
 
 .invite-friend-btn.disabled {
   background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--tp-text-muted);
   cursor: not-allowed;
 }
 
@@ -757,70 +597,14 @@
   text-align: center;
   padding: 6px 0;
   font-size: 13px;
-  color: #51cf66;
+  color: #6ee7a8;
   margin-top: 4px;
 }
 
 .invite-message.error {
-  color: #ff6b6b;
+  color: #fca5a5;
 }
 
-/* ===== SHARE BUTTONS ===== */
-.share-buttons {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 1.2rem;
-}
-
-.share-buttons .share-btn {
-  flex: 1;
-  padding: 10px 8px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.35s ease;
-  text-align: center;
-  letter-spacing: 0.2px;
-}
-
-.share-buttons .share-btn.whatsapp {
-  background: rgba(37, 211, 102, 0.1);
-  color: #25D366;
-}
-
-.share-buttons .share-btn.whatsapp:hover {
-  background: rgba(37, 211, 102, 0.2);
-  transform: scale(1.02);
-}
-
-.share-buttons .share-btn.copy-link {
-  background: rgba(108, 99, 255, 0.08);
-  color: #6c63ff;
-}
-
-.share-buttons .share-btn.copy-link:hover {
-  background: rgba(108, 99, 255, 0.18);
-  transform: scale(1.02);
-}
-
-.share-buttons .share-btn.refresh {
-  flex: 0.25;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.share-buttons .share-btn.refresh:hover {
-  background: rgba(255, 255, 255, 0.06);
-  transform: rotate(45deg);
-}
-
-/* ===== LOBBY ACTIONS ===== */
 .lobby-actions {
   display: flex;
   flex-direction: column;
@@ -828,70 +612,74 @@
 }
 
 .lobby-actions .btn-start {
-  padding: 14px;
+  padding: 15px;
   font-size: 16px;
   font-weight: 700;
-  background: linear-gradient(135deg, #00b894, #00a381);
-  color: #fff;
+  background: linear-gradient(135deg, var(--tp-accent-3), #00a891);
+  color: #06070a;
   border: none;
   border-radius: 14px;
   cursor: pointer;
-  transition: all 0.35s ease;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 20px rgba(0, 184, 148, 0.15);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  letter-spacing: 0.4px;
+  box-shadow: 0 8px 26px rgba(0, 217, 192, 0.22);
 }
 
 .lobby-actions .btn-start:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(0, 184, 148, 0.3);
+  box-shadow: 0 14px 42px rgba(0, 217, 192, 0.38);
 }
 
 .lobby-actions .btn-start:disabled {
-  opacity: 0.25;
+  opacity: 0.3;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none;
 }
 
 .lobby-actions .btn-leave {
-  padding: 11px;
-  font-size: 13px;
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 12px;
+  font-size: 13.5px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--tp-text-muted);
+  border: 1px solid var(--tp-border-soft);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.35s ease;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .lobby-actions .btn-leave:hover {
-  background: rgba(231, 76, 60, 0.06);
-  color: rgba(231, 76, 60, 0.6);
-  border-color: rgba(231, 76, 60, 0.1);
+  background: rgba(244, 63, 94, 0.08);
+  color: #fca5a5;
+  border-color: rgba(244, 63, 94, 0.2);
 }
 
-/* ===== WAITING TEXT ===== */
 .waiting-text {
   text-align: center;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--tp-text-muted);
   padding: 10px 0 6px;
   font-size: 14px;
 }
 
 .waiting-text strong {
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 600;
+  color: var(--tp-text-secondary);
+  font-weight: 700;
 }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+.no-invites-message {
+  text-align: center;
+  padding: 10px 0;
+  color: var(--tp-text-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--tp-border-soft);
+}
+
 @media (max-width: 640px) {
   .team-modal {
     padding: 1.8rem 1.5rem 1.5rem;
-    border-radius: 20px;
-    max-width: 100%;
+    border-radius: 22px;
   }
 
   .team-options {
@@ -916,54 +704,8 @@
     font-size: 28px;
   }
 
-  .join-room-input {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .join-room-input input {
-    width: 100%;
-    font-size: 16px;
-    padding: 12px 14px;
-  }
-
-  .join-room-input .btn-secondary {
-    width: 100%;
-    padding: 12px;
-    font-size: 15px;
-  }
-
-  .team-info .info-row {
-    gap: 8px;
-  }
-
   .team-info .info-row p {
     font-size: 12px;
-  }
-
-  .room-code-display {
-    padding: 10px 16px;
-    flex-wrap: wrap;
-  }
-
-  .room-code-display .code {
-    font-size: 18px;
-    letter-spacing: 2px;
-    word-break: break-all;
-    text-align: center;
-  }
-
-  .share-buttons {
-    flex-wrap: wrap;
-  }
-
-  .share-buttons .share-btn {
-    flex: 1 1 calc(50% - 5px);
-    min-width: 70px;
-  }
-
-  .share-buttons .share-btn.refresh {
-    flex: 0 0 44px;
   }
 
   .pending-invite-item {
@@ -980,20 +722,11 @@
 @media (max-width: 400px) {
   .team-modal {
     padding: 1.2rem 1rem 1rem;
-    border-radius: 16px;
+    border-radius: 18px;
   }
 
   .team-modal .modal-header h2 {
     font-size: 19px;
-  }
-
-  .team-modal .modal-header .icon-wrapper {
-    width: 48px;
-    height: 48px;
-  }
-
-  .team-modal .modal-header .icon-wrapper .icon {
-    font-size: 24px;
   }
 
   .team-option h3 {
@@ -1004,58 +737,17 @@
     font-size: 11px;
   }
 
-  .team-option {
-    padding: 1rem 0.8rem;
-  }
-
-  .join-room-input input {
-    font-size: 14px;
-    padding: 10px 12px;
-  }
-
-  .join-room-input .btn-secondary {
-    font-size: 13px;
-    padding: 10px;
-  }
-
-  .room-code-display .code {
-    font-size: 15px;
-    letter-spacing: 1.5px;
-  }
-
-  .room-code-display {
-    padding: 8px 12px;
-  }
-
-  .room-code-display .copy-btn {
-    font-size: 10px;
-    padding: 3px 10px;
-  }
-
   .player-item {
-    padding: 6px 10px;
+    padding: 8px 12px;
     font-size: 13px;
   }
 
   .lobby-actions .btn-start {
     font-size: 14px;
-    padding: 12px;
+    padding: 13px;
   }
 
   .team-info .info-row p {
     font-size: 11px;
   }
-
-  .team-info {
-    padding: 10px 14px;
-  }
-}
-/* ===== NO INVITES MESSAGE ===== */
-.no-invites-message {
-  text-align: center;
-  padding: 8px 0;
-  color: rgba(255, 255, 255, 0.15);
-  font-size: 13px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }

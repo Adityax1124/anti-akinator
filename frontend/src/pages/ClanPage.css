@@ -1,0 +1,335 @@
+:root {
+  --cp-bg-deep: #06070a;
+  --cp-accent: #6c63ff;
+  --cp-accent-2: #a89bff;
+  --cp-accent-3: #00d9c0;
+  --cp-glass: rgba(255, 255, 255, 0.025);
+  --cp-glass-hover: rgba(255, 255, 255, 0.045);
+  --cp-border-soft: rgba(255, 255, 255, 0.06);
+  --cp-border-accent: rgba(108, 99, 255, 0.35);
+  --cp-text-primary: #ffffff;
+  --cp-text-secondary: rgba(255, 255, 255, 0.62);
+  --cp-text-muted: rgba(255, 255, 255, 0.35);
+}
+
+.clan-page {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 40px 60px;
+  min-height: 100vh;
+  opacity: 0;
+  transform: translateY(60px);
+  transition: all 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  isolation: isolate;
+}
+
+.clan-page.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.clan-bg-noise {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.clan-bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 20%, transparent 75%);
+}
+
+.clan-page-header {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.005));
+  border: 1px solid var(--cp-border-soft);
+  border-radius: 28px;
+  padding: 36px 34px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.clan-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.clan-aurora-1 {
+  width: 300px;
+  height: 300px;
+  top: -140px;
+  left: -80px;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.45), transparent 70%);
+  animation: clanAuroraDrift1 16s ease-in-out infinite;
+}
+
+.clan-aurora-2 {
+  width: 260px;
+  height: 260px;
+  top: -100px;
+  right: -80px;
+  background: radial-gradient(circle, rgba(0, 217, 192, 0.3), transparent 70%);
+  animation: clanAuroraDrift2 20s ease-in-out infinite;
+}
+
+@keyframes clanAuroraDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, 25px) scale(1.1); }
+}
+
+@keyframes clanAuroraDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-35px, 20px) scale(1.08); }
+}
+
+.clan-info {
+  position: relative;
+  z-index: 1;
+}
+
+.clan-name-clickable {
+  font-size: 32px;
+  font-weight: 900;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -1px;
+  color: var(--cp-text-primary);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.clan-name-gradient {
+  background: linear-gradient(120deg, #ffffff 0%, var(--cp-accent-2) 35%, var(--cp-accent) 65%, #ffffff 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: clanShimmer 6s linear infinite;
+}
+
+@keyframes clanShimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 250% center; }
+}
+
+.clan-name-clickable:hover {
+  transform: translateX(4px);
+}
+
+.clan-description {
+  color: var(--cp-text-secondary);
+  font-size: 15px;
+  margin: 12px 0 18px;
+  line-height: 1.6;
+}
+
+.clan-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.clan-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  background: rgba(108, 99, 255, 0.08);
+  border: 1px solid rgba(108, 99, 255, 0.18);
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cp-accent-2);
+}
+
+.clan-page-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: var(--cp-glass);
+  border: 1px solid var(--cp-border-soft);
+  padding: 8px;
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 13px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--cp-text-secondary);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tab-btn:hover {
+  background: var(--cp-glass-hover);
+  color: #fff;
+}
+
+.tab-btn.active {
+  background: rgba(108, 99, 255, 0.12);
+  color: var(--cp-accent-2);
+  box-shadow: 0 0 24px rgba(108, 99, 255, 0.12);
+}
+
+.donate-btn-header {
+  background: rgba(0, 217, 192, 0.1);
+  color: var(--cp-accent-3) !important;
+  border: 1px solid rgba(0, 217, 192, 0.2);
+}
+
+.donate-btn-header:hover {
+  background: rgba(0, 217, 192, 0.18) !important;
+  box-shadow: 0 0 24px rgba(0, 217, 192, 0.15);
+}
+
+.clan-page-content {
+  background: var(--cp-glass);
+  border: 1px solid var(--cp-border-soft);
+  border-radius: 24px;
+  padding: 24px;
+  min-height: 500px;
+  backdrop-filter: blur(20px);
+}
+
+.clan-page-loading,
+.clan-page-error {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: var(--cp-bg-deep);
+}
+
+.error-container {
+  position: relative;
+  background: var(--cp-glass);
+  border: 1px solid var(--cp-border-soft);
+  border-radius: 28px;
+  padding: 44px;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  backdrop-filter: blur(24px);
+}
+
+.error-icon {
+  font-size: 56px;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.error-container h2 {
+  color: #fff;
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.error-container p {
+  color: var(--cp-text-secondary);
+  font-size: 15px;
+  margin-bottom: 26px;
+  line-height: 1.6;
+}
+
+.error-container button {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, var(--cp-accent), #5a52d5);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.3);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.error-container button:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 14px 45px rgba(108, 99, 255, 0.45);
+}
+
+.clan-page-loading p {
+  color: var(--cp-text-muted);
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.loader {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  border: 3px solid rgba(108, 99, 255, 0.12);
+  border-top-color: var(--cp-accent);
+  border-radius: 50%;
+  animation: clanSpin 0.8s linear infinite;
+}
+
+@keyframes clanSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .clan-page {
+    padding: 12px 16px 40px;
+  }
+
+  .clan-page-header {
+    padding: 26px 22px;
+    border-radius: 22px;
+  }
+
+  .clan-name-clickable {
+    font-size: 24px;
+  }
+
+  .clan-page-tabs {
+    flex-direction: column;
+  }
+
+  .error-container {
+    padding: 28px;
+    border-radius: 22px;
+  }
+
+  .error-icon {
+    font-size: 40px;
+  }
+
+  .error-container h2 {
+    font-size: 21px;
+  }
+
+  .clan-aurora-1, .clan-aurora-2 {
+    width: 180px;
+    height: 180px;
+    filter: blur(60px);
+  }
+}

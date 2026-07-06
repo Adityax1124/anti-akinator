@@ -16,7 +16,6 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
   const fetchFriends = async () => {
     try {
       const response = await api.get('/friend/list');
-      console.log('📊 Friends list:', response.data.friends);
       setFriends(response.data.friends || []);
     } catch (error) {
       console.error('Fetch friends error:', error);
@@ -42,11 +41,7 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
   const isHost = hostId && userId && hostId.toString() === userId.toString();
 
   const handleInviteFriend = async (friendId, friendUsername) => {
-    console.log('📤 [INVITE] Sending invite to:', { friendId, friendUsername });
-    console.log('📤 [INVITE] Room code:', roomCode);
-    
     if (!friendId) {
-      console.error('❌ [INVITE] No friend ID provided');
       setInviteMessage('❌ Invalid friend');
       setTimeout(() => setInviteMessage(''), 3000);
       return;
@@ -60,8 +55,6 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
         friendId: friendId
       });
 
-      console.log('📨 [INVITE] Response:', response.data);
-
       if (response.data.success) {
         setInviteMessage(`✅ Invite sent to ${friendUsername}!`);
         setTimeout(() => setInviteMessage(''), 3000);
@@ -71,8 +64,6 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
         setTimeout(() => setInviteMessage(''), 3000);
       }
     } catch (error) {
-      console.error('❌ [INVITE] Error:', error);
-      console.error('❌ [INVITE] Response:', error.response?.data);
       setInviteMessage(`❌ ${error.response?.data?.message || 'Failed to send invite'}`);
       setTimeout(() => setInviteMessage(''), 3000);
     } finally {
@@ -101,7 +92,6 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
 
   const playerCount = room?.players?.length || 0;
 
-  // Filter out friends already in the room
   const availableFriends = friends.filter(friend => {
     const isInRoom = room?.players?.some(
       p => p.user && (p.user._id || p.user) === friend.userId
@@ -111,17 +101,20 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
 
   return (
     <div className="team-lobby">
-      <h2>👑 Team Lobby</h2>
-      
-      {/* ✅ REMOVED Room Code Section - No longer needed */}
+      <div className="lobby-header">
+        <h2>👑 Team Lobby</h2>
+      </div>
 
       <div className="players-list">
-        <h4>Players ({playerCount}/{room?.maxPlayers || 4})</h4>
+        <div className="players-header">
+          <h4>Players</h4>
+          <span className="count">{playerCount}/{room?.maxPlayers || 4}</span>
+        </div>
         {room?.players && room.players.length > 0 ? (
           room.players.map((player, index) => {
             const playerId = player.user?._id || player.user || player._id;
             const isPlayerHost = playerId && hostId && playerId.toString() === hostId.toString();
-            
+
             return (
               <div key={index} className="player-item">
                 <span className="player-name">
@@ -131,23 +124,22 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
                     <span className="host-badge">Host</span>
                   )}
                 </span>
-                <span className="player-status">
+                <span className={`player-status ${!player.user ? 'waiting' : ''}`}>
                   {player.user ? '🟢 Ready' : '⏳ Waiting'}
                 </span>
               </div>
             );
           })
         ) : (
-          <div style={{ color: '#666', textAlign: 'center', padding: '1rem 0' }}>
+          <div className="no-invites-message">
             No players yet. Invite your friends!
           </div>
         )}
       </div>
 
-      {/* ✅ INVITE FRIENDS SECTION (Host Only) */}
       {isHost && (
         <div className="invite-section">
-          <button 
+          <button
             className="invite-toggle-btn"
             onClick={() => setShowInviteDropdown(!showInviteDropdown)}
           >
@@ -169,7 +161,7 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
                         {friend.username}
                         <span className="invite-badge online">🟢 Online</span>
                       </span>
-                      <button 
+                      <button
                         className="invite-friend-btn"
                         onClick={() => handleInviteFriend(friend.userId, friend.username)}
                         disabled={inviteLoading}
@@ -191,11 +183,11 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
         </div>
       )}
 
-      {error && <div className="auth-error" style={{ margin: '0.5rem 0' }}>{error}</div>}
+      {error && <div className="auth-error">{error}</div>}
 
       <div className="lobby-actions">
         {isHost ? (
-          <button 
+          <button
             className="btn-start"
             onClick={handleStartGame}
             disabled={loading || playerCount < 2}
@@ -213,9 +205,18 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
       </div>
 
       <div className="team-info">
-        <p>💡 Need at least <strong>2</strong> players to start</p>
-        <p>🎴 Reward: <strong>5 Shards</strong> each if you guess correctly</p>
-        <p>⚡ No streak or leaderboard impact</p>
+        <div className="info-row">
+          <span className="info-icon">💡</span>
+          <p>Need at least <strong>2</strong> players to start</p>
+        </div>
+        <div className="info-row">
+          <span className="info-icon">🎴</span>
+          <p>Reward: <strong>5 Shards</strong> each if you guess correctly</p>
+        </div>
+        <div className="info-row">
+          <span className="info-icon">⚡</span>
+          <p>No streak or leaderboard impact</p>
+        </div>
       </div>
     </div>
   );

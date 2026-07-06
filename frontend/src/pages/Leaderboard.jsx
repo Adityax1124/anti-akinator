@@ -11,10 +11,8 @@ const Leaderboard = () => {
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState('');
   const navigate = useNavigate();
-  
-  // ===== PREVENT MULTIPLE FETCHES =====
+
   const fetchedRef = useRef(false);
-  // ===== REF FOR INTERSECTION OBSERVER =====
   const containerRef = useRef(null);
   const itemRefs = useRef([]);
 
@@ -28,7 +26,6 @@ const Leaderboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // ===== INTERSECTION OBSERVER FOR SCROLL ANIMATIONS =====
   useEffect(() => {
     if (!loading && leaderboard.length > 0) {
       const observer = new IntersectionObserver(
@@ -45,7 +42,6 @@ const Leaderboard = () => {
         }
       );
 
-      // Observe all leaderboard items
       itemRefs.current.forEach((item) => {
         if (item) observer.observe(item);
       });
@@ -62,33 +58,29 @@ const Leaderboard = () => {
     try {
       setLoading(true);
       const response = await api.get('/season/leaderboard');
-      
-      console.log('📊 Leaderboard API Response:', response.data);
-      
+
       let data = response.data;
       let leaderboardData = data.leaderboard || [];
       let seasonNumber = data.season || 1;
-      
+
       if (Array.isArray(leaderboardData) && leaderboardData.length > 0) {
         setLeaderboard(leaderboardData);
-        console.log('✅ Leaderboard loaded:', leaderboardData.length, 'players');
       } else {
-        console.warn('⚠️ No data in leaderboard');
         setLeaderboard([]);
       }
-      
+
       setSeason(seasonNumber);
-      
+
       if (data.seasonDisplayName) {
         setSeasonDisplayName(data.seasonDisplayName);
       } else {
         setSeasonDisplayName(`Season ${seasonNumber}`);
       }
-      
+
       setLoading(false);
     } catch (error) {
-      console.error('❌ Leaderboard fetch error:', error);
-      
+      console.error('Leaderboard fetch error:', error);
+
       if (error.response?.status === 404) {
         setError('Leaderboard feature coming soon! 🚀');
       } else if (error.response?.status === 429) {
@@ -96,7 +88,7 @@ const Leaderboard = () => {
       } else {
         setError('Failed to load leaderboard. Please try again.');
       }
-      
+
       setLoading(false);
     }
   };
@@ -105,16 +97,16 @@ const Leaderboard = () => {
     const now = new Date();
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     const diff = endOfMonth - now;
-    
+
     if (diff <= 0) {
       setTimeLeft('Season ends today!');
       return;
     }
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     setTimeLeft(`${days}d ${hours}h ${minutes}m`);
   };
 
@@ -124,7 +116,6 @@ const Leaderboard = () => {
     }
   };
 
-  // ===== GET RANK CLASS =====
   const getRankClass = (index) => {
     if (index === 0) return 'gold';
     if (index === 1) return 'silver';
@@ -132,7 +123,6 @@ const Leaderboard = () => {
     return '';
   };
 
-  // ===== GET RANK DISPLAY =====
   const getRankDisplay = (index, rank) => {
     if (index === 0) return '🥇';
     if (index === 1) return '🥈';
@@ -153,8 +143,17 @@ const Leaderboard = () => {
 
   return (
     <div className="leaderboard-container fade-in" ref={containerRef}>
+      <div className="bg-noise"></div>
+      <div className="bg-grid"></div>
+      <div className="aurora aurora-1"></div>
+      <div className="aurora aurora-2"></div>
+
       <div className="leaderboard-header">
-        <h1>🏆 {seasonDisplayName} Leaderboard 🏆</h1>
+        <div className="leaderboard-badge">
+          <span className="badge-dot"></span>
+          {seasonDisplayName}
+        </div>
+        <h1>🏆 Leaderboard 🏆</h1>
         <p className="prize-message">
           🥇 Season Winner will receive <strong>₹2,000 INR</strong>!
         </p>
@@ -168,7 +167,7 @@ const Leaderboard = () => {
 
       <div className="leaderboard-card">
         {error && <div className="leaderboard-error">{error}</div>}
-        
+
         {!error && leaderboard.length === 0 ? (
           <div className="leaderboard-empty">
             <p>No players yet. Be the first to play! 🎯</p>
@@ -176,7 +175,6 @@ const Leaderboard = () => {
           </div>
         ) : !error && (
           <div className="leaderboard-list">
-            {/* ===== HEADER ROW ===== */}
             <div className="leaderboard-item header">
               <span className="rank">#</span>
               <span className="avatar-col">Avatar</span>
@@ -184,8 +182,7 @@ const Leaderboard = () => {
               <span className="games">Season Wins</span>
               <span className="streak">🔥 Streak</span>
             </div>
-            
-            {/* ===== DATA ROWS ===== */}
+
             {leaderboard.map((player, index) => {
               const rank = player.rank || index + 1;
               const username = player.username || 'Unknown';
@@ -194,10 +191,10 @@ const Leaderboard = () => {
               const rankClass = getRankClass(index);
               const rankDisplay = getRankDisplay(index, rank);
               const isTop = index < 3;
-              
+
               return (
-                <div 
-                  key={username + index + player._id || index} 
+                <div
+                  key={username + index + player._id || index}
                   ref={el => itemRefs.current[index] = el}
                   className={`leaderboard-item ${isTop ? 'top' : ''}`}
                   onClick={() => handlePlayerClick(username)}
@@ -208,8 +205,8 @@ const Leaderboard = () => {
                   </span>
                   <span className="avatar-col">
                     {player.profilePhoto ? (
-                      <img 
-                        src={player.profilePhoto} 
+                      <img
+                        src={player.profilePhoto}
                         alt={username}
                         className="leaderboard-avatar"
                         onError={(e) => {

@@ -1,0 +1,179 @@
+:root {
+  --ccf-accent: #6c63ff;
+  --ccf-accent-2: #a89bff;
+  --ccf-accent-3: #00d9c0;
+  --ccf-glass: rgba(255, 255, 255, 0.025);
+  --ccf-glass-hover: rgba(255, 255, 255, 0.045);
+  --ccf-border-soft: rgba(255, 255, 255, 0.06);
+  --ccf-border-accent: rgba(108, 99, 255, 0.35);
+  --ccf-text-primary: #ffffff;
+  --ccf-text-secondary: rgba(255, 255, 255, 0.62);
+  --ccf-text-muted: rgba(255, 255, 255, 0.35);
+}
+
+.clan-create-form {
+  padding: 6px 0;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ccf-border-soft);
+  border-radius: 10px;
+  color: var(--ccf-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  margin-bottom: 24px;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.back-btn:hover {
+  transform: translateX(-4px);
+  background: var(--ccf-glass-hover);
+  color: #fff;
+  border-color: var(--ccf-border-accent);
+}
+
+.clan-create-form h2 {
+  color: #fff;
+  font-size: 25px;
+  font-weight: 800;
+  margin-bottom: 26px;
+  text-align: center;
+  letter-spacing: -0.6px;
+}
+
+.form-group {
+  margin-bottom: 26px;
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  color: var(--ccf-text-secondary);
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--ccf-border-soft);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--ccf-text-muted);
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--ccf-border-accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.form-group input:disabled,
+.form-group textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.char-count,
+.word-count {
+  position: absolute;
+  bottom: -20px;
+  right: 4px;
+  font-size: 11.5px;
+  color: var(--ccf-text-muted);
+}
+
+.clan-cost-info {
+  background: rgba(108, 99, 255, 0.06);
+  border: 1px solid rgba(108, 99, 255, 0.18);
+  border-radius: 14px;
+  padding: 18px;
+  margin: 28px 0;
+  text-align: center;
+}
+
+.clan-cost-info span {
+  color: var(--ccf-accent-2);
+  font-size: 17px;
+  font-weight: 700;
+  display: block;
+}
+
+.info-text {
+  font-size: 12px;
+  color: var(--ccf-text-muted) !important;
+  margin-top: 6px !important;
+  font-weight: 500 !important;
+}
+
+.create-clan-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--ccf-accent), #5a52d5);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.28);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.create-clan-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 42px rgba(108, 99, 255, 0.42);
+}
+
+.create-clan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.error-message {
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  color: #fca5a5;
+  padding: 13px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  text-align: center;
+  font-size: 13.5px;
+}
+
+@media (max-width: 768px) {
+  .clan-create-form h2 {
+    font-size: 21px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 14px;
+    padding: 12px 14px;
+  }
+
+  .create-clan-btn {
+    font-size: 15px;
+    padding: 14px;
+  }
+}

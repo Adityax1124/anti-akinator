@@ -1,0 +1,262 @@
+:root {
+  --cm-bg-deep: #06070a;
+  --cm-accent: #6c63ff;
+  --cm-accent-2: #a89bff;
+  --cm-accent-3: #00d9c0;
+  --cm-glass: rgba(255, 255, 255, 0.025);
+  --cm-glass-hover: rgba(255, 255, 255, 0.045);
+  --cm-border-soft: rgba(255, 255, 255, 0.06);
+  --cm-border-accent: rgba(108, 99, 255, 0.35);
+  --cm-text-primary: #ffffff;
+  --cm-text-secondary: rgba(255, 255, 255, 0.62);
+  --cm-text-muted: rgba(255, 255, 255, 0.35);
+}
+
+.clan-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 7, 10, 0.75);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: cmFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 20px;
+}
+
+.clan-modal {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(28px);
+  border-radius: 28px;
+  padding: 40px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--cm-border-soft);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  isolation: isolate;
+}
+
+.clan-modal-aurora {
+  position: absolute;
+  top: -160px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 460px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(108, 99, 255, 0.22), transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.clan-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clan-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+.clan-modal::-webkit-scrollbar-thumb {
+  background: var(--cm-accent);
+  border-radius: 10px;
+}
+
+.clan-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--cm-border-soft);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 2;
+}
+
+.clan-modal-close:hover {
+  transform: rotate(90deg);
+  background: rgba(108, 99, 255, 0.15);
+  border-color: var(--cm-border-accent);
+  color: var(--cm-accent-2);
+}
+
+.clan-modal-choices {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.clan-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid rgba(108, 99, 255, 0.25);
+  border-radius: 50px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #c3baff;
+  margin-bottom: 20px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cm-accent-3);
+  box-shadow: 0 0 10px var(--cm-accent-3);
+  animation: cmPulseDot 1.8s ease-in-out infinite;
+}
+
+@keyframes cmPulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.clan-modal-choices h2 {
+  color: #fff;
+  font-size: 27px;
+  font-weight: 800;
+  margin-bottom: 30px;
+  letter-spacing: -0.8px;
+}
+
+.clan-modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.clan-modal-btn {
+  position: relative;
+  background: var(--cm-glass);
+  border: 1px solid var(--cm-border-soft);
+  border-radius: 18px;
+  padding: 28px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.clan-modal-btn:hover {
+  transform: translateY(-5px);
+  background: var(--cm-glass-hover);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.create-btn:hover {
+  border-color: var(--cm-border-accent);
+  box-shadow: 0 16px 40px rgba(108, 99, 255, 0.18);
+}
+
+.join-btn:hover {
+  border-color: rgba(0, 217, 192, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 217, 192, 0.16);
+}
+
+.btn-icon-wrapper {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.btn-icon-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse, rgba(108, 99, 255, 0.16), transparent 70%);
+  border-radius: 50%;
+  transition: all 0.5s ease;
+}
+
+.join-btn .btn-icon-glow {
+  background: radial-gradient(ellipse, rgba(0, 217, 192, 0.16), transparent 70%);
+}
+
+.clan-modal-btn:hover .btn-icon-glow {
+  width: 170%;
+  height: 170%;
+}
+
+.btn-icon {
+  font-size: 34px;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.btn-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cm-text-muted);
+}
+
+@keyframes cmFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .clan-modal {
+    padding: 28px 22px;
+    border-radius: 22px;
+  }
+
+  .clan-modal-choices h2 {
+    font-size: 21px;
+    margin-bottom: 22px;
+  }
+
+  .clan-modal-btn {
+    padding: 20px;
+  }
+
+  .btn-icon-wrapper {
+    width: 46px;
+    height: 46px;
+  }
+
+  .btn-icon {
+    font-size: 26px;
+  }
+
+  .btn-title {
+    font-size: 16px;
+  }
+}

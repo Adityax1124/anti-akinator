@@ -11,8 +11,10 @@ const PublicProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    setIsVisible(true);
     fetchProfile();
   }, [username]);
 
@@ -22,7 +24,6 @@ const PublicProfile = () => {
       const response = await api.get(`/profile/public/${username}`, {
         params: { _t: Date.now() }
       });
-      console.log('📥 Profile data:', response.data.user);
       setProfile(response.data.user);
       setError('');
     } catch (error) {
@@ -35,7 +36,7 @@ const PublicProfile = () => {
   };
 
   const getRarityColor = (rarity) => {
-    switch(rarity) {
+    switch (rarity) {
       case 'Common': return '#a0a0a0';
       case 'Uncommon': return '#4ecdc4';
       case 'Rare': return '#4a9eff';
@@ -46,7 +47,7 @@ const PublicProfile = () => {
   };
 
   const getRarityEmoji = (rarity) => {
-    switch(rarity) {
+    switch (rarity) {
       case 'Common': return '⬜';
       case 'Uncommon': return '🟩';
       case 'Rare': return '🟦';
@@ -88,16 +89,13 @@ const PublicProfile = () => {
     return null;
   }
 
-  // ===== FIX: Extract photos properly =====
   const unlockedPhotos = profile.achievements?.profilePhotos || [];
-  
-  // Build display array (up to 10)
+
   const displayPhotos = [];
   for (let i = 0; i < 10; i++) {
     if (i < unlockedPhotos.length) {
       const photoData = unlockedPhotos[i];
-      
-      // Check if photoId is populated (object) or just an ID
+
       if (photoData.photoId && typeof photoData.photoId === 'object') {
         displayPhotos.push({
           ...photoData.photoId,
@@ -105,7 +103,6 @@ const PublicProfile = () => {
           unlockedAt: photoData.unlockedAt
         });
       } else {
-        // If photoId is not populated, push null (show as locked)
         displayPhotos.push(null);
       }
     } else {
@@ -114,18 +111,22 @@ const PublicProfile = () => {
   }
 
   return (
-    <div className="public-profile-container fade-in">
-      {/* ===== PUBLIC BANNER ===== */}
-      <div 
+    <div className={`public-profile-container ${isVisible ? 'visible' : ''}`}>
+      <div className="bg-noise"></div>
+      <div className="bg-grid"></div>
+
+      <div
         className="public-profile-banner"
         style={profile.equipped?.banner?.gifUrl ? { backgroundImage: `url(${profile.equipped.banner.gifUrl})` } : {}}
       >
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
         <div className="public-banner-overlay"></div>
 
         <div className="public-banner-user-row">
-          <div 
+          <div
             className="public-profile-photo"
-            style={profile.equipped?.profilePhoto?.imageUrl ? { 
+            style={profile.equipped?.profilePhoto?.imageUrl ? {
               backgroundImage: `url(${profile.equipped.profilePhoto.imageUrl})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center'
@@ -140,7 +141,7 @@ const PublicProfile = () => {
 
           <div className="public-banner-user-info">
             <h1 className="public-banner-username">{profile.username}</h1>
-            
+
             {profile.equipped?.title && (
               <div className="public-banner-title" style={{ color: getRarityColor(profile.equipped.title.rarity) }}>
                 {profile.equipped.title.displayName}
@@ -168,7 +169,6 @@ const PublicProfile = () => {
         </div>
       </div>
 
-      {/* ===== ACHIEVEMENT STATS ===== */}
       <div className="public-stats-grid">
         <div className="public-stat-card">
           <div className="public-stat-number">{profile.stats?.gamesPlayed || 0}</div>
@@ -188,29 +188,28 @@ const PublicProfile = () => {
         </div>
       </div>
 
-      {/* ===== TOP 10 PROFILE PHOTOS ===== */}
       <div className="public-photos-section">
         <div className="public-photos-section-header">
           <h2>📸 Profile Photos</h2>
           <span className="public-photos-count">{unlockedPhotos.length} / 10</span>
         </div>
-        
+
         <div className="public-top-photos-grid">
           {displayPhotos.map((photo, index) => {
             const isUnlocked = photo !== null && photo.imageUrl;
             const isEquipped = isUnlocked && photo.isEquipped === true;
-            
+
             return (
-              <div 
+              <div
                 key={index}
                 className={`public-top-photo-item ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
                 title={isUnlocked ? photo.name || 'Unknown' : 'Locked'}
               >
                 {isUnlocked ? (
                   <>
-                    <div 
-                      className="public-top-photo-preview" 
-                      style={{ 
+                    <div
+                      className="public-top-photo-preview"
+                      style={{
                         backgroundImage: `url(${photo.imageUrl})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center'

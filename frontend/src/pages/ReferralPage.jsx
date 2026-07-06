@@ -8,9 +8,11 @@ const ReferralPage = () => {
   const [referralData, setReferralData] = useState(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+  const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    setIsVisible(true);
     fetchReferralData();
   }, []);
 
@@ -51,21 +53,30 @@ const ReferralPage = () => {
   }
 
   return (
-    <div className="referral-page fade-in">
+    <div className={`referral-page ${isVisible ? 'visible' : ''}`}>
+      <div className="bg-noise"></div>
+      <div className="bg-grid"></div>
+
       <div className="referral-page-header">
-        <h1>🤝 Refer & Earn</h1>
+        <div className="referral-badge">
+          <span className="badge-dot"></span>
+          Refer & Earn
+        </div>
+        <h1>Invite Friends, Earn Shards</h1>
         <p>Invite friends and earn <strong>50 Shards</strong> each!</p>
       </div>
 
       {error && <div className="referral-error">{error}</div>}
 
       <div className="referral-page-content">
-        {/* Referral Code */}
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
+
         <div className="referral-code-section">
           <label>Your Referral Code</label>
           <div className="referral-code-box">
             <span className="referral-code">{referralData?.referralCode}</span>
-            <button 
+            <button
               className="copy-btn"
               onClick={() => copyToClipboard(referralData?.referralCode)}
             >
@@ -74,14 +85,13 @@ const ReferralPage = () => {
           </div>
         </div>
 
-        {/* Share Buttons */}
         <div className="share-section">
           <label>Share with friends</label>
           <div className="share-buttons">
             <button className="share-btn whatsapp" onClick={shareOnWhatsApp}>
               📱 WhatsApp
             </button>
-            <button 
+            <button
               className="share-btn copy-link"
               onClick={() => copyToClipboard(referralData?.referralLink)}
             >
@@ -90,7 +100,6 @@ const ReferralPage = () => {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="referral-stats">
           <h3>📊 Your Earnings</h3>
           <div className="stats-grid">
@@ -109,7 +118,6 @@ const ReferralPage = () => {
           </div>
         </div>
 
-        {/* How it works */}
         <div className="how-it-works">
           <h3>📖 How it works</h3>
           <div className="steps">
@@ -131,7 +139,6 @@ const ReferralPage = () => {
           </div>
         </div>
 
-        {/* Recent Referrals */}
         {referralData?.recentReferrals?.length > 0 && (
           <div className="recent-referrals">
             <h3>🔄 Recent Referrals</h3>

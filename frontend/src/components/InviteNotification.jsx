@@ -12,9 +12,7 @@ const InviteNotification = ({ invite, onClose }) => {
   const handleAccept = async () => {
     setLoading(true);
     try {
-      // ✅ CHECK IF IT'S A MATCH INVITE OR TEAM INVITE
       if (invite.type === 'match') {
-        // ✅ MATCH INVITE
         const response = await api.post('/match/accept-invite', {
           matchCode: invite.matchCode
         });
@@ -23,7 +21,6 @@ const InviteNotification = ({ invite, onClose }) => {
           navigate(`/match/battle/${invite.matchCode}`);
         }
       } else {
-        // ✅ TEAM INVITE (Existing)
         const response = await api.post('/team/accept-invite', {
           roomCode: invite.roomCode
         });
@@ -33,7 +30,6 @@ const InviteNotification = ({ invite, onClose }) => {
         }
       }
     } catch (error) {
-      console.error('Accept invite error:', error);
       alert(error.response?.data?.message || 'Failed to join');
     } finally {
       setLoading(false);
@@ -53,34 +49,29 @@ const InviteNotification = ({ invite, onClose }) => {
       }
       onClose();
     } catch (error) {
-      console.error('Decline invite error:', error);
       onClose();
     }
   };
 
-  // ✅ Determine display details based on invite type
   const getDisplayDetails = () => {
     if (invite.type === 'match') {
       return {
-        title: 'Battle Invite!',
         code: invite.matchCode,
         players: '1/2',
         type: '⚔️ Battle'
       };
-    } else {
-      return {
-        title: 'Team Invite!',
-        code: invite.roomCode,
-        players: `${invite.room?.players || 1}/${invite.room?.maxPlayers || 4}`,
-        type: '🤝 Team'
-      };
     }
+    return {
+      code: invite.roomCode,
+      players: `${invite.room?.players || 1}/${invite.room?.maxPlayers || 4}`,
+      type: '🤝 Team'
+    };
   };
 
   const details = getDisplayDetails();
 
   return (
-    <div className="invite-notification slide-in">
+    <div className="invite-notification">
       <div className="invite-content">
         <div className="invite-icon">
           {invite.type === 'match' ? '⚔️' : '📨'}
@@ -88,19 +79,19 @@ const InviteNotification = ({ invite, onClose }) => {
         <div className="invite-text">
           <strong>{invite.from?.username || 'Someone'}</strong> invited you to a {details.type}!
           <span className="invite-details">
-            {details.type}: {details.code} • 👥 {details.players} players
+            {details.type} · {details.code} · {details.players} players
           </span>
         </div>
       </div>
       <div className="invite-actions">
-        <button 
+        <button
           className="invite-btn accept"
           onClick={handleAccept}
           disabled={loading}
         >
           {loading ? 'Joining...' : 'Accept'}
         </button>
-        <button 
+        <button
           className="invite-btn decline"
           onClick={handleDecline}
           disabled={loading}

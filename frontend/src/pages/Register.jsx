@@ -18,8 +18,6 @@ const Register = () => {
   const [referralValid, setReferralValid] = useState(null);
   const [referralUsername, setReferralUsername] = useState('');
   const [verifying, setVerifying] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,7 +35,7 @@ const Register = () => {
   // ===== VERIFY REFERRAL CODE =====
   const verifyReferralCode = async (code) => {
     if (!code || code.length < 6) return;
-    
+
     setVerifying(true);
     try {
       const response = await api.post('/auth/verify-referral', { referralCode: code });
@@ -63,14 +61,10 @@ const Register = () => {
     return re.test(email);
   };
 
-  const validatePassword = (password) => {
-    return password.length >= 6 && /[A-Z]/.test(password) && /[0-9]/.test(password);
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    
+
     if (name === 'referralCode') {
       setReferralValid(null);
       setReferralUsername('');
@@ -78,7 +72,7 @@ const Register = () => {
         verifyReferralCode(value);
       }
     }
-    
+
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
@@ -129,7 +123,6 @@ const Register = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    // If there are errors, stop submission
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -147,46 +140,20 @@ const Register = () => {
 
       if (trimmedReferralCode && trimmedReferralCode.length >= 6 && referralValid === true) {
         registerData.referralCode = trimmedReferralCode;
-        console.log('📝 [Register] Sending referral code:', trimmedReferralCode);
-      } else {
-        console.log('ℹ️ [Register] No valid referral code provided');
       }
 
-      console.log('📝 [Register] Sending device fingerprint:', registerData.deviceFingerprint);
-
       const result = await register(registerData);
-      
+
       if (result.success) {
-        // ✅ Check if verification is required
-        if (result.requiresVerification) {
-          setRegisteredEmail(result.email || trimmedEmail);
-          setRegistrationSuccess(true);
-          localStorage.setItem('pendingVerificationEmail', result.email || trimmedEmail);
-          
-          // Clear form data
-          setFormData({
-            username: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            referralCode: ''
-          });
-          
-          // Navigate to verify page
-          navigate('/verify-otp', { 
-            state: { email: result.email || trimmedEmail }
-          });
-        } else {
-          // Old flow (no verification)
-          setFormData({
-            username: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-            referralCode: ''
-          });
-          navigate('/');
-        }
+        // ===== Direct login, no OTP verification step =====
+        setFormData({
+          username: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          referralCode: ''
+        });
+        navigate('/');
       } else {
         if (result.message?.includes('device already has an account')) {
           setErrors({ general: '❌ This device already has an account. Only one account per device is allowed.' });
@@ -210,40 +177,19 @@ const Register = () => {
     }
   };
 
-  // ===== If registration success, show success message =====
-  if (registrationSuccess) {
-    return (
-      <div className="auth-container fade-in">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>📧 Verify Your Email</h1>
-            <p>We've sent a 6-digit verification code to</p>
-            <p className="auth-email-display"><strong>{registeredEmail}</strong></p>
-          </div>
-          <div className="auth-form">
-            <div className="success-box">
-              <p>✅ Registration successful!</p>
-              <p style={{ color: '#aaa', fontSize: '14px' }}>Please check your email for the OTP.</p>
-            </div>
-            <button
-              type="button"
-              className="btn btn-secondary btn-block"
-              onClick={() => navigate('/verify-otp', { state: { email: registeredEmail } })}
-            >
-              Enter OTP
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="auth-container fade-in">
+      <div className="aurora aurora-1"></div>
+      <div className="aurora aurora-2"></div>
+
       <div className="auth-card">
         <div className="auth-header">
-          <h1>Join the Game! 🎮</h1>
-          <p>Create your account and start guessing</p>
+          <div className="auth-badge">
+            <span className="badge-dot"></span>
+            Join the Battle
+          </div>
+          <h1>Create Account</h1>
+          <p>Start your anime card collection journey</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
@@ -293,12 +239,9 @@ const Register = () => {
                 {errors.email}
               </div>
             )}
-            <small className="form-text text-muted">
-              We'll send a verification code to this email
-            </small>
           </div>
 
-          {/* ===== ✅ REFERRAL CODE FIELD ===== */}
+          {/* ===== REFERRAL CODE FIELD ===== */}
           <div className="form-group">
             <label htmlFor="referralCode">Referral Code (Optional)</label>
             <input
@@ -383,9 +326,9 @@ const Register = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
-            className="btn btn-secondary btn-block" 
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
             disabled={loading}
           >
             {loading ? (

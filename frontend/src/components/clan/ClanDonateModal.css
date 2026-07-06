@@ -1,0 +1,198 @@
+:root {
+  --dm-accent: #6c63ff;
+  --dm-accent-2: #a89bff;
+  --dm-accent-3: #00d9c0;
+  --dm-glass: rgba(255, 255, 255, 0.025);
+  --dm-glass-hover: rgba(255, 255, 255, 0.045);
+  --dm-border-soft: rgba(255, 255, 255, 0.06);
+  --dm-border-accent: rgba(108, 99, 255, 0.35);
+  --dm-text-secondary: rgba(255, 255, 255, 0.62);
+  --dm-text-muted: rgba(255, 255, 255, 0.35);
+}
+
+.donate-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 7, 10, 0.75);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: dmFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.donate-modal {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(28px);
+  border: 1px solid var(--dm-border-soft);
+  border-radius: 26px;
+  padding: 36px;
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.donate-modal-aurora {
+  position: absolute;
+  top: -140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  height: 260px;
+  background: radial-gradient(ellipse, rgba(0, 217, 192, 0.2), transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.donate-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--dm-border-soft);
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 2;
+}
+
+.donate-modal-close:hover {
+  transform: rotate(90deg);
+  background: rgba(108, 99, 255, 0.15);
+  border-color: var(--dm-border-accent);
+  color: var(--dm-accent-2);
+}
+
+.donate-modal h3 {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 800;
+  margin-bottom: 26px;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.donate-modal .form-group {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 20px;
+}
+
+.donate-modal .form-group label {
+  display: block;
+  color: var(--dm-text-secondary);
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.donate-modal .form-group select,
+.donate-modal .form-group input {
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--dm-border-soft);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.donate-modal .form-group select:focus,
+.donate-modal .form-group input:focus {
+  outline: none;
+  border-color: var(--dm-border-accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.donate-modal .form-group select option {
+  background: #0d0e14;
+  color: #fff;
+}
+
+.donate-btn {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--dm-accent-3), #00a891);
+  border: none;
+  border-radius: 14px;
+  color: #06070a;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(0, 217, 192, 0.25);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  margin-top: 8px;
+}
+
+.donate-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 42px rgba(0, 217, 192, 0.38);
+}
+
+.donate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.error-message {
+  position: relative;
+  z-index: 1;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  color: #fca5a5;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 13.5px;
+}
+
+@keyframes dmFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .donate-modal {
+    padding: 26px 22px;
+    border-radius: 20px;
+  }
+
+  .donate-modal h3 {
+    font-size: 19px;
+  }
+
+  .donate-modal .form-group select,
+  .donate-modal .form-group input {
+    font-size: 14px;
+    padding: 12px 14px;
+  }
+
+  .donate-btn {
+    font-size: 15px;
+    padding: 13px;
+  }
+}

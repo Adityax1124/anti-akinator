@@ -37,14 +37,9 @@ const Collection = () => {
     }
   };
 
-  // ===== FIX: Scroll to top AND prevent body scroll when modal opens =====
   const handleCardClick = (card) => {
-    // Scroll to top of page immediately
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Lock body scroll
     document.body.classList.add('modal-open');
-    
     setSelectedCard(card);
     setShowModal(true);
   };
@@ -56,8 +51,8 @@ const Collection = () => {
   };
 
   const handleUpgradeSuccess = (updatedCard) => {
-    setCards(prevCards => 
-      prevCards.map(c => 
+    setCards(prevCards =>
+      prevCards.map(c =>
         c.characterId === updatedCard.characterId ? updatedCard : c
       )
     );
@@ -71,13 +66,13 @@ const Collection = () => {
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(card => 
+      filtered = filtered.filter(card =>
         card.characterName?.toLowerCase().includes(query)
       );
     }
 
     if (filter !== 'all') {
-      filtered = filtered.filter(card => 
+      filtered = filtered.filter(card =>
         card.element?.toLowerCase() === filter.toLowerCase()
       );
     }
@@ -89,10 +84,11 @@ const Collection = () => {
       case 'level':
         filtered.sort((a, b) => b.level - a.level);
         break;
-      case 'rarity':
+      case 'rarity': {
         const rarityOrder = { 'Legendary': 5, 'Epic': 4, 'Rare': 3, 'Uncommon': 2, 'Common': 1 };
         filtered.sort((a, b) => (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0));
         break;
+      }
       case 'name':
         filtered.sort((a, b) => a.characterName?.localeCompare(b.characterName || '') || 0);
         break;
@@ -140,6 +136,8 @@ const Collection = () => {
   if (loading) {
     return (
       <div className="collection-container">
+        <div className="collection-bg-noise"></div>
+        <div className="collection-bg-grid"></div>
         <div className="collection-loading">
           <div className="loader"></div>
           <p>Loading your collection...</p>
@@ -150,8 +148,19 @@ const Collection = () => {
 
   return (
     <div className="collection-container">
+      <div className="collection-bg-noise"></div>
+      <div className="collection-bg-grid"></div>
+      <div className="collection-aurora collection-aurora-1"></div>
+      <div className="collection-aurora collection-aurora-2"></div>
+
       <div className="collection-header">
-        <h1>📁 My Collection</h1>
+        <div className="collection-header-title">
+          <div className="collection-badge">
+            <span className="badge-dot"></span>
+            Your Vault
+          </div>
+          <h1>My Collection</h1>
+        </div>
         <div className="collection-stats">
           <div className="stat-item">
             <span className="stat-value">{stats.totalCards}</span>
@@ -186,8 +195,8 @@ const Collection = () => {
           />
         </div>
         <div className="filter-group">
-          <select 
-            value={filter} 
+          <select
+            value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="filter-select"
           >
@@ -197,8 +206,8 @@ const Collection = () => {
             <option value="wind">🌪️ Wind</option>
             <option value="earth">🌍 Earth</option>
           </select>
-          <select 
-            value={sortBy} 
+          <select
+            value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="filter-select"
           >
@@ -215,21 +224,22 @@ const Collection = () => {
           <div className="empty-icon">🃏</div>
           <h3>No cards found</h3>
           <p>
-            {cards.length === 0 
-              ? "You don't have any cards yet. Win battles to collect cards!" 
+            {cards.length === 0
+              ? "You don't have any cards yet. Win battles to collect cards!"
               : "Try adjusting your search or filters"}
           </p>
         </div>
       ) : (
         <div className="collection-grid">
-          {filteredCards.map((card) => (
+          {filteredCards.map((card, i) => (
             <div
               key={card.characterId}
               className="collection-card"
               onClick={() => handleCardClick(card)}
               style={{
                 borderColor: getRarityColor(card.rarity),
-                boxShadow: `0 0 20px ${getRarityColor(card.rarity)}22`
+                boxShadow: `0 0 24px ${getRarityColor(card.rarity)}1a`,
+                animationDelay: `${Math.min(i * 0.04, 0.4)}s`
               }}
             >
               <div className="card-image-container">
@@ -253,8 +263,8 @@ const Collection = () => {
                   <span className="card-level-text">Level {card.level || 1}/10</span>
                 </div>
                 <div className="card-progress-bar">
-                  <div 
-                    className="card-progress-fill" 
+                  <div
+                    className="card-progress-fill"
                     style={{ width: `${((card.level || 1) / 10) * 100}%` }}
                   />
                 </div>

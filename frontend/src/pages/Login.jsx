@@ -13,7 +13,6 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // ===== GET CSRF TOKEN =====
   useEffect(() => {
     const token = document.cookie
       .split('; ')
@@ -24,7 +23,6 @@ const Login = () => {
     }
   }, []);
 
-  // ===== VALIDATE EMAIL =====
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
@@ -34,7 +32,6 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
-    // ===== FRONTEND VALIDATION =====
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
 
@@ -57,21 +54,18 @@ const Login = () => {
 
     try {
       const result = await login(trimmedEmail, trimmedPassword);
-      
+
       if (result.success) {
-        // ===== CHECK IF 2FA IS REQUIRED =====
         if (result.requires2FA) {
-          // Navigate to 2FA verification page
-          navigate('/2fa-verify', { 
-            state: { 
+          navigate('/2fa-verify', {
+            state: {
               email: result.email || trimmedEmail,
-              userId: result.userId 
+              userId: result.userId
             }
           });
           return;
         }
-        
-        // Clear sensitive data from state
+
         setEmail('');
         setPassword('');
         navigate('/');
@@ -79,7 +73,6 @@ const Login = () => {
         setError(result.message || 'Login failed. Please try again.');
       }
     } catch (err) {
-      // Handle network errors
       if (err.message?.includes('Network')) {
         setError('Network error. Please check your connection.');
       } else if (err.response?.status === 429) {
@@ -96,10 +89,17 @@ const Login = () => {
 
   return (
     <div className="auth-container fade-in">
+      <div className="aurora aurora-1"></div>
+      <div className="aurora aurora-2"></div>
+
       <div className="auth-card">
         <div className="auth-header">
-          <h1>Welcome Back! 🎯</h1>
-          <p>Login to continue your Anti-Akinator journey</p>
+          <div className="auth-badge">
+            <span className="badge-dot"></span>
+            Welcome Back
+          </div>
+          <h1>Anti-Akinator</h1>
+          <p>Login to continue your anime journey</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
@@ -144,9 +144,9 @@ const Login = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
-            className="btn btn-primary btn-block" 
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
             disabled={loading}
           >
             {loading ? (
@@ -156,7 +156,6 @@ const Login = () => {
             )}
           </button>
 
-          {/* Hidden CSRF token field for form */}
           {csrfToken && (
             <input type="hidden" name="_csrf" value={csrfToken} />
           )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TeamPlayModal from '../components/TeamPlayModal';
@@ -10,7 +10,6 @@ const Home = () => {
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  // ✅ Scroll Animation - Intersection Observer
   useEffect(() => {
     setIsVisible(true);
 
@@ -37,16 +36,23 @@ const Home = () => {
 
   return (
     <div className={`home-container ${isVisible ? 'visible' : ''}`}>
-      <TeamPlayModal 
-        isOpen={isTeamModalOpen} 
-        onClose={() => setIsTeamModalOpen(false)} 
+      <div className="bg-noise"></div>
+      <div className="bg-grid"></div>
+
+      <TeamPlayModal
+        isOpen={isTeamModalOpen}
+        onClose={() => setIsTeamModalOpen(false)}
       />
 
-      {/* ===== HERO SECTION ===== */}
       <section className="hero-section">
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
         <div className="hero-glow"></div>
         <div className="hero-content">
-          <div className="hero-badge">🎮 Premium Anime Battle Platform</div>
+          <div className="hero-badge">
+            <span className="badge-dot"></span>
+            Premium Anime Battle Platform
+          </div>
           <h1 className="hero-title">
             <span className="hero-title-gradient">Anti-Akinator</span>
           </h1>
@@ -56,20 +62,20 @@ const Home = () => {
             and steal their best cards to build your ultimate anime collection!
           </p>
           <div className="hero-buttons">
-            <button 
+            <button
               className="hero-btn btn-primary"
               onClick={() => navigate('/game')}
             >
               <span className="btn-text">Start Playing</span>
               <span className="btn-icon">🚀</span>
             </button>
-            <button 
+            <button
               className="hero-btn btn-secondary"
               onClick={() => navigate('/match')}
             >
               <span className="btn-text">⚔️ Battle Now</span>
             </button>
-            <button 
+            <button
               className="hero-btn btn-team"
               onClick={() => setIsTeamModalOpen(true)}
             >
@@ -77,15 +83,18 @@ const Home = () => {
             </button>
           </div>
         </div>
+        <div className="hero-scroll-hint">
+          <span></span>
+        </div>
       </section>
 
-      {/* ===== WHAT WE OFFER ===== */}
       <section className="offer-section">
         <h2 className="section-title">
           What <span className="section-title-highlight">We Offer</span>
         </h2>
         <div className="offer-grid">
           <div className="offer-card">
+            <div className="offer-card-border"></div>
             <div className="offer-icon-wrapper">
               <div className="offer-icon-glow"></div>
               <span className="offer-icon">🤔</span>
@@ -95,6 +104,7 @@ const Home = () => {
             <div className="offer-tag">Classic Mode</div>
           </div>
           <div className="offer-card">
+            <div className="offer-card-border"></div>
             <div className="offer-icon-wrapper">
               <div className="offer-icon-glow"></div>
               <span className="offer-icon">🃏</span>
@@ -104,6 +114,7 @@ const Home = () => {
             <div className="offer-tag">Collect & Earn</div>
           </div>
           <div className="offer-card">
+            <div className="offer-card-border"></div>
             <div className="offer-icon-wrapper">
               <div className="offer-icon-glow"></div>
               <span className="offer-icon">⚔️</span>
@@ -113,6 +124,7 @@ const Home = () => {
             <div className="offer-tag">Multiplayer</div>
           </div>
           <div className="offer-card">
+            <div className="offer-card-border"></div>
             <div className="offer-icon-wrapper">
               <div className="offer-icon-glow"></div>
               <span className="offer-icon">🎯</span>
@@ -122,6 +134,7 @@ const Home = () => {
             <div className="offer-tag">High Stakes</div>
           </div>
           <div className="offer-card">
+            <div className="offer-card-border"></div>
             <div className="offer-icon-wrapper">
               <div className="offer-icon-glow"></div>
               <span className="offer-icon">💎</span>
@@ -131,6 +144,7 @@ const Home = () => {
             <div className="offer-tag">Progression</div>
           </div>
           <div className="offer-card">
+            <div className="offer-card-border"></div>
             <div className="offer-icon-wrapper">
               <div className="offer-icon-glow"></div>
               <span className="offer-icon">🏆</span>
@@ -142,12 +156,12 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ===== HOW TO PLAY ===== */}
       <section className="how-to-play-section">
         <h2 className="section-title">
           How to <span className="section-title-highlight">Play</span>
         </h2>
         <div className="how-to-play-grid">
+          <div className="how-to-line"></div>
           <div className="how-to-card how-to-left">
             <div className="how-to-number">01</div>
             <div className="how-to-content">
@@ -193,7 +207,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ===== STATS ===== */}
       <section className="stats-section">
         <div className="stats-grid">
           <div className="stat-card">
@@ -229,14 +242,14 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ===== CTA ===== */}
       <section className="cta-section">
+        <div className="cta-grid-overlay"></div>
         <div className="cta-glow"></div>
         <div className="cta-content">
           <h2>Ready to Begin Your Journey?</h2>
           <p>Join thousands of players in the ultimate anime guessing and card battle game</p>
           <div className="cta-buttons">
-            <button 
+            <button
               className="cta-btn"
               onClick={() => navigate('/game')}
             >
@@ -245,7 +258,7 @@ const Home = () => {
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
-            <button 
+            <button
               className="cta-btn-secondary"
               onClick={() => navigate('/collection')}
             >

@@ -48,7 +48,6 @@ const FriendModal = ({ isOpen, onClose }) => {
     if (query.length >= 2) {
       try {
         const response = await api.get(`/profile/search?q=${encodeURIComponent(query)}`);
-        console.log('📊 Search results:', response.data.users);
         setSearchResults(response.data.users || []);
       } catch (error) {
         console.error('Search error:', error);
@@ -58,7 +57,6 @@ const FriendModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // ===== HANDLE FRIEND PROFILE CLICK =====
   const handleFriendClick = (username) => {
     if (username) {
       onClose();
@@ -66,10 +64,9 @@ const FriendModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // ===== HANDLE SEND REQUEST =====
   const handleSendRequest = async (userId) => {
     let targetId = userId;
-    
+
     if (!targetId) {
       const searchResult = searchResults.find(u => u.username === userId || u._id === userId);
       if (searchResult) {
@@ -77,17 +74,13 @@ const FriendModal = ({ isOpen, onClose }) => {
       }
     }
 
-    console.log('📝 [handleSendRequest] Called with userId:', targetId);
-    
     if (!targetId) {
-      console.error('❌ [handleSendRequest] No userId provided');
       setError('Invalid user - no ID provided');
       return;
     }
 
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(targetId);
     if (!isValidObjectId) {
-      console.error('❌ [handleSendRequest] Invalid ObjectId format:', targetId);
       setError('Invalid user ID format');
       return;
     }
@@ -96,14 +89,12 @@ const FriendModal = ({ isOpen, onClose }) => {
     setError('');
     setSuccess('');
     try {
-      console.log('📝 Sending friend request to userId:', targetId);
       const response = await api.post('/friend/request', { userId: targetId });
-      console.log('✅ Friend request response:', response.data);
       setSuccess('Friend request sent!');
       setSearchResults(searchResults.filter(u => (u._id || u.id) !== targetId));
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      console.error('❌ Send request error:', error);
+      console.error('Send request error:', error);
       setError(error.response?.data?.message || 'Failed to send request');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -145,27 +136,28 @@ const FriendModal = ({ isOpen, onClose }) => {
   return (
     <div className="friend-modal-overlay" onClick={onClose}>
       <div className="friend-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="friend-modal-glow"></div>
         <button className="friend-modal-close" onClick={onClose}>✕</button>
-        
+
         <div className="friend-modal-header">
           <h2>👥 Friends</h2>
           <p className="subtitle">Connect with players and challenge them</p>
         </div>
 
         <div className="friend-tabs">
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
             onClick={() => setActiveTab('friends')}
           >
             Friends <span className="tab-count">{friends.length}</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
             Requests <span className="tab-count">{pendingRequests.length}</span>
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`}
             onClick={() => setActiveTab('search')}
           >
@@ -200,13 +192,13 @@ const FriendModal = ({ isOpen, onClose }) => {
                     </div>
                   </div>
                   <div className="friend-actions-area">
-                    <button 
+                    <button
                       className="friend-action-btn view-profile"
                       onClick={() => handleFriendClick(friend.username)}
                     >
                       View
                     </button>
-                    <button 
+                    <button
                       className="friend-action-btn unfriend"
                       onClick={() => handleUnfriend(friend.userId)}
                     >
@@ -242,13 +234,13 @@ const FriendModal = ({ isOpen, onClose }) => {
                     </div>
                   </div>
                   <div className="friend-actions-area">
-                    <button 
+                    <button
                       className="friend-action-btn accept"
                       onClick={() => handleAcceptRequest(request.requester._id)}
                     >
                       Accept
                     </button>
-                    <button 
+                    <button
                       className="friend-action-btn reject"
                       onClick={() => handleRejectRequest(request.requester._id)}
                     >
@@ -274,8 +266,7 @@ const FriendModal = ({ isOpen, onClose }) => {
               <div className="search-results-list">
                 {searchResults.map((result) => {
                   const userId = result._id || result.id || result.userId;
-                  console.log('🔍 Search result:', { username: result.username, userId });
-                  
+
                   return (
                     <div key={result._id || result.id || result.username} className="search-result-item">
                       <div className="friend-avatar">
@@ -285,12 +276,9 @@ const FriendModal = ({ isOpen, onClose }) => {
                         <span className="friend-name">{result.username}</span>
                         <span className="friend-stats">🎴 {result.shards || 0} Shards</span>
                       </div>
-                      <button 
+                      <button
                         className="friend-action-btn add"
-                        onClick={() => {
-                          console.log('🖱️ Add Friend clicked for:', result);
-                          handleSendRequest(userId);
-                        }}
+                        onClick={() => handleSendRequest(userId)}
                         disabled={loading || !userId}
                       >
                         {loading ? 'Sending...' : 'Add Friend'}

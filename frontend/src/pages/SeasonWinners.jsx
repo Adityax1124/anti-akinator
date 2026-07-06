@@ -6,15 +6,15 @@ const SeasonWinners = () => {
   const [winners, setWinners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSeason, setCurrentSeason] = useState(null);
-  
-  // ===== REF FOR INTERSECTION OBSERVER =====
+  const [isVisible, setIsVisible] = useState(false);
+
   const itemRefs = useRef([]);
 
   useEffect(() => {
+    setIsVisible(true);
     fetchData();
   }, []);
 
-  // ===== INTERSECTION OBSERVER FOR SCROLL ANIMATIONS =====
   useEffect(() => {
     if (!loading && winners.length > 0) {
       const observer = new IntersectionObserver(
@@ -31,7 +31,6 @@ const SeasonWinners = () => {
         }
       );
 
-      // Observe all winner items
       itemRefs.current.forEach((item) => {
         if (item) observer.observe(item);
       });
@@ -47,18 +46,10 @@ const SeasonWinners = () => {
   const fetchData = async () => {
     try {
       const response = await api.get('/season/winners');
-      
-      // The backend now returns:
-      // {
-      //   currentSeason: { code: 202607, display: "Season 3" },
-      //   winners: [{ season: 202607, displaySeason: "Season 3", username: "...", ... }]
-      // }
-      
       setWinners(response.data.winners || []);
       setCurrentSeason(response.data.currentSeason || null);
     } catch (error) {
       console.error('Error fetching season winners:', error);
-      // Fallback: try to fetch current season separately if winners endpoint fails
       try {
         const seasonRes = await api.get('/season/current');
         setCurrentSeason(seasonRes.data.season || null);
@@ -72,7 +63,9 @@ const SeasonWinners = () => {
 
   if (loading) {
     return (
-      <div className="season-winners-container fade-in">
+      <div className={`season-winners-container ${isVisible ? 'visible' : ''}`}>
+        <div className="sw-bg-noise"></div>
+        <div className="sw-bg-grid"></div>
         <div className="loading-container">
           <div className="loader"></div>
           <p>Loading champions...</p>
@@ -82,26 +75,52 @@ const SeasonWinners = () => {
   }
 
   return (
-    <div className="season-winners-container fade-in">
-      <div className="season-winners-header">
-        <h1>🏆 Season Champions 🏆</h1>
-        <p className="season-subtitle">
-          Current Season: <strong>{currentSeason?.display || 'Loading...'}</strong>
-        </p>
-      </div>
+    <div className={`season-winners-container ${isVisible ? 'visible' : ''}`}>
+      <div className="sw-bg-noise"></div>
+      <div className="sw-bg-grid"></div>
+
+      <section className="season-hero">
+        <div className="sw-aurora sw-aurora-1"></div>
+        <div className="sw-aurora sw-aurora-2"></div>
+        <div className="sw-hero-glow"></div>
+        <div className="season-hero-content">
+          <div className="season-badge">
+            <span className="badge-dot"></span>
+            Hall of Fame
+          </div>
+          <h1 className="season-title">
+            <span className="season-title-gradient">Season Champions</span>
+          </h1>
+          <p className="season-subtitle">
+            Current Season: <strong>{currentSeason?.display || 'Loading...'}</strong>
+          </p>
+        </div>
+      </section>
 
       {winners.length === 0 ? (
         <div className="no-winners">
-          <p>No season winners yet. Be the first to win a season! 🚀</p>
+          <span className="no-winners-icon">🚀</span>
+          <p>No season winners yet.</p>
+          <p>Be the first to win a season!</p>
         </div>
       ) : (
         <div className="winners-list">
+          <div className="winners-list-header">
+            <span>Season</span>
+            <span>Champion</span>
+            <span>Streak</span>
+            <span>Wins</span>
+            <span>Prize</span>
+          </div>
+
           {winners.map((winner, index) => (
-            <div 
-              key={winner.season} 
-              ref={el => itemRefs.current[index] = el}
+            <div
+              key={winner.season}
+              ref={(el) => (itemRefs.current[index] = el)}
               className={`winner-item ${index === 0 ? 'latest' : ''}`}
+              style={{ transitionDelay: `${Math.min(index, 10) * 0.08}s` }}
             >
+              {index === 0 && <div className="winner-item-glow"></div>}
               <span className="season-number">
                 {index === 0 && <span className="crown">👑</span>}
                 {winner.displaySeason || `Season ${winner.season}`}
@@ -109,7 +128,7 @@ const SeasonWinners = () => {
               <span className="winner-name">{winner.username}</span>
               <span className="winner-streak">🔥 {winner.streak}</span>
               <span className="winner-wins">🎯 {winner.wins}</span>
-              <span className="winner-prize">💰 {winner.prize || 2000} Shards</span>
+              <span className="winner-prize">💰 {winner.prize || 2000}</span>
             </div>
           ))}
         </div>

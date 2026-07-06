@@ -6,84 +6,99 @@ import io from 'socket.io-client';
 import MatchChat from '../components/MatchChat';
 import './MatchBattle.css';
 
-// ============================================================
-// FIGHT ANIMATION COMPONENT
-// ============================================================
 const FightAnimation = ({ playerCard, opponentCard, winner, onComplete, mySide }) => {
   const [stage, setStage] = useState('fly');
   const [sparkles, setSparkles] = useState([]);
   const [showResult, setShowResult] = useState(false);
-  
+
   useEffect(() => {
-    const flyTimer = setTimeout(() => setStage('impact'), 800);
+    const flyTimer = setTimeout(() => setStage('impact'), 900);
     const impactTimer = setTimeout(() => {
       setStage('result');
       setShowResult(true);
       const newSparkles = [];
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 28; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const distance = 50 + Math.random() * 150;
+        const distance = 60 + Math.random() * 180;
         newSparkles.push({
           id: i,
           x: 50 + Math.cos(angle) * distance,
           y: 50 + Math.sin(angle) * distance,
-          delay: Math.random() * 0.3,
-          size: 5 + Math.random() * 15
+          delay: Math.random() * 0.35,
+          size: 4 + Math.random() * 14
         });
       }
       setSparkles(newSparkles);
-    }, 1400);
+    }, 1500);
     const completeTimer = setTimeout(() => {
       setStage('complete');
       if (onComplete) onComplete();
-    }, 3000);
+    }, 3200);
     return () => {
       clearTimeout(flyTimer);
       clearTimeout(impactTimer);
       clearTimeout(completeTimer);
     };
   }, []);
-  
+
   const isWinner = winner === mySide;
   const isDraw = winner === 'draw';
-  
+
   return (
-    <div className="fight-modal-arena">
+    <div className={`fight-modal-arena ${stage === 'impact' ? 'shaking' : ''}`}>
+      <div className="fight-arena-glow"></div>
+      <div className="fight-arena-rays"></div>
+
       <div className="fight-cards-container">
-        {/* Player Card */}
-        <div className={`fight-card player-card ${stage === 'impact' ? 'battle-impact' : ''} ${stage === 'result' ? (isWinner ? 'winner-card' : 'loser-card') : ''}`}>
-          {playerCard?.image ? (
-            <img src={playerCard.image} alt={playerCard.characterName} className="fight-card-image" />
-          ) : (
-            <div className="fight-card-placeholder">{playerCard?.characterName?.charAt(0) || '?'}</div>
-          )}
+        <div className={`fight-card player-card ${stage === 'fly' ? 'flying' : ''} ${stage === 'impact' ? 'battle-impact' : ''} ${stage === 'result' ? (isWinner ? 'winner-card' : isDraw ? 'draw-card' : 'loser-card') : ''}`}>
+          <div className="fight-card-trail player-trail"></div>
+          <div className="fight-card-inner">
+            {playerCard?.image ? (
+              <img src={playerCard.image} alt={playerCard.characterName} className="fight-card-image" />
+            ) : (
+              <div className="fight-card-placeholder">{playerCard?.characterName?.charAt(0) || '?'}</div>
+            )}
+            <div className="fight-card-shine"></div>
+          </div>
           <div className="fight-card-info">
             <span className="fight-card-name">{playerCard?.characterName || 'Your Card'}</span>
             <span className="fight-card-power">⚡{playerCard?.powerLevel || '?'}</span>
           </div>
+          {stage === 'result' && isWinner && <div className="fight-card-crown">👑</div>}
         </div>
-        
-        {/* VS Burst */}
-        {stage === 'impact' && <div className="vs-burst">⚡VS⚡</div>}
-        
-        {/* Opponent Card */}
-        <div className={`fight-card opponent-card ${stage === 'impact' ? 'battle-impact' : ''} ${stage === 'result' ? (!isWinner && !isDraw ? 'winner-card' : 'loser-card') : ''}`}>
-          {opponentCard?.image ? (
-            <img src={opponentCard.image} alt={opponentCard.characterName} className="fight-card-image" />
-          ) : (
-            <div className="fight-card-placeholder">{opponentCard?.characterName?.charAt(0) || '?'}</div>
-          )}
+
+        {stage === 'impact' && (
+          <>
+            <div className="impact-shockwave ring-1"></div>
+            <div className="impact-shockwave ring-2"></div>
+            <div className="impact-shockwave ring-3"></div>
+            <div className="lightning-bolt bolt-1">⚡</div>
+            <div className="lightning-bolt bolt-2">⚡</div>
+            <div className="vs-burst">VS</div>
+          </>
+        )}
+
+        <div className={`fight-card opponent-card ${stage === 'fly' ? 'flying' : ''} ${stage === 'impact' ? 'battle-impact' : ''} ${stage === 'result' ? (!isWinner && !isDraw ? 'winner-card' : isDraw ? 'draw-card' : 'loser-card') : ''}`}>
+          <div className="fight-card-trail opponent-trail"></div>
+          <div className="fight-card-inner">
+            {opponentCard?.image ? (
+              <img src={opponentCard.image} alt={opponentCard.characterName} className="fight-card-image" />
+            ) : (
+              <div className="fight-card-placeholder">{opponentCard?.characterName?.charAt(0) || '?'}</div>
+            )}
+            <div className="fight-card-shine"></div>
+          </div>
           <div className="fight-card-info">
             <span className="fight-card-name">{opponentCard?.characterName || 'Opponent'}</span>
             <span className="fight-card-power">⚡{opponentCard?.powerLevel || '?'}</span>
           </div>
+          {stage === 'result' && !isWinner && !isDraw && <div className="fight-card-crown">👑</div>}
         </div>
-        
-        {/* Sparkles */}
+
         {sparkles.map(s => (
-          <div 
+          <div
             key={s.id}
-            className="sparkle"
+            className={`sparkle ${isDraw ? 'sparkle-draw' : isWinner ? 'sparkle-win' : 'sparkle-lose'}`}
             style={{
               '--tx': `${s.x - 50}px`,
               '--ty': `${s.y - 50}px`,
@@ -91,16 +106,16 @@ const FightAnimation = ({ playerCard, opponentCard, winner, onComplete, mySide }
               top: `${s.y}%`,
               width: `${s.size}px`,
               height: `${s.size}px`,
-              animationDelay: `${s.delay}s`,
+              animationDelay: `${s.delay}s`
             }}
           />
         ))}
       </div>
-      
-      {/* Result Announcement */}
+
       {showResult && (
         <div className="fight-result-announcement">
           <div className={`fight-result-text ${isDraw ? 'draw' : (isWinner ? 'win' : 'lose')}`}>
+            <span className="fight-result-shine"></span>
             {isDraw ? '⚖️ DRAW!' : (isWinner ? '🎉 YOU WIN!' : '💔 YOU LOSE!')}
           </div>
         </div>

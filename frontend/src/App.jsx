@@ -30,6 +30,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Contact from './pages/Contact';
+import ClanPage from './pages/ClanPage'; // ✅ ADDED
 import './App.css';
 
 // ✅ NEW: ScrollToTop component to fix scroll position on route change
@@ -198,6 +199,11 @@ const AppContent = () => {
           
           <Route path="/buy-shards" element={
             <PrivateRouteWrapper><BuyShards /></PrivateRouteWrapper>
+          } />
+          
+          {/* ✅ ADDED: Clan Route */}
+          <Route path="/clan" element={
+            <PrivateRouteWrapper><ClanPage /></PrivateRouteWrapper>
           } />
           
           <Route path="/admin" element={

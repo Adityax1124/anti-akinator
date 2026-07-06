@@ -1,26 +1,43 @@
-/* ============================================================
-   INVITE NOTIFICATION
-   ============================================================ */
+:root {
+  --accent: #6c63ff;
+  --accent-2: #a89bff;
+  --accent-3: #00d9c0;
+}
 
 .invite-notification {
   position: fixed;
   top: 80px;
   right: 20px;
   z-index: 10000;
-  background: linear-gradient(145deg, rgba(20, 20, 50, 0.97), rgba(10, 10, 30, 0.99));
-  border: 1px solid rgba(108, 99, 255, 0.2);
-  border-radius: 16px;
-  padding: 16px 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px 22px;
   max-width: 380px;
-  min-width: 300px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(20px);
-  animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 320px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: inviteSlideIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  isolation: isolate;
 }
 
-@keyframes slideInRight {
+.invite-notification::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  right: -30%;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.25), transparent 70%);
+  filter: blur(50px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+@keyframes inviteSlideIn {
   from {
-    transform: translateX(100px);
+    transform: translateX(120px);
     opacity: 0;
   }
   to {
@@ -29,77 +46,88 @@
   }
 }
 
-.invite-notification.slide-in {
-  animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
 .invite-content {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .invite-icon {
-  font-size: 28px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
-  margin-top: 2px;
+  border-radius: 12px;
+  background: rgba(108, 99, 255, 0.12);
+  border: 1px solid rgba(108, 99, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
 }
 
 .invite-text {
   flex: 1;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
+  padding-top: 4px;
 }
 
 .invite-text strong {
-  color: #6c63ff;
+  color: #fff;
   font-weight: 700;
 }
 
 .invite-details {
   display: block;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 4px;
+  letter-spacing: 0.2px;
 }
 
 .invite-actions {
   display: flex;
-  gap: 8px;
-  margin-left: 40px;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 .invite-btn {
-  padding: 6px 18px;
+  flex: 1;
+  padding: 10px 18px;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 13px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13.5px;
+  font-family: 'Inter', sans-serif;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .invite-btn.accept {
-  background: linear-gradient(135deg, #00b894, #00a381);
+  background: linear-gradient(135deg, var(--accent), #5a52d5);
   color: #fff;
+  box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
 }
 
 .invite-btn.accept:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(108, 99, 255, 0.4);
 }
 
 .invite-btn.decline {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .invite-btn.decline:hover:not(:disabled) {
   background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
+  color: #ff8080;
   border-color: rgba(255, 107, 107, 0.2);
 }
 
@@ -111,29 +139,29 @@
 
 .invite-close {
   position: absolute;
-  top: 8px;
-  right: 10px;
+  top: 14px;
+  right: 16px;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 16px;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 15px;
   cursor: pointer;
-  padding: 4px;
-  transition: all 0.3s ease;
+  padding: 0;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 2;
 }
 
 .invite-close:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {
   .invite-notification {
     top: 70px;
@@ -141,18 +169,7 @@
     left: 10px;
     max-width: none;
     min-width: 0;
-    padding: 14px 16px;
-  }
-
-  .invite-actions {
-    margin-left: 40px;
-    flex-wrap: wrap;
-  }
-
-  .invite-btn {
-    flex: 1;
-    text-align: center;
-    padding: 8px 12px;
+    padding: 16px 18px;
   }
 
   .invite-text {

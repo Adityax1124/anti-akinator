@@ -18,26 +18,61 @@ const referralRoutes = require('./routes/referral');
 const teamRoutes = require('./routes/team');
 const friendRoutes = require('./routes/friend');
 const matchRoutes = require('./routes/match');
+const clanRoutes = require('./routes/clan');
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 const cardRoutes = require('./routes/card');
 
 const app = express();
+
+// ============================================================
+// ✅ CRITICAL: SERVER TIMEOUT INCREASE
+// ============================================================
 const server = http.createServer(app);
+server.timeout = 120000; // 2 minutes
+
+// ============================================================
+// ✅ REQUEST TIMEOUT MIDDLEWARE
+// ============================================================
+app.use((req, res, next) => {
+  req.setTimeout(120000, () => {
+    if (!res.headersSent) {
+      res.status(408).json({
+        success: false,
+        message: 'Request timeout. Please try again.'
+      });
+    }
+  });
+  next();
+});
+
+// ============================================================
+// SOCKET.IO
+// ============================================================
 const io = socketIO(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
-  }
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
+
+// ✅ Pass io instance to app for use in controllers
+app.set('io', io);
+console.log('🔌 Socket.io instance set on app');
 
 // ✅ Pass io instance to team routes
 teamRoutes.setIO(io);
 console.log('🔌 Socket.io instance passed to team routes');
 
-// ✅ CRITICAL FIX: Pass io instance to match routes
+// ✅ Pass io instance to match routes
 matchRoutes.setIO(io);
 console.log('🔌 Socket.io instance passed to match routes');
+
+// ✅ Pass io instance to clan routes
+clanRoutes.setIO(io);
+console.log('🛡️ Socket.io instance passed to clan routes');
 
 // ============================================================
 // TRUST PROXY (Secure for Railway/Vercel)
@@ -45,7 +80,7 @@ console.log('🔌 Socket.io instance passed to match routes');
 app.set('trust proxy', 1);
 
 // ============================================================
-// ✅ CRITICAL: BODY PARSER - MUST BE BEFORE ROUTES
+// ✅ BODY PARSER - MUST BE BEFORE ROUTES
 // ============================================================
 app.use(express.json({ 
   limit: '10mb',
@@ -82,8 +117,8 @@ app.use(helmet({
         process.env.CLIENT_URL || 'http://localhost:5173',
         'https://anti-akinator-silk.vercel.app',
         'https://anti-akinator.vercel.app',
-  'https://anti-akinator.in',      // ✅ NEW
-  'https://www.anti-akinator.in' 
+        'https://anti-akinator.in',
+        'https://www.anti-akinator.in' 
       ],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
@@ -125,8 +160,8 @@ const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
   'https://anti-akinator-silk.vercel.app',
   'https://anti-akinator.vercel.app',
-  'https://anti-akinator.in',        // ✅ NEW
-  'https://www.anti-akinator.in',    // ✅ NEW
+  'https://anti-akinator.in',
+  'https://www.anti-akinator.in',
   'https://anti-akinator-production.up.railway.app'
 ];
 
@@ -306,7 +341,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE, INVITES & MATCHES
+// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE, INVITES, MATCHES & CLANS
 // ============================================================
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
@@ -417,6 +452,47 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ===== CLAN SOCKET EVENTS =====
+  socket.on('join-clan-room', (clanId) => {
+    if (clanId && clanId !== 'undefined') {
+      socket.join(`clan_${clanId}`);
+      console.log(`🛡️ Socket ${socket.id} joined clan room: ${clanId}`);
+    }
+  });
+
+  socket.on('leave-clan-room', (clanId) => {
+    if (clanId && clanId !== 'undefined') {
+      socket.leave(`clan_${clanId}`);
+      console.log(`🛡️ Socket ${socket.id} left clan room: ${clanId}`);
+    }
+  });
+
+  socket.on('clan-chat-message', (data) => {
+    const { clanId, username, message, userId } = data;
+    if (clanId && clanId !== 'undefined') {
+      io.to(`clan_${clanId}`).emit('clan-chat-message', {
+        username,
+        message,
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`💬 Clan chat in ${clanId}: ${username}: ${message}`);
+    }
+  });
+
+  socket.on('clan-donation', (data) => {
+    const { clanId, from, to, amount } = data;
+    if (clanId && clanId !== 'undefined') {
+      io.to(`clan_${clanId}`).emit('clan-donation', {
+        from,
+        to,
+        amount,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`🎁 Donation in clan ${clanId}: ${from} donated ${amount} 💎 to ${to}`);
+    }
+  });
+
   // ===== TEAM SOCKET EVENTS =====
   socket.on('join-team-room', (roomCode) => {
     if (roomCode && roomCode !== 'undefined') {
@@ -514,8 +590,9 @@ app.use('/api/referral', authMiddleware, referralRoutes);
 app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/friend', authMiddleware, friendRoutes);
 app.use('/api/match', authMiddleware, matchRoutes);
+app.use('/api/clan', authMiddleware, clanRoutes.router);
 app.use('/api/2fa', twoFactorRoutes);
-app.use('/api/cards', authMiddleware, cardRoutes); // ✅ FIXED: authMiddleware applied
+app.use('/api/cards', authMiddleware, cardRoutes);
 
 // ============================================================
 // AGORA TOKEN GENERATOR
@@ -667,4 +744,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`🔗 Healthcheck: /api/health`);
   console.log(`🔌 Socket.io is ready`);
   console.log(`⚔️ Match routes loaded with socket events`);
+  console.log(`🛡️ Clan routes loaded with socket events`);
+  console.log(`⏰ Server timeout: 120 seconds`);
 });

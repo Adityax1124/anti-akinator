@@ -271,6 +271,15 @@ const userSchema = new mongoose.Schema({
   },
 
   // ============================================================
+  // ===== 🛡️ CLAN SYSTEM =====
+  // ============================================================
+  clanId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Clan',
+    default: null
+  },
+
+  // ============================================================
   // ===== 🔗 REFERRAL SYSTEM =====
   // ============================================================
   referralCode: {
@@ -378,6 +387,8 @@ userSchema.index({ deviceFingerprint: 1 });
 userSchema.index({ 'cards.characterId': 1 });
 userSchema.index({ 'cards.currentPower': -1 });
 userSchema.index({ 'cards.level': -1 });
+// ✅ NEW: Clan index
+userSchema.index({ clanId: 1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {

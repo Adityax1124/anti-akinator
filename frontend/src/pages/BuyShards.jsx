@@ -4,6 +4,15 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import './BuyShards.css';
 
+const shardPackages = [
+  { id: 1, name: 'STARTER', shards: 50, price: '₹36 INR', priceValue: 36, hints: 1, tag: null },
+  { id: 2, name: 'ENTHUSIAST', shards: 150, price: '₹105 INR', priceValue: 105, hints: 3, tag: null },
+  { id: 3, name: 'PRO', shards: 350, price: '₹210 INR', priceValue: 210, hints: 7, tag: null },
+  { id: 4, name: 'POPULAR', shards: 750, price: '₹375 INR', priceValue: 375, hints: 15, tag: '⭐ Popular' },
+  { id: 5, name: 'ULTIMATE', shards: 1500, price: '₹750 INR', priceValue: 750, hints: 30, tag: null },
+  { id: 6, name: 'LEGENDARY', shards: 3000, price: '₹1350 INR', priceValue: 1350, hints: 60, tag: null },
+];
+
 const BuyShards = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -12,124 +21,36 @@ const BuyShards = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
-  // ===== REFS FOR INTERSECTION OBSERVER =====
-  const packRefs = useRef([]);
+  const [isVisible, setIsVisible] = useState(false);
+  const [showPurchase, setShowPurchase] = useState(false);
+
   const purchaseRef = useRef(null);
 
-  const shardPackages = [
-    { 
-      id: 1,
-      name: 'STARTER', 
-      shards: 50, 
-      price: '₹36 INR', 
-      priceValue: 36,
-      hints: 1, 
-      tag: null 
-    },
-    { 
-      id: 2,
-      name: 'ENTHUSIAST', 
-      shards: 150, 
-      price: '₹105 INR', 
-      priceValue: 105,
-      hints: 3, 
-      tag: null 
-    },
-    { 
-      id: 3,
-      name: 'PRO', 
-      shards: 350, 
-      price: '₹210 INR', 
-      priceValue: 210,
-      hints: 7, 
-      tag: null 
-    },
-    { 
-      id: 4,
-      name: 'POPULAR', 
-      shards: 750, 
-      price: '₹375 INR', 
-      priceValue: 375,
-      hints: 15, 
-      tag: '⭐ POPULAR' 
-    },
-    { 
-      id: 5,
-      name: 'ULTIMATE', 
-      shards: 1500, 
-      price: '₹750 INR', 
-      priceValue: 750,
-      hints: 30, 
-      tag: null 
-    },
-    { 
-      id: 6,
-      name: 'LEGENDARY', 
-      shards: 3000, 
-      price: '₹1350 INR', 
-      priceValue: 1350,
-      hints: 60, 
-      tag: null 
-    },
-  ];
-
-  // Load Razorpay script
   useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsVisible(true));
+
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     document.body.appendChild(script);
+
     return () => {
+      cancelAnimationFrame(frame);
       document.body.removeChild(script);
     };
   }, []);
 
-  // ===== INTERSECTION OBSERVER FOR STAGGERED ANIMATIONS =====
   useEffect(() => {
-    // Observe pack cards
-    const packObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px',
-      }
-    );
-
-    packRefs.current.forEach((pack) => {
-      if (pack) packObserver.observe(pack);
-    });
-
-    // Observe purchase section
-    const purchaseObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px',
-      }
-    );
-
-    if (purchaseRef.current) {
-      purchaseObserver.observe(purchaseRef.current);
+    if (selectedPack) {
+      const frame = requestAnimationFrame(() => {
+        setShowPurchase(true);
+        purchaseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+      return () => cancelAnimationFrame(frame);
+    } else {
+      setShowPurchase(false);
     }
-
-    return () => {
-      packObserver.disconnect();
-      purchaseObserver.disconnect();
-    };
-  }, []);
+  }, [selectedPack]);
 
   const handleSelectPack = (pack) => {
     setSelectedPack(pack);
@@ -152,39 +73,35 @@ const BuyShards = () => {
     setSuccess('');
 
     try {
-      // Step 1: Create Razorpay order
       const orderResponse = await api.post('/payment/create-order', {
         amount: selectedPack.priceValue,
         shards: selectedPack.shards,
-        packId: selectedPack.id
+        packId: selectedPack.id,
       });
 
       const { orderId, amount, currency } = orderResponse.data;
 
-      // Step 2: Initialize Razorpay Checkout
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: amount * 100, // Convert to paise
+        amount: amount * 100,
         currency: currency,
         name: 'Anti-Akinator',
         description: `${selectedPack.shards} Shards Pack - ${selectedPack.name}`,
         image: '/logo.png',
         order_id: orderId,
         handler: async (response) => {
-          // Step 3: Verify payment
           try {
             const verifyResponse = await api.post('/payment/verify-payment', {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,
-              shards: selectedPack.shards
+              shards: selectedPack.shards,
             });
 
             if (verifyResponse.data.success) {
               setSuccess(`✅ Successfully purchased ${selectedPack.shards} Shards!`);
               setSelectedPack(null);
               setAgreed(false);
-              // Update user's shards in UI
               setTimeout(() => {
                 window.location.reload();
               }, 2000);
@@ -192,7 +109,6 @@ const BuyShards = () => {
               setError('Payment verification failed. Please contact support.');
             }
           } catch (error) {
-            console.error('Verification error:', error);
             setError('Payment verification failed. Please contact support.');
           }
           setLoading(false);
@@ -208,58 +124,58 @@ const BuyShards = () => {
           ondismiss: () => {
             setLoading(false);
             setError('Payment cancelled.');
-          }
-        }
+          },
+        },
       };
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error) {
-      console.error('Purchase error:', error);
       setError(error.response?.data?.message || 'Failed to initiate payment. Please try again.');
       setLoading(false);
     }
   };
 
-  // Get selected pack details for display
-  const getSelectedPackDetails = () => {
-    if (!selectedPack) {
-      return {
-        name: 'None Selected',
-        shards: 0,
-        price: '₹0 INR',
-        hints: 0
-      };
-    }
-    return selectedPack;
-  };
-
-  const packDetails = getSelectedPackDetails();
-
   return (
-    <div className="buy-shards-container fade-in">
-      <div className="buy-shards-header">
-        <h1>🎴 Buy Character Shards</h1>
-        <p>Purchase shards to use hints and unlock premium features</p>
-        <p className="current-shards">
-          You have <strong>{user?.shards || 0}</strong> Shards
-        </p>
-      </div>
+    <div className={`buyshards-page ${isVisible ? 'visible' : ''}`}>
+      <div className="bg-noise"></div>
+      <div className="bg-grid"></div>
 
-      {error && <div className="buy-shards-error">{error}</div>}
-      {success && <div className="buy-shards-success">{success}</div>}
+      <section className="buyshards-hero">
+        <div className="aurora aurora-1"></div>
+        <div className="aurora aurora-2"></div>
+        <div className="buyshards-hero-content">
+          <div className="hero-badge">
+            <span className="badge-dot"></span>
+            Power Up Your Collection
+          </div>
+          <h1 className="buyshards-title">
+            <span className="buyshards-title-gradient">Buy Character Shards</span>
+          </h1>
+          <p className="buyshards-subtitle">Purchase shards to use hints and unlock premium features</p>
+          <div className="shards-display">
+            <span className="shards-icon">🎴</span>
+            <span>You have</span>
+            <strong>{user?.shards || 0}</strong>
+            <span>Shards</span>
+          </div>
+        </div>
+      </section>
+
+      {error && <div className="buyshards-alert error">{error}</div>}
+      {success && <div className="buyshards-alert success">{success}</div>}
 
       <div className="shards-packs-grid">
         {shardPackages.map((pack, index) => (
           <div
             key={pack.id}
-            ref={el => packRefs.current[index] = el}
-            className={`shards-pack ${pack.tag ? 'popular' : ''}`}
+            className={`shards-pack ${pack.tag ? 'popular' : ''} ${selectedPack?.id === pack.id ? 'selected' : ''} ${isVisible ? 'visible' : ''}`}
+            style={{ animationDelay: `${0.15 + index * 0.08}s` }}
             onClick={() => handleSelectPack(pack)}
           >
-            {pack.tag && (
-              <div className="pack-tag">{pack.tag}</div>
-            )}
+            <div className="shards-pack-border"></div>
+            {pack.tag && <div className="pack-tag">{pack.tag}</div>}
+            {selectedPack?.id === pack.id && <div className="pack-selected-check">✓</div>}
             <div className="pack-name">{pack.name}</div>
             <div className="pack-shards">🎴 {pack.shards} Shards</div>
             <div className="pack-price">{pack.price}</div>
@@ -268,57 +184,49 @@ const BuyShards = () => {
         ))}
       </div>
 
-      {/* ===== ORDER SUMMARY - ALWAYS VISIBLE ===== */}
-      <div className="purchase-section" ref={purchaseRef}>
-        <div className="purchase-summary">
-          <h3>📋 Order Summary</h3>
-          <p>
-            <span>Package:</span>
-            <strong>{packDetails.name} – {packDetails.shards} Shards</strong>
-          </p>
-          <p>
-            <span>Price:</span>
-            <strong className="price-highlight">{packDetails.price}</strong>
-          </p>
-          <p>
-            <span>Hints Included:</span>
-            <strong>{packDetails.hints} hints</strong>
-          </p>
-        </div>
+      {selectedPack && (
+        <div className={`purchase-section ${showPurchase ? 'visible' : ''}`} ref={purchaseRef}>
+          <div className="purchase-summary">
+            <h3>📋 Order Summary</h3>
+            <p>
+              <span>Package:</span>
+              <strong>{selectedPack.name} – {selectedPack.shards} Shards</strong>
+            </p>
+            <p>
+              <span>Price:</span>
+              <strong className="price-highlight">{selectedPack.price}</strong>
+            </p>
+            <p>
+              <span>Hints Included:</span>
+              <strong>{selectedPack.hints} hints</strong>
+            </p>
+          </div>
 
-        <div className="agreement-section">
-          <label className="agreement-checkbox">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-            />
-            <span>
-              I agree to the{' '}
-              <a href="/terms" target="_blank" rel="noopener noreferrer">
-                Terms & Conditions
-              </a>
-              ,{' '}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer">
-                Privacy Policy
-              </a>
-              , and{' '}
-              <a href="/refund" target="_blank" rel="noopener noreferrer">
-                Refund & Cancellation Policy
-              </a>
-              .
-            </span>
-          </label>
-        </div>
+          <div className="agreement-section">
+            <label className="agreement-checkbox">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+              />
+              <span>
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer">Terms & Conditions</a>,{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>, and{' '}
+                <a href="/refund" target="_blank" rel="noopener noreferrer">Refund & Cancellation Policy</a>.
+              </span>
+            </label>
+          </div>
 
-        <button
-          className="purchase-btn"
-          onClick={handlePurchase}
-          disabled={!agreed || loading || !selectedPack}
-        >
-          {loading ? 'Processing...' : selectedPack ? `Buy ${selectedPack.shards} Shards ${selectedPack.price}` : 'Select a pack to purchase'}
-        </button>
-      </div>
+          <button
+            className="purchase-btn"
+            onClick={handlePurchase}
+            disabled={!agreed || loading}
+          >
+            {loading ? 'Processing...' : `Buy ${selectedPack.shards} Shards · ${selectedPack.price}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

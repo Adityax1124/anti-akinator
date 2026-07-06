@@ -17,16 +17,11 @@ const ReferralModal = ({ isOpen, onClose }) => {
   const fetchReferralData = async () => {
     try {
       setLoading(true);
-      console.log('📊 [REFERRAL MODAL] Fetching referral data...');
       const response = await api.get('/referral/info');
-      console.log('📊 [REFERRAL MODAL] Response:', response.data);
       setReferralData(response.data);
       setError('');
     } catch (error) {
-      console.error('❌ [REFERRAL MODAL] Error fetching referral data:', error);
-      console.error('❌ Response status:', error.response?.status);
-      console.error('❌ Response data:', error.response?.data);
-      
+      console.error('Error fetching referral data:', error);
       if (error.response?.status === 404) {
         setError('Referral system is not set up yet. Please contact support.');
       } else if (error.response?.status === 401) {
@@ -65,8 +60,9 @@ const ReferralModal = ({ isOpen, onClose }) => {
   return (
     <div className="referral-overlay" onClick={onClose}>
       <div className="referral-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="referral-modal-glow"></div>
         <button className="referral-close" onClick={onClose}>✕</button>
-        
+
         <div className="referral-header">
           <h2>🤝 Refer & Earn</h2>
           <p>Invite friends and earn <strong>50 Shards</strong> each!</p>
@@ -81,27 +77,11 @@ const ReferralModal = ({ isOpen, onClose }) => {
           <div className="referral-error">{error}</div>
         ) : (
           <>
-            {/* Debug Info - Remove after testing */}
-            <div className="debug-info" style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              padding: '8px 12px', 
-              borderRadius: '8px', 
-              marginBottom: '12px',
-              fontSize: '11px',
-              color: '#888',
-              display: 'none' // Hidden by default, show for debugging
-            }}>
-              <div>✅ Referral Code: {referralData?.referralCode}</div>
-              <div>📊 Total Referrals: {referralData?.stats?.totalReferrals || 0}</div>
-              <div>🎴 Shards Earned: {referralData?.stats?.shardsEarned || 0}</div>
-            </div>
-
-            {/* Referral Code */}
             <div className="referral-code-section">
               <label>Your Referral Code</label>
               <div className="referral-code-box">
                 <span className="referral-code">{referralData?.referralCode || 'Loading...'}</span>
-                <button 
+                <button
                   className="copy-btn"
                   onClick={() => copyToClipboard(referralData?.referralCode || '')}
                   disabled={!referralData?.referralCode}
@@ -111,7 +91,6 @@ const ReferralModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Share Buttons */}
             <div className="share-section">
               <label>Share with friends</label>
               <div className="share-buttons">
@@ -124,7 +103,7 @@ const ReferralModal = ({ isOpen, onClose }) => {
                 <button className="share-btn twitter" onClick={shareOnTwitter}>
                   🐦 Twitter
                 </button>
-                <button 
+                <button
                   className="share-btn copy-link"
                   onClick={() => copyToClipboard(referralData?.referralLink || '')}
                   disabled={!referralData?.referralLink}
@@ -134,12 +113,11 @@ const ReferralModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Referral Link */}
             <div className="referral-link-section">
               <label>Your Referral Link</label>
               <div className="referral-link-box">
                 <span className="referral-link">{referralData?.referralLink || 'Generating...'}</span>
-                <button 
+                <button
                   className="copy-link-btn"
                   onClick={() => copyToClipboard(referralData?.referralLink || '')}
                   disabled={!referralData?.referralLink}
@@ -149,7 +127,6 @@ const ReferralModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="referral-stats">
               <h3>📊 Your Earnings</h3>
               <div className="stats-grid">
@@ -168,7 +145,6 @@ const ReferralModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* How it works */}
             <div className="how-it-works">
               <h3>📖 How it works</h3>
               <div className="steps">
@@ -190,7 +166,6 @@ const ReferralModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Recent Referrals */}
             {referralData?.recentReferrals?.length > 0 && (
               <div className="recent-referrals">
                 <h3>🔄 Recent Referrals</h3>
@@ -210,12 +185,9 @@ const ReferralModal = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            {/* No Referrals Yet */}
             {(!referralData?.recentReferrals || referralData?.recentReferrals?.length === 0) && (
               <div className="no-referrals">
-                <p style={{ color: '#666', textAlign: 'center', fontSize: '14px', marginTop: '8px' }}>
-                  No referrals yet. Share your code and start earning! 🚀
-                </p>
+                <p>No referrals yet. Share your code and start earning! 🚀</p>
               </div>
             )}
           </>

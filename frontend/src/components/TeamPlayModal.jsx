@@ -18,10 +18,8 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
   const socketRef = useRef(null);
   const pollingIntervalRef = useRef(null);
 
-  // ✅ Connect socket and listen for invites when modal opens
   useEffect(() => {
     if (!isOpen || !isAuthenticated || !user) {
-      // Clean up when modal closes
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -29,14 +27,9 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    console.log('🔌 Connecting socket from TeamPlayModal...');
-    
-    // ✅ Get the correct user ID
     const userId = user?._id || user?.id || user?.userId;
-    console.log('👤 User ID:', userId);
-    
+
     if (!userId) {
-      console.error('❌ No user ID found!');
       return;
     }
 
@@ -49,25 +42,15 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('✅ Socket connected:', socket.id);
       socket.emit('register-user', { userId: userId });
-      console.log(`📤 Registered user ${userId} for invites`);
     });
 
-    // ✅ Listen for team invites (primary)
     socket.on('team-invite', (data) => {
-      console.log('📨 [PRIMARY] Team invite received in modal!', data);
-      console.log('📨 From:', data.from?.username);
-      console.log('📨 Room:', data.roomCode);
-      
       setPendingInvites(prev => {
-        // Check if already exists
         const exists = prev.some(invite => invite.roomCode === data.roomCode);
         if (exists) {
-          console.log('⚠️ Invite already exists, skipping');
           return prev;
         }
-        console.log('✅ Adding invite to pending list');
         return [...prev, {
           ...data,
           id: Date.now(),
@@ -76,11 +59,8 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       });
     });
 
-    // ✅ Listen for global invites (fallback)
     socket.on('team-invite-global', (data) => {
-      console.log('📨 [GLOBAL] Global invite received:', data);
       if (data.targetUserId === userId) {
-        console.log('✅ Global invite matches current user');
         setPendingInvites(prev => {
           const exists = prev.some(invite => invite.roomCode === data.roomCode);
           if (exists) return prev;
@@ -93,12 +73,9 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       }
     });
 
-    socket.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
-    });
-
+    socket.on('disconnect', () => {});
     socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error);
+      console.error('Socket connection error:', error);
     });
 
     return () => {
@@ -109,14 +86,11 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen, isAuthenticated, token, user]);
 
-  // Join team room socket
   useEffect(() => {
     if (!roomCode || roomCode === 'undefined' || !socketRef.current || !isAuthenticated) return;
     socketRef.current.emit('join-team-room', roomCode);
-    console.log(`📤 Joined socket room: ${roomCode}`);
   }, [roomCode, isAuthenticated]);
 
-  // Polling for room updates
   useEffect(() => {
     if (!isOpen || !roomCode || roomCode === 'undefined' || view !== 'lobby' || !isAuthenticated) {
       if (pollingIntervalRef.current) {
@@ -158,22 +132,16 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // ✅ Accept Invite - Navigate to team game page (which shows lobby)
   const handleAcceptInvite = async (invite) => {
-    console.log('📨 Accepting invite to:', invite.roomCode);
     setLoading(true);
     setError('');
     try {
       const response = await api.post('/team/accept-invite', {
         roomCode: invite.roomCode
       });
-      
+
       if (response.data.success) {
-        // Remove from pending invites
         setPendingInvites(prev => prev.filter(i => i.roomCode !== invite.roomCode));
-        
-        // ✅ Close modal and navigate to team game page
-        // The TeamGamePage will show the lobby first
         onClose();
         navigate(`/team-game/${invite.roomCode}`);
       }
@@ -186,9 +154,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // ✅ Decline Invite
   const handleDeclineInvite = async (invite) => {
-    console.log('📨 Declining invite to:', invite.roomCode);
     try {
       await api.post('/team/decline-invite', {
         roomCode: invite.roomCode
@@ -205,7 +171,7 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       setError('Please login first');
       return;
     }
-    
+
     setLoading(true);
     setError('');
     try {
@@ -213,16 +179,16 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       if (response.data.success) {
         const newRoom = response.data.room;
         const code = response.data.roomCode || newRoom?.roomCode;
-        
+
         const roomWithCode = {
           ...newRoom,
           roomCode: code
         };
-        
+
         setRoom(roomWithCode);
         setRoomCode(code);
         setView('lobby');
-        
+
         if (socketRef.current) {
           socketRef.current.emit('join-team-room', code);
         }
@@ -273,7 +239,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
               <p>Play with friends as a team!</p>
             </div>
 
-            {/* ✅ PENDING INVITES SECTION */}
             {pendingInvites.length > 0 ? (
               <div className="pending-invites-section">
                 <h4>📨 Pending Invites ({pendingInvites.length})</h4>
@@ -289,14 +254,14 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
                       </span>
                     </div>
                     <div className="invite-actions">
-                      <button 
+                      <button
                         className="invite-btn accept-invite"
                         onClick={() => handleAcceptInvite(invite)}
                         disabled={loading}
                       >
                         {loading ? 'Joining...' : 'Accept'}
                       </button>
-                      <button 
+                      <button
                         className="invite-btn decline-invite"
                         onClick={() => handleDeclineInvite(invite)}
                         disabled={loading}
@@ -314,11 +279,11 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
             )}
 
             <div className="team-options">
-              <div className="team-option" style={{ gridColumn: '1 / -1', maxWidth: '300px', margin: '0 auto' }}>
+              <div className="team-option team-option-single">
                 <span className="opt-icon">👑</span>
                 <h3>Create Room</h3>
                 <p className="opt-desc">Host a team game and invite friends</p>
-                <button 
+                <button
                   className="btn btn-primary"
                   onClick={handleCreateRoom}
                   disabled={loading || !isAuthenticated}
