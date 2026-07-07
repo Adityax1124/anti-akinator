@@ -22,47 +22,58 @@ const Stars = () => {
           y: Math.random() * canvas.height,
           radius: Math.random() * 1.8 + 0.5,
           brightness: Math.random() * 0.6 + 0.4,
-          twinkleSpeed: Math.random() * 0.025 + 0.005,
+          twinkleSpeed: Math.random() * 0.008 + 0.002,
+          // ✅ Random velocity for movement
+          vx: (Math.random() - 0.5) * 0.15, // Very slow horizontal speed
+          vy: (Math.random() - 0.5) * 0.15, // Very slow vertical speed
         });
       }
     };
 
-    // ✅ Draw gradient background - Top-Left Black to Bottom-Right Navy Blue
     const drawBackground = () => {
-      // Top-left to Bottom-right diagonal
       const gradient = ctx.createLinearGradient(
-        0, 0,              // Start: Top-Left
-        canvas.width, canvas.height  // End: Bottom-Right
+        0, 0,
+        canvas.width, canvas.height
       );
       
-      gradient.addColorStop(0, '#0a0a12');        // Top-Left: Very dark (almost black)
-      gradient.addColorStop(0.3, '#0d0d2b');      // 30%: Dark navy
-      gradient.addColorStop(0.6, '#12123a');      // 60%: Medium navy
-      gradient.addColorStop(0.85, '#18184a');     // 85%: Light navy
-      gradient.addColorStop(1, '#1a1a5a');        // Bottom-Right: Light navy blue
+      gradient.addColorStop(0, '#0a0a12');
+      gradient.addColorStop(0.3, '#0d0d2b');
+      gradient.addColorStop(0.6, '#12123a');
+      gradient.addColorStop(0.85, '#18184a');
+      gradient.addColorStop(1, '#1a1a5a');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
 
     const drawStars = () => {
-      // ✅ Clear and draw background first
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawBackground();
 
-      // ✅ Draw stars with subtle blue glow
       stars.forEach((star) => {
+        // ✅ Update position with random movement
+        star.x += star.vx;
+        star.y += star.vy;
+
+        // ✅ Bounce off walls (or wrap around)
+        if (star.x < 0 || star.x > canvas.width) {
+          star.vx *= -1;
+          star.x = Math.max(0, Math.min(canvas.width, star.x));
+        }
+        if (star.y < 0 || star.y > canvas.height) {
+          star.vy *= -1;
+          star.y = Math.max(0, Math.min(canvas.height, star.y));
+        }
+
+        // ✅ Twinkle
         const twinkle = Math.sin(Date.now() * star.twinkleSpeed) * 0.3 + 0.7;
         const opacity = star.brightness * twinkle;
 
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        
-        // Stars with slight blue tint
         ctx.fillStyle = `rgba(200, 220, 255, ${opacity * 0.9})`;
         ctx.fill();
 
-        // Glow for brighter stars
         if (star.radius > 1.2) {
           ctx.shadowColor = `rgba(100, 150, 255, ${opacity * 0.2})`;
           ctx.shadowBlur = 15;
@@ -71,7 +82,7 @@ const Stars = () => {
         }
       });
 
-      // ✅ Extra large stars with more glow
+      // Extra large stars with more glow
       stars.filter(s => s.radius > 1.5).forEach((star) => {
         const twinkle = Math.sin(Date.now() * star.twinkleSpeed * 0.7) * 0.3 + 0.7;
         const opacity = star.brightness * twinkle;
