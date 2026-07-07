@@ -208,14 +208,14 @@ const userSchema = new mongoose.Schema({
       type: Number,
       required: true,
       min: 0.5,
-      max: 50
+      max: 100
     },
     // ✅ Current Power (after upgrades)
     currentPower: {
       type: Number,
       required: true,
       min: 0.5,
-      max: 50
+      max: 200
     },
     // ✅ Card Level (1-10)
     level: {
