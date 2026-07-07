@@ -155,7 +155,7 @@ const Leaderboard = () => {
         </div>
         <h1>🏆 Leaderboard 🏆</h1>
         <p className="prize-message">
-          🥇 Season Winner will receive <strong>₹2,000 INR</strong>!
+          🥇 Season Winner will receive <strong>1000 Shards🎴</strong>!
         </p>
         <p className="leaderboard-subtitle">
           Ranked by streak • Less season win breaks ties
