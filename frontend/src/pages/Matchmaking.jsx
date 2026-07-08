@@ -14,11 +14,13 @@ const Matchmaking = () => {
   const [cardCount, setCardCount] = useState(0);
   const [searchTime, setSearchTime] = useState(0);
   const [createdMatchCode, setCreatedMatchCode] = useState(null);
+  const [quickMatchCode, setQuickMatchCode] = useState(null);
   const [friends, setFriends] = useState([]);
   const [showInviteDropdown, setShowInviteDropdown] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteMessage, setInviteMessage] = useState('');
   const searchIntervalRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const [allCards, setAllCards] = useState([]);
 
@@ -28,6 +30,18 @@ const Matchmaking = () => {
   useEffect(() => {
     fetchCardCount();
     fetchFriends();
+
+    return () => {
+      if (searchIntervalRef.current) {
+        clearInterval(searchIntervalRef.current);
+      }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
   }, []);
 
   const fetchCardCount = async () => {
@@ -174,6 +188,15 @@ const Matchmaking = () => {
     }
   };
 
+  const cancelQuickMatchSearch = async (code) => {
+    if (!code) return;
+    try {
+      await api.post('/match/cancel-quick-match', { matchCode: code });
+    } catch (error) {
+      console.error('Cancel quick match error:', error);
+    }
+  };
+
   const handleQuickMatch = async () => {
     if (!teamConfirmed) {
       setError('Please confirm your team first!');
@@ -187,47 +210,81 @@ const Matchmaking = () => {
     setMode('searching');
     setError('');
     setCreatedMatchCode(null);
+    setQuickMatchCode(null);
 
-    let attempts = 0;
+    try {
+      const response = await api.post('/match/quick-match', {
+        team: selectedTeam
+      });
 
-    searchIntervalRef.current = setInterval(async () => {
-      attempts++;
-
-      if (attempts >= 4) {
-        clearInterval(searchIntervalRef.current);
-        searchIntervalRef.current = null;
-
-        try {
-          const response = await api.post('/match/create', {
-            team: selectedTeam
-          });
-          if (response.data.success) {
-            setMode('create');
-            setTimeout(() => {
-              navigate(`/match/battle/${response.data.matchCode}`);
-            }, 500);
-          }
-        } catch (err) {
-          setMode('create');
-          setError('Failed to create match. Please try again.');
-        }
-      }
-    }, 1500);
-
-    setTimeout(() => {
-      if (searchIntervalRef.current) {
-        clearInterval(searchIntervalRef.current);
-        searchIntervalRef.current = null;
+      if (!response.data.success) {
         setMode('create');
-        setError('No opponents found. Try creating a match instead.');
+        setError(response.data.message || 'Failed to search for match');
+        return;
       }
-    }, 10000);
+
+      const code = response.data.matchCode;
+      setQuickMatchCode(code);
+
+      if (response.data.matched) {
+        setMode('create');
+        setTimeout(() => {
+          navigate(`/match/battle/${code}`);
+        }, 500);
+        return;
+      }
+
+      searchIntervalRef.current = setInterval(async () => {
+        try {
+          const pollResponse = await api.get(`/match/${code}`);
+          if (pollResponse.data.success) {
+            const status = pollResponse.data.match.status;
+            if (status !== 'waiting') {
+              clearInterval(searchIntervalRef.current);
+              searchIntervalRef.current = null;
+              if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+                searchTimeoutRef.current = null;
+              }
+              setMode('create');
+              setTimeout(() => {
+                navigate(`/match/battle/${code}`);
+              }, 300);
+            }
+          }
+        } catch (pollError) {
+          console.error('Poll quick match error:', pollError);
+        }
+      }, 2000);
+
+      searchTimeoutRef.current = setTimeout(() => {
+        if (searchIntervalRef.current) {
+          clearInterval(searchIntervalRef.current);
+          searchIntervalRef.current = null;
+          cancelQuickMatchSearch(code);
+          setQuickMatchCode(null);
+          setMode('create');
+          setError('No opponents found. Try creating a match instead.');
+        }
+      }, 45000);
+    } catch (err) {
+      setMode('create');
+      setError(err.response?.data?.message || 'Failed to find quick match');
+    }
   };
 
   const cancelSearch = () => {
     if (searchIntervalRef.current) {
       clearInterval(searchIntervalRef.current);
       searchIntervalRef.current = null;
+    }
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
+    }
+    if (quickMatchCode) {
+      cancelQuickMatchSearch(quickMatchCode);
+      setQuickMatchCode(null);
     }
     setMode('create');
     setSearchTime(0);

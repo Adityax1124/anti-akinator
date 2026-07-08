@@ -24,6 +24,47 @@ function generateMatchCode() {
   return `BTL-${code}`;
 }
 
+// ===== HELPER: Build team cards from selection or auto-pick top 10 =====
+// (Extracted so /create and /quick-match share identical team-building logic)
+function buildTeamCards(team, userData) {
+  if (team && Array.isArray(team) && team.length === 10) {
+    return team.map(card => {
+      const id = card.characterId || card._id || card.id;
+      const power = card.currentPower || card.powerLevel || 25;
+      return {
+        characterId: id,
+        characterName: card.characterName || 'Unknown',
+        powerLevel: power,
+        image: card.image || '',
+        cardId: id?.toString() || 'unknown',
+        used: false,
+        won: null,
+        roundUsed: null,
+        level: card.level || 1,
+        element: card.element || 'Fire',
+        rarity: card.rarity || 'Common'
+      };
+    });
+  }
+
+  return userData.cards
+    .sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0))
+    .slice(0, 10)
+    .map(card => ({
+      characterId: card.characterId,
+      characterName: card.characterName,
+      powerLevel: card.currentPower || card.powerLevel || 25,
+      image: card.image || '',
+      cardId: card._id?.toString() || card.characterId?.toString() || 'unknown',
+      used: false,
+      won: null,
+      roundUsed: null,
+      level: card.level || 1,
+      element: card.element || 'Fire',
+      rarity: card.rarity || 'Common'
+    }));
+}
+
 // ============================================================
 // CREATE MATCH - FIXED POWER LEVEL
 // ============================================================
@@ -121,6 +162,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 
     const match = new Match({
       matchCode,
+      matchType: 'private',
       player1: {
         user: user._id,
         username: user.username,
@@ -178,6 +220,213 @@ router.post('/create', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to create match: ' + error.message
+    });
+  }
+});
+
+// ============================================================
+// ✅ NEW: QUICK MATCH (random pairing)
+// ============================================================
+router.post('/quick-match', authMiddleware, async (req, res) => {
+  try {
+    const user = req.user;
+    const { team } = req.body;
+
+    console.log(`⚡ [QUICK MATCH] ${user.username} searching for opponent...`);
+
+    const userData = await User.findById(user._id);
+
+    if (!userData.cards || userData.cards.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'You need at least 10 cards to battle!',
+        currentCards: userData.cards?.length || 0,
+        required: 10
+      });
+    }
+
+    const activeMatch = await Match.findOne({
+      $or: [
+        { 'player1.user': user._id },
+        { 'player2.user': user._id }
+      ],
+      status: { $in: ['waiting', 'selecting', 'revealing', 'round_result', 'selecting_reward'] }
+    });
+
+    if (activeMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have an active battle!',
+        matchCode: activeMatch.matchCode
+      });
+    }
+
+    const teamCards = buildTeamCards(team, userData);
+
+    const waitingMatch = await Match.findOne({
+      status: 'waiting',
+      matchType: 'quick',
+      'player2.user': null,
+      'player1.user': { $ne: user._id }
+    }).sort({ createdAt: 1 });
+
+    if (waitingMatch) {
+      waitingMatch.player2.user = user._id;
+      waitingMatch.player2.username = user.username;
+      waitingMatch.player2.team = teamCards;
+      waitingMatch.player2.currentScore = 0;
+      waitingMatch.player2.selectedCardIndex = null;
+      waitingMatch.player2.confirmedCardIndex = null;
+      waitingMatch.player2.cardsWon = [];
+      waitingMatch.player2.cardsLost = [];
+
+      waitingMatch.status = 'selecting';
+      waitingMatch.roundStartTime = new Date();
+      waitingMatch.selectionDeadline = new Date(Date.now() + 30000);
+      waitingMatch.addLog('info', `${user.username} joined via Quick Match! Battle starting now.`);
+
+      await waitingMatch.save();
+
+      console.log(`✅ [QUICK MATCH] ${user.username} matched into ${waitingMatch.matchCode}`);
+
+      if (ioInstance) {
+        ioInstance.to(waitingMatch.matchCode).emit('match-started', {
+          matchCode: waitingMatch.matchCode,
+          status: 'selecting',
+          message: 'Opponent found! Battle started!'
+        });
+      }
+
+      return res.json({
+        success: true,
+        matched: true,
+        matchCode: waitingMatch.matchCode,
+        message: 'Opponent found! Battle starting...'
+      });
+    }
+
+    let matchCode;
+    let isUnique = false;
+    let attempts = 0;
+    while (!isUnique && attempts < 20) {
+      matchCode = generateMatchCode();
+      const existing = await Match.findOne({ matchCode });
+      if (!existing) isUnique = true;
+      attempts++;
+    }
+
+    if (!isUnique) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate match code'
+      });
+    }
+
+    const match = new Match({
+      matchCode,
+      matchType: 'quick',
+      player1: {
+        user: user._id,
+        username: user.username,
+        team: teamCards,
+        currentScore: 0,
+        selectedCardIndex: null,
+        confirmedCardIndex: null,
+        cardsWon: [],
+        cardsLost: []
+      },
+      status: 'waiting',
+      currentRound: 1,
+      maxRounds: 10,
+      roundStates: [],
+      winnerSide: null,
+      loserSide: null,
+      availableCardsToSteal: [],
+      gemRewards: {
+        winner: 20,
+        loser: 5,
+        draw: 10,
+        duplicateBonus: 20
+      }
+    });
+
+    await match.save();
+    match.addLog('info', `${user.username} is searching for an opponent via Quick Match...`);
+    await match.save();
+
+    console.log(`⏳ [QUICK MATCH] ${user.username} created waiting room ${match.matchCode}`);
+
+    return res.json({
+      success: true,
+      matched: false,
+      matchCode: match.matchCode,
+      message: 'Searching for an opponent...'
+    });
+
+  } catch (error) {
+    console.error('❌ [QUICK MATCH] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to find quick match'
+    });
+  }
+});
+
+// ============================================================
+// ✅ NEW: CANCEL QUICK MATCH SEARCH
+// ============================================================
+router.post('/cancel-quick-match', authMiddleware, async (req, res) => {
+  try {
+    const { matchCode } = req.body;
+    const user = req.user;
+
+    if (!matchCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Match code is required'
+      });
+    }
+
+    const match = await Match.findOne({
+      matchCode: matchCode.toUpperCase().trim(),
+      status: 'waiting',
+      matchType: 'quick'
+    });
+
+    if (!match) {
+      return res.json({
+        success: true,
+        message: 'No active search to cancel'
+      });
+    }
+
+    if (match.player1.user.toString() !== user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to cancel this search'
+      });
+    }
+
+    if (match.player2.user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Opponent already joined, cannot cancel'
+      });
+    }
+
+    await Match.deleteOne({ _id: match._id });
+    console.log(`🚫 [CANCEL QUICK MATCH] ${user.username} cancelled search ${matchCode}`);
+
+    res.json({
+      success: true,
+      message: 'Search cancelled'
+    });
+
+  } catch (error) {
+    console.error('❌ [CANCEL QUICK MATCH] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel search'
     });
   }
 });
@@ -1268,10 +1517,6 @@ router.post('/steal', authMiddleware, async (req, res) => {
     const winnerUser = await User.findById(winnerData.user);
     const loserUser = await User.findById(loserData.user);
 
-    // ✅ NEW: Find the opponent's ACTUAL card in their live collection.
-    // This is the source of truth for level/basePower/currentPower —
-    // the match's `team` snapshot only stores the effective powerLevel,
-    // not the real base power or level, so we must go back to the User doc.
     const loserCardIndex = loserUser
       ? loserUser.cards.findIndex(c =>
           c.characterId.toString() === stolenCard.characterId.toString()
@@ -1287,11 +1532,6 @@ router.post('/steal', authMiddleware, async (req, res) => {
       );
 
       if (!alreadyHas) {
-        // ✅ FIX: Copy the real card data — level and basePower stay intact.
-        // Before: level was hardcoded to 1 and basePower was set to the
-        // leveled-up powerLevel (e.g. base 40 -> became base 43 at level 1).
-        // Now: we copy the opponent's actual level (e.g. 3) and actual
-        // basePower (40) / currentPower (43), so nothing gets collapsed.
         winnerUser.cards.push({
           characterId: actualStolenCard?.characterId || stolenCard.characterId,
           characterName: actualStolenCard?.characterName || stolenCard.characterName,
@@ -1318,8 +1558,6 @@ router.post('/steal', authMiddleware, async (req, res) => {
     const loserGems = gemRewards.loser || 5;
     if (loserUser) {
       loserUser.gems = (loserUser.gems || 0) + loserGems;
-      // ✅ Use the same index we already found above, so the removal
-      // is guaranteed to target the exact same card we just copied.
       if (loserCardIndex !== -1) {
         loserUser.cards.splice(loserCardIndex, 1);
       }
