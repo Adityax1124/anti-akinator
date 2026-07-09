@@ -26,18 +26,20 @@ const cardRoutes = require('./routes/card');
 const app = express();
 
 // ============================================================
-// ✅ PRO PLAN: MAX EVENT LISTENERS (WebSocket connections)
+// 🚀 MAX EVENT LISTENERS (For High Concurrency)
 // ============================================================
-require('events').EventEmitter.defaultMaxListeners = 100;
+require('events').EventEmitter.defaultMaxListeners = 200;
 
 // ============================================================
-// ✅ CRITICAL: SERVER TIMEOUT INCREASE
+// 🚀 SERVER TIMEOUT (Keep-Alive for Long Connections)
 // ============================================================
 const server = http.createServer(app);
-server.timeout = 120000; // 2 minutes
+server.timeout = 120000;
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
 
 // ============================================================
-// ✅ REQUEST TIMEOUT MIDDLEWARE
+// 🚀 REQUEST TIMEOUT MIDDLEWARE
 // ============================================================
 app.use((req, res, next) => {
   req.setTimeout(120000, () => {
@@ -52,7 +54,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// SOCKET.IO
+// 🚀 SOCKET.IO (Optimized for High Concurrency)
 // ============================================================
 const io = socketIO(server, {
   cors: {
@@ -62,32 +64,32 @@ const io = socketIO(server, {
   pingTimeout: 60000,
   pingInterval: 25000,
   maxHttpBufferSize: 1e8,
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+  perMessageDeflate: {
+    threshold: 1024
+  }
 });
 
-// ✅ Pass io instance to app for use in controllers
 app.set('io', io);
 console.log('🔌 Socket.io instance set on app');
 
-// ✅ Pass io instance to team routes
 teamRoutes.setIO(io);
 console.log('🔌 Socket.io instance passed to team routes');
 
-// ✅ Pass io instance to match routes
 matchRoutes.setIO(io);
 console.log('🔌 Socket.io instance passed to match routes');
 
-// ✅ Pass io instance to clan routes
 clanRoutes.setIO(io);
 console.log('🛡️ Socket.io instance passed to clan routes');
 
 // ============================================================
-// TRUST PROXY (Secure for Railway/Vercel)
+// 🚀 TRUST PROXY (For Railway)
 // ============================================================
 app.set('trust proxy', 1);
 
 // ============================================================
-// ✅ BODY PARSER - MUST BE BEFORE ROUTES
+// 🚀 BODY PARSER (Optimized)
 // ============================================================
 app.use(express.json({ 
   limit: '10mb',
@@ -104,7 +106,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================================
-// SECURITY: HELMET (Security Headers)
+// 🚀 SECURITY: HELMET (Optimized for Performance)
 // ============================================================
 app.use(helmet({
   hsts: {
@@ -146,7 +148,7 @@ app.use(helmet({
 }));
 
 // ============================================================
-// CSP REPORTING ENDPOINT
+// 🚀 CSP REPORTING ENDPOINT
 // ============================================================
 app.post('/api/csp-report', express.json({ type: ['json', 'csp-report'] }), (req, res) => {
   if (req.body && req.body['csp-report']) {
@@ -161,7 +163,7 @@ app.post('/api/csp-report', express.json({ type: ['json', 'csp-report'] }), (req
 });
 
 // ============================================================
-// SECURITY: CORS (Hardened)
+// 🚀 CORS (Hardened)
 // ============================================================
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
@@ -199,11 +201,11 @@ app.use(cors({
 }));
 
 // ============================================================
-// RATE LIMITING - PRO PLAN (Higher Limits)
+// 🚀 RATE LIMITING (MAXIMUM FOR PRO PLAN + M10)
 // ============================================================
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// ✅ PRO PLAN: 500 requests per minute (was 100)
+// General API Limiter (500 req/min per IP)
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: isDevelopment ? 1000 : 500,
@@ -223,10 +225,10 @@ const apiLimiter = rateLimit({
   }
 });
 
-// ✅ PRO PLAN: 50 login attempts per 15 min (was 10)
+// 🔥 LOGIN: 100 attempts per 15 min per IP (was 50)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDevelopment ? 100 : 50,
+  max: isDevelopment ? 200 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -243,7 +245,27 @@ const authLimiter = rateLimit({
   }
 });
 
-// ✅ PRO PLAN: 200 game requests per minute (was 60)
+// 🔥 REGISTER: 20 accounts per 24 hours per IP (was 10)
+const registerLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: isDevelopment ? 200 : 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many accounts created from this network. Maximum 20 accounts per IP in 24 hours.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return false;
+  },
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
+});
+
+// Game Limiter (200 req/min per IP)
 const gameLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: isDevelopment ? 500 : 200,
@@ -263,7 +285,7 @@ const gameLimiter = rateLimit({
   }
 });
 
-// ✅ PRO PLAN: 100 profile requests per minute (was 30)
+// Profile Limiter (100 req/min per IP)
 const profileLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: isDevelopment ? 300 : 100,
@@ -283,7 +305,7 @@ const profileLimiter = rateLimit({
   }
 });
 
-// ✅ PRO PLAN: 50 admin requests per minute (was 20)
+// Admin Limiter (50 req/min per IP)
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: isDevelopment ? 200 : 50,
@@ -306,7 +328,7 @@ const adminLimiter = rateLimit({
 // Apply rate limiters
 app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/register', registerLimiter);
 app.use('/api/game', gameLimiter);
 app.use('/api/profile', profileLimiter);
 app.use('/api/season', profileLimiter);
@@ -315,7 +337,7 @@ app.use('/api/shop', profileLimiter);
 app.use('/api/referral', profileLimiter);
 
 // ============================================================
-// HTTPS REDIRECT
+// 🚀 HTTPS REDIRECT
 // ============================================================
 app.use((req, res, next) => {
   const forwardedProto = req.headers['x-forwarded-proto'];
@@ -327,7 +349,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// ADDITIONAL SECURITY HEADERS
+// 🚀 ADDITIONAL SECURITY HEADERS
 // ============================================================
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -339,7 +361,7 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// LOGGING (Sanitized)
+// 🚀 LOGGING (Sanitized)
 // ============================================================
 app.use((req, res, next) => {
   const startTime = Date.now();
@@ -353,12 +375,11 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// SOCKET.IO - REAL-TIME MULTIPLAYER WITH VOICE, INVITES, MATCHES & CLANS
+// 🚀 SOCKET.IO - REAL-TIME EVENTS
 // ============================================================
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
 
-  // ✅ Register user for private messages (invites)
   socket.on('register-user', (data) => {
     if (data?.userId) {
       socket.join(`user_${data.userId}`);
@@ -590,7 +611,7 @@ io.on('connection', (socket) => {
 });
 
 // ============================================================
-// ROUTES
+// 🚀 ROUTES
 // ============================================================
 app.use('/api/auth', authRoutes);
 app.use('/api/game', authMiddleware, gameRoutes);
@@ -607,7 +628,7 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/cards', authMiddleware, cardRoutes);
 
 // ============================================================
-// AGORA TOKEN GENERATOR
+// 🚀 AGORA TOKEN GENERATOR
 // ============================================================
 app.get('/api/agora-token', authMiddleware, (req, res) => {
   try {
@@ -658,7 +679,7 @@ app.get('/api/agora-token', authMiddleware, (req, res) => {
 });
 
 // ============================================================
-// HEALTH CHECK
+// 🚀 HEALTH CHECK
 // ============================================================
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -666,12 +687,14 @@ app.get('/api/health', (req, res) => {
     message: 'Anti-Akinator API is running',
     environment: process.env.NODE_ENV || 'development',
     secure: process.env.NODE_ENV === 'production',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    replicas: 12,
+    maxPoolSize: 100
   });
 });
 
 // ============================================================
-// ERROR HANDLER (Sanitized)
+// 🚀 ERROR HANDLER
 // ============================================================
 app.use((err, req, res, next) => {
   console.error('❌ Error:', {
@@ -695,7 +718,7 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================
-// MONGODB CONNECTION
+// 🚀 MONGODB CONNECTION (MAXIMUM POOL FOR M10)
 // ============================================================
 const isProduction = process.env.NODE_ENV === 'production';
 console.log(`🔐 MongoDB SSL: ${isProduction ? 'Enabled' : 'Disabled (development)'}`);
@@ -728,7 +751,7 @@ mongoose.connection.on('error', (err) => {
 });
 
 // ============================================================
-// GRACEFUL SHUTDOWN
+// 🚀 GRACEFUL SHUTDOWN
 // ============================================================
 process.on('SIGTERM', () => {
   console.log('🔄 SIGTERM received, closing server...');
@@ -747,7 +770,7 @@ process.on('SIGINT', () => {
 });
 
 // ============================================================
-// START SERVER
+// 🚀 START SERVER
 // ============================================================
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
@@ -760,5 +783,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`⚔️ Match routes loaded with socket events`);
   console.log(`🛡️ Clan routes loaded with socket events`);
   console.log(`⏰ Server timeout: 120 seconds`);
-  console.log(`📊 maxPoolSize: 100, maxListeners: 100, rate limits: 500/min`);
+  console.log(`📊 maxPoolSize: 100, maxListeners: 200, rate limits: 500/min`);
+  console.log(`📊 Login: 100/15min, Register: 20/24hrs`);
 });
