@@ -9,7 +9,20 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const chatContainerRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const intervalRef = useRef(null);
+
+  // ✅ FIX: Sirf chat container ko scroll karega
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
+
+  // ✅ Scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     fetchMessages();
@@ -62,6 +75,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
       if (response.data && response.data.data) {
         setMessages(prev => [...prev, response.data.data]);
         setNewMessage('');
+        setTimeout(scrollToBottom, 100);
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -111,6 +125,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
         <span className="member-badge">{clanName || 'Clan'}</span>
       </div>
 
+      {/* ✅ Yeh container scroll karega, poora page nahi */}
       <div className="chat-messages" ref={chatContainerRef}>
         {error && (
           <div className="chat-error">
@@ -137,6 +152,8 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
             </div>
           ))
         )}
+        
+        <div ref={messagesEndRef} />
       </div>
 
       <form className="chat-input-form" onSubmit={sendMessage}>

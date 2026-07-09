@@ -7,7 +7,7 @@ const User = require('../models/User');
 exports.createClan = async (req, res) => {
   try {
     const { name, description } = req.body;
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -76,7 +76,7 @@ exports.createClan = async (req, res) => {
 exports.joinClan = async (req, res) => {
   try {
     const { clanId } = req.body;
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -136,7 +136,7 @@ exports.joinClan = async (req, res) => {
 // Leave Clan
 exports.leaveClan = async (req, res) => {
   try {
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
     const { clanId } = req.body;
 
     if (!userId) {
@@ -199,7 +199,7 @@ exports.leaveClan = async (req, res) => {
 // Get All Clans (for joining)
 exports.getAllClans = async (req, res) => {
   try {
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -249,36 +249,50 @@ exports.getAllClans = async (req, res) => {
 // Get My Clan
 exports.getMyClan = async (req, res) => {
   try {
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      return res.status(401).json({ 
+        success: false,
+        message: 'User not authenticated' 
+      });
     }
 
     const clanMember = await ClanMember.findOne({ userId });
     if (!clanMember) {
-      return res.status(404).json({ message: 'You are not in a clan' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'You are not in a clan' 
+      });
     }
 
     const clan = await Clan.findById(clanMember.clanId);
     if (!clan) {
-      return res.status(404).json({ message: 'Clan not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Clan not found' 
+      });
     }
 
     const members = await ClanMember.find({ clanId: clan._id })
       .populate('userId', 'username shards gems')
       .lean();
 
-    const memberCount = members.length;
-    const memberList = members.map(m => ({
-      id: m.userId._id,
-      username: m.userId.username,
-      role: m.role,
-      gemsDonated: m.diamondsDonated,
-      gemsRequested: m.diamondsRequested
-    }));
+    // ✅ FIX: Filter out null userIds
+    const memberList = members
+      .filter(m => m.userId !== null)
+      .map(m => ({
+        id: m.userId._id,
+        username: m.userId.username || 'Unknown',
+        role: m.role,
+        gemsDonated: m.diamondsDonated || 0,
+        gemsRequested: m.diamondsRequested || 0
+      }));
+
+    const memberCount = memberList.length;
 
     res.status(200).json({
+      success: true,
       clan: {
         id: clan._id,
         name: clan.name,
@@ -292,7 +306,10 @@ exports.getMyClan = async (req, res) => {
     });
   } catch (error) {
     console.error('Get my clan error:', error);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error: ' + error.message 
+    });
   }
 };
 
@@ -305,18 +322,27 @@ exports.getClanMembers = async (req, res) => {
       .populate('userId', 'username shards gems')
       .lean();
 
-    const memberList = members.map(m => ({
-      id: m.userId._id,
-      username: m.userId.username,
-      role: m.role,
-      gemsDonated: m.diamondsDonated,
-      gemsRequested: m.diamondsRequested
-    }));
+    // ✅ FIX: Filter out null userIds
+    const memberList = members
+      .filter(m => m.userId !== null)
+      .map(m => ({
+        id: m.userId._id,
+        username: m.userId.username || 'Unknown',
+        role: m.role,
+        gemsDonated: m.diamondsDonated || 0,
+        gemsRequested: m.diamondsRequested || 0
+      }));
 
-    res.status(200).json({ members: memberList });
+    res.status(200).json({ 
+      success: true,
+      members: memberList 
+    });
   } catch (error) {
     console.error('Get members error:', error);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error: ' + error.message 
+    });
   }
 };
 
@@ -343,7 +369,7 @@ exports.sendChatMessage = async (req, res) => {
   try {
     const { clanId } = req.params;
     const { message } = req.body;
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -379,11 +405,11 @@ exports.sendChatMessage = async (req, res) => {
   }
 };
 
-// ✅ Donate GEMS ONLY - 1 Gem = 2 Shards, No Self Donation
+// Donate GEMS ONLY - 1 Gem = 2 Shards, No Self Donation
 exports.donateDiamonds = async (req, res) => {
   try {
     const { clanId, amount, targetUserId } = req.body;
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -393,7 +419,7 @@ exports.donateDiamonds = async (req, res) => {
       return res.status(400).json({ message: 'Amount must be at least 1 gem' });
     }
 
-    // ✅ Prevent donating to yourself
+    // Prevent donating to yourself
     const userIdStr = userId.toString();
     const targetUserIdStr = targetUserId.toString();
     
@@ -421,7 +447,7 @@ exports.donateDiamonds = async (req, res) => {
       return res.status(404).json({ message: 'Donor not found' });
     }
 
-    // ✅ 1 Gem = 2 Shards conversion rate
+    // 1 Gem = 2 Shards conversion rate
     const GEM_TO_SHARD_RATE = 2;
     const shardCost = amount * GEM_TO_SHARD_RATE;
 
@@ -438,12 +464,12 @@ exports.donateDiamonds = async (req, res) => {
       return res.status(404).json({ message: 'Target not found' });
     }
 
-    // ✅ DEDUCT shards from donor (payment for gems)
+    // DEDUCT shards from donor (payment for gems)
     donor.shards -= shardCost;
     await donor.save();
     console.log(`💰 Deducted ${shardCost} shards from ${donor.username} for ${amount} gems. Remaining shards: ${donor.shards}`);
 
-    // ✅ ADD gems to target (NOT shards!)
+    // ADD gems to target (NOT shards!)
     target.gems += amount;
     await target.save();
     console.log(`💎 Added ${amount} gems to ${target.username}. New gems total: ${target.gems}`);
@@ -495,7 +521,7 @@ exports.donateDiamonds = async (req, res) => {
 exports.requestDiamonds = async (req, res) => {
   try {
     const { clanId, amount } = req.body;
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -544,7 +570,7 @@ exports.requestDiamonds = async (req, res) => {
 exports.transferLeadership = async (req, res) => {
   try {
     const { clanId, newLeaderId } = req.body;
-    const userId = req.user._id || req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
