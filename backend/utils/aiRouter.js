@@ -1,9 +1,13 @@
 const Groq = require('groq-sdk');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const providers = [];
 
-// ===== GROQ =====
+console.log('========================================');
+console.log('🔧 Initializing AI Providers...');
+
+// ============================================================
+// 🔥 GROQ - FIRST PRIORITY (Single API Key)
+// ============================================================
 if (process.env.GROQ_API_KEY) {
   try {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -11,15 +15,17 @@ if (process.env.GROQ_API_KEY) {
       name: 'groq',
       call: async (messages) => {
         try {
+          console.log(`🔄 Groq processing...`);
           const response = await groq.chat.completions.create({
             messages,
             model: 'llama-3.1-8b-instant',
             temperature: 0.1,
             max_tokens: 10
           });
+          console.log(`✅ Groq succeeded`);
           return response.choices[0].message.content;
         } catch (err) {
-          console.error('❌ Groq API error:', err.message);
+          console.error(`❌ Groq error:`, err.message);
           throw err;
         }
       }
@@ -30,81 +36,91 @@ if (process.env.GROQ_API_KEY) {
   }
 }
 
-// ===== GEMINI =====
-if (process.env.GEMINI_API_KEY) {
-  try {
-    const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    providers.push({
-      name: 'gemini',
-      call: async (messages) => {
-        try {
-          const model = gemini.getGenerativeModel({ model: 'gemini-2.0-flash' });
-          const prompt = messages.map(m => `${m.role}: ${m.content}`).join('\n');
-          const result = await model.generateContent(prompt);
-          return result.response.text();
-        } catch (err) {
-          console.error('❌ Gemini API error:', err.message);
-          throw err;
-        }
-      }
-    });
-    console.log('✅ Gemini provider loaded');
-  } catch (err) {
-    console.error('❌ Failed to load Gemini:', err.message);
-  }
-}
-
-// ===== MISTRAL =====
-if (process.env.MISTRAL_API_KEY) {
+// ============================================================
+// 🔵 DEEPINFRA - SECOND PRIORITY (Backup)
+// ============================================================
+if (process.env.DEEPINFRA_API_KEY) {
   try {
     providers.push({
-      name: 'mistral',
+      name: 'deepinfra',
       call: async (messages) => {
         try {
-          const { Mistral } = await import('@mistralai/mistralai');
-          const mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
-          const response = await mistral.chat.completions.create({
-            messages,
-            model: 'mistral-small-latest',
-            temperature: 0.1,
-            max_tokens: 10
+          console.log(`🔄 DeepInfra processing...`);
+          
+          const response = await fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.DEEPINFRA_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+              messages: messages,
+              temperature: 0.1,
+              max_tokens: 10,
+              stream: false
+            })
           });
-          return response.choices[0].message.content;
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ DeepInfra API error: ${response.status} - ${errorText}`);
+            throw new Error(`DeepInfra API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const answer = data.choices[0]?.message?.content || 'Maybe';
+          console.log(`✅ DeepInfra succeeded`);
+          return answer;
         } catch (err) {
-          console.error('❌ Mistral API error:', err.message);
+          console.error('❌ DeepInfra API error:', err.message);
           throw err;
         }
       }
     });
-    console.log('✅ Mistral provider loaded');
+    console.log('✅ DeepInfra provider loaded');
   } catch (err) {
-    console.error('❌ Failed to load Mistral:', err.message);
+    console.error('❌ Failed to load DeepInfra:', err.message);
   }
 }
 
-// ===== FALLBACK: Mock responses =====
+// ============================================================
+// 📊 PROVIDER SUMMARY
+// ============================================================
+console.log(`📊 Total AI providers loaded: ${providers.length}`);
+providers.forEach(p => console.log(`   - ${p.name}`));
+console.log('========================================');
+
+// ============================================================
+// 🔥 FALLBACK: Mock responses if all providers fail
+// ============================================================
+const fallbackAnswers = ['Yes', 'No', 'Maybe'];
+
+function getFallbackAnswer() {
+  return fallbackAnswers[Math.floor(Math.random() * fallbackAnswers.length)];
+}
+
+// ============================================================
+// 🚀 MAIN askAI FUNCTION with failover
+// ============================================================
 async function askAI(messages, retryCount = 0) {
-  // ✅ If no providers, use fallback
   if (providers.length === 0) {
     console.log('⚠️ No AI providers available. Using fallback responses.');
-    const fallbackAnswers = ['Yes', 'No', 'Maybe'];
-    const randomAnswer = fallbackAnswers[Math.floor(Math.random() * fallbackAnswers.length)];
-    return { answer: randomAnswer, provider: 'fallback' };
+    return { answer: getFallbackAnswer(), provider: 'fallback' };
   }
 
   if (retryCount >= providers.length) {
     console.log('❌ All AI providers failed. Using fallback.');
-    const fallbackAnswers = ['Yes', 'No', 'Maybe'];
-    const randomAnswer = fallbackAnswers[Math.floor(Math.random() * fallbackAnswers.length)];
-    return { answer: randomAnswer, provider: 'fallback' };
+    return { answer: getFallbackAnswer(), provider: 'fallback' };
   }
 
   const provider = providers[retryCount];
   try {
     console.log(`🔄 Trying ${provider.name}...`);
     const answer = await provider.call(messages);
+    const cleanAnswer = answer.trim().replace(/[^a-zA-Z\s]/g, '').trim();
     console.log(`✅ ${provider.name} succeeded`);
-    return { answer, provider: provider.name };
+    return { answer: cleanAnswer || getFallbackAnswer(), provider: provider.name };
   } catch (error) {
     console.log(`❌ ${provider.name} failed:`, error.message);
     return askAI(messages, retryCount + 1);
