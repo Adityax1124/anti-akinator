@@ -25,7 +25,6 @@ function generateMatchCode() {
 }
 
 // ===== HELPER: Build team cards from selection or auto-pick top 10 =====
-// (Extracted so /create and /quick-match share identical team-building logic)
 function buildTeamCards(team, userData) {
   if (team && Array.isArray(team) && team.length === 10) {
     return team.map(card => {
@@ -66,7 +65,7 @@ function buildTeamCards(team, userData) {
 }
 
 // ============================================================
-// CREATE MATCH - FIXED POWER LEVEL
+// CREATE MATCH
 // ============================================================
 router.post('/create', authMiddleware, async (req, res) => {
   try {
@@ -89,7 +88,6 @@ router.post('/create', authMiddleware, async (req, res) => {
     let teamCards = [];
     
     if (team && Array.isArray(team) && team.length === 10) {
-      // ✅ FIX: Use currentPower or powerLevel from card
       teamCards = team.map(card => {
         const id = card.characterId || card._id || card.id;
         const power = card.currentPower || card.powerLevel || 25;
@@ -108,7 +106,6 @@ router.post('/create', authMiddleware, async (req, res) => {
         };
       });
     } else {
-      // ✅ FIX: Use currentPower from user's cards
       teamCards = userData.cards
         .sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0))
         .slice(0, 10)
@@ -225,7 +222,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ NEW: QUICK MATCH (random pairing)
+// QUICK MATCH
 // ============================================================
 router.post('/quick-match', authMiddleware, async (req, res) => {
   try {
@@ -373,7 +370,7 @@ router.post('/quick-match', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ NEW: CANCEL QUICK MATCH SEARCH
+// CANCEL QUICK MATCH SEARCH
 // ============================================================
 router.post('/cancel-quick-match', authMiddleware, async (req, res) => {
   try {
@@ -432,7 +429,7 @@ router.post('/cancel-quick-match', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// JOIN MATCH - FIXED POWER LEVEL
+// JOIN MATCH
 // ============================================================
 router.post('/join', authMiddleware, async (req, res) => {
   try {
@@ -482,7 +479,6 @@ router.post('/join', authMiddleware, async (req, res) => {
       });
     }
 
-    // ✅ FIX: Use currentPower from user's cards
     const topCards = userData.cards
       .sort((a, b) => (b.currentPower || b.powerLevel || 0) - (a.currentPower || a.powerLevel || 0))
       .slice(0, 10);
@@ -607,6 +603,81 @@ router.post('/start', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to start match'
+    });
+  }
+});
+
+// ============================================================
+// 🚫 CANCEL / DELETE MATCH (NEW)
+// ============================================================
+router.delete('/cancel/:matchCode', authMiddleware, async (req, res) => {
+  try {
+    const { matchCode } = req.params;
+    const user = req.user;
+
+    console.log(`🚫 [CANCEL MATCH] ${user.username} cancelling match: ${matchCode}`);
+
+    const match = await Match.findOne({
+      matchCode: matchCode.toUpperCase().trim()
+    });
+
+    if (!match) {
+      return res.status(404).json({
+        success: false,
+        message: 'Match not found'
+      });
+    }
+
+    // ✅ Check if user is part of this match
+    const side = getPlayerSide(match, user._id);
+    if (!side) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not part of this match'
+      });
+    }
+
+    // ✅ Check if match is already finished
+    if (match.status === 'finished') {
+      return res.status(400).json({
+        success: false,
+        message: 'Match already finished, cannot cancel'
+      });
+    }
+
+    // ✅ Check if match is already in progress (selection phase)
+    if (match.status === 'selecting' || match.status === 'revealing' || match.status === 'round_result') {
+      // Notify other player that match is being cancelled
+      const opponentSide = side === 'player1' ? 'player2' : 'player1';
+      const opponentData = opponentSide === 'player1' ? match.player1 : match.player2;
+      
+      if (ioInstance) {
+        ioInstance.to(match.matchCode).emit('match-cancelled', {
+          matchCode: match.matchCode,
+          message: `${user.username} cancelled the match!`,
+          cancelledBy: user.username
+        });
+      }
+    }
+
+    const matchCodeSaved = match.matchCode;
+
+    // ✅ DELETE the match from database
+    await Match.deleteOne({ _id: match._id });
+
+    console.log(`🗑️ [CANCEL MATCH] Match ${matchCodeSaved} deleted by ${user.username}`);
+
+    res.json({
+      success: true,
+      message: 'Match cancelled and deleted successfully',
+      matchCode: matchCodeSaved
+    });
+
+  } catch (error) {
+    console.error('❌ [CANCEL MATCH] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel match: ' + error.message
     });
   }
 });
@@ -1432,9 +1503,6 @@ router.post('/leave', authMiddleware, async (req, res) => {
 
 // ============================================================
 // STEAL CARD
-// ✅ FIXED: Preserves the opponent's actual level & basePower
-// instead of resetting level to 1 and baking the leveled-up
-// power in as the new basePower.
 // ============================================================
 router.post('/steal', authMiddleware, async (req, res) => {
   try {

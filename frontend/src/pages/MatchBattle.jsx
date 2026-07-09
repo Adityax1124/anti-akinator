@@ -222,6 +222,15 @@ const MatchBattle = () => {
       setChatMessages(prev => [...prev, data]);
     });
 
+    // ✅ NEW: Match cancelled event
+    socket.on('match-cancelled', (data) => {
+      console.log('🚫 Match cancelled:', data);
+      setSuccess(`⚠️ ${data.message || 'Match has been cancelled'}`);
+      setTimeout(() => {
+        navigate('/match');
+      }, 2000);
+    });
+
     fetchMatchState();
 
     const interval = setInterval(fetchMatchState, 3000);
@@ -468,6 +477,57 @@ const MatchBattle = () => {
     }
   };
 
+  // ============================================================
+  // ✅ CANCEL / DELETE MATCH (NEW)
+  // ============================================================
+  const handleCancelMatch = async () => {
+    if (!matchCode) {
+      setError('No active match to cancel');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    // ✅ Confirmation dialog
+    if (!window.confirm(
+      '⚠️ Are you sure you want to CANCEL this match?\n\n' +
+      'This will PERMANENTLY DELETE the match from the database.\n' +
+      'Both players will be sent back to matchmaking.\n\n' +
+      'This action CANNOT be undone!'
+    )) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.delete(`/match/cancel/${matchCode}`);
+      
+      if (response.data.success) {
+        setSuccess('✅ Match cancelled and deleted successfully');
+        
+        // ✅ Notify via socket
+        if (socketRef.current) {
+          socketRef.current.emit('match-cancelled', {
+            matchCode: matchCode,
+            userId: user?._id
+          });
+          socketRef.current.emit('leave-match-room', matchCode);
+          socketRef.current.disconnect();
+        }
+        
+        // ✅ Navigate back to matchmaking
+        setTimeout(() => {
+          navigate('/match');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('❌ Failed to cancel match:', error);
+      setError(error.response?.data?.message || 'Failed to cancel match');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendChat = (message) => {
     if (socketRef.current && matchCode) {
       socketRef.current.emit('match-chat-message', {
@@ -675,9 +735,29 @@ const MatchBattle = () => {
 
       {/* ===== HEADER ===== */}
       <div className="battle-header">
+        {/* ✅ CANCEL MATCH BUTTON */}
+        <button 
+          className="btn-cancel-match" 
+          onClick={handleCancelMatch} 
+          disabled={loading || isFinished}
+          style={{
+            background: 'rgba(255,0,0,0.15)',
+            border: '1px solid rgba(255,0,0,0.3)',
+            color: '#ff6b6b',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          }}
+        >
+          {loading ? '⏳ Cancelling...' : '🚫 Cancel Match'}
+        </button>
+
         <button className="btn-leave" onClick={handleLeave} disabled={leaveLoading}>
           {leaveLoading ? '⏳' : '🚪 Leave'}
         </button>
+
         <div className="battle-info">
           <span className="battle-code">{matchCode}</span>
           <span className="battle-round">Round {match.currentRound} / {match.maxRounds}</span>
@@ -687,6 +767,7 @@ const MatchBattle = () => {
             </span>
           )}
         </div>
+
         <div className="battle-timer">
           <span className="timer-icon">⏱️</span>
           <span className={`timer-text ${timeLeft <= 5 ? 'danger' : ''}`}>

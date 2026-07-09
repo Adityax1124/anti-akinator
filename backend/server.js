@@ -460,6 +460,19 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ✅ NEW: Match cancelled event
+  socket.on('match-cancelled', (data) => {
+    const { matchCode, userId } = data;
+    if (matchCode && matchCode !== 'undefined') {
+      io.to(matchCode).emit('match-cancelled', {
+        matchCode: matchCode,
+        message: 'Match has been cancelled',
+        cancelledBy: userId
+      });
+      console.log(`🚫 Match ${matchCode} cancelled by user ${userId}`);
+    }
+  });
+
   socket.on('match-chat-message', (data) => {
     const { matchCode, username, message, userId } = data;
     if (matchCode && matchCode !== 'undefined') {

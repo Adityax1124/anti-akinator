@@ -10,6 +10,13 @@ const matchSchema = new mongoose.Schema({
     trim: true
   },
   
+  // Match type: 'private' or 'quick'
+  matchType: {
+    type: String,
+    enum: ['private', 'quick'],
+    default: 'private'
+  },
+  
   // Players
   player1: {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -122,7 +129,7 @@ const matchSchema = new mongoose.Schema({
   winnerSide: { type: String, enum: ['player1', 'player2', null], default: null },
   loserSide: { type: String, enum: ['player1', 'player2', null], default: null },
   
-  // ✅ NEW: Forfeit fields
+  // Forfeit fields
   forfeit: {
     type: Boolean,
     default: false
@@ -185,6 +192,19 @@ matchSchema.index({ 'player1.user': 1 });
 matchSchema.index({ 'player2.user': 1 });
 matchSchema.index({ createdAt: -1 });
 matchSchema.index({ forfeit: 1 });
+matchSchema.index({ matchType: 1 });
+
+// ✅ NEW: TTL index for auto-deletion after 24 hours (all matches)
+matchSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
+
+// ✅ NEW: TTL index for auto-deletion after 5 minutes for waiting matches only
+matchSchema.index(
+  { createdAt: 1 },
+  { 
+    expireAfterSeconds: 300, // 5 minutes
+    partialFilterExpression: { status: 'waiting' }
+  }
+);
 
 // ===== METHODS =====
 matchSchema.methods.addLog = function(type, message) {
@@ -251,6 +271,16 @@ matchSchema.methods.getGemRewards = function(side) {
   if (side === 'loser') return rewards.loser;
   if (side === 'draw') return rewards.draw;
   return 0;
+};
+
+// ✅ NEW: Check if match is cancellable
+matchSchema.methods.isCancellable = function() {
+  return ['waiting', 'selecting'].includes(this.status);
+};
+
+// ✅ NEW: Check if match is active
+matchSchema.methods.isActive = function() {
+  return ['waiting', 'selecting', 'revealing', 'round_result', 'selecting_reward'].includes(this.status);
 };
 
 module.exports = mongoose.model('Match', matchSchema);
