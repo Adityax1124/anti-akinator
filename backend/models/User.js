@@ -82,7 +82,7 @@ const userSchema = new mongoose.Schema({
   }],
   
   // ============================================================
-  // ✅ NEW - GEMS (Currency for Card Upgrades)
+  // ✅ GEMS (Currency for Card Upgrades)
   // ============================================================
   gems: {
     type: Number,
@@ -383,11 +383,11 @@ userSchema.index({ 'seasonHistory.season': -1 });
 userSchema.index({ referralCode: 1 });
 userSchema.index({ referredBy: 1 });
 userSchema.index({ deviceFingerprint: 1 });
-// ✅ NEW: Card indexes
+// ✅ Card indexes
 userSchema.index({ 'cards.characterId': 1 });
 userSchema.index({ 'cards.currentPower': -1 });
 userSchema.index({ 'cards.level': -1 });
-// ✅ NEW: Clan index
+// ✅ Clan index
 userSchema.index({ clanId: 1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
@@ -454,7 +454,7 @@ userSchema.methods.resetFailedAttempts = async function() {
 };
 
 // ============================================================
-// ✅ CARD COLLECTION METHODS (UPDATED)
+// ✅ CARD COLLECTION METHODS
 // ============================================================
 userSchema.methods.addCard = function(character) {
   // Check if card already exists
@@ -507,7 +507,7 @@ userSchema.methods.getTopCards = function(limit = 10) {
     .slice(0, limit);
 };
 
-// ✅ NEW: Upgrade Card
+// ✅ Upgrade Card
 userSchema.methods.upgradeCard = function(characterId) {
   const card = this.cards.find(c => 
     c.characterId.toString() === characterId.toString()
@@ -542,7 +542,9 @@ userSchema.methods.upgradeCard = function(characterId) {
   };
 };
 
-// ✅ NEW: Get Upgrade Cost
+// ============================================================
+// ✅ GET UPGRADE COST (Helper Function)
+// ============================================================
 function getUpgradeCost(level) {
   const costs = {
     1: 10,
@@ -558,7 +560,9 @@ function getUpgradeCost(level) {
   return costs[level] || 120;
 }
 
-// ✅ NEW: Get Power Increase
+// ============================================================
+// ✅ GET POWER INCREASE (Helper Function)
+// ============================================================
 function getPowerIncrease(level) {
   const increases = {
     1: 1,
@@ -590,7 +594,9 @@ userSchema.methods.removeGems = function(amount) {
   return true;
 };
 
-// ===== REFERRAL METHODS =====
+// ============================================================
+// ✅ REFERRAL METHODS
+// ============================================================
 userSchema.methods.generateReferralCode = function() {
   if (this.referralCode) return this.referralCode;
   
@@ -608,7 +614,9 @@ userSchema.methods.getReferralStats = function() {
   };
 };
 
-// ===== STATICS =====
+// ============================================================
+// ✅ STATICS
+// ============================================================
 userSchema.statics.findByUsernameOrEmail = function(identifier) {
   const sanitized = sanitizeInput(identifier);
   return this.findOne({

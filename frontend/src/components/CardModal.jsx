@@ -7,6 +7,7 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSellConfirm, setShowSellConfirm] = useState(false);
 
   const getUpgradeInfo = (level) => {
     const upgradeData = {
@@ -24,10 +25,37 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
     return upgradeData[level] || upgradeData[1];
   };
 
+  // ✅ CORRECTED: Calculate sell price
+const getSellPrice = (card) => {
+  const basePrices = {
+    'Common': 5,
+    'Uncommon': 25,
+    'Rare': 60,
+    'Epic': 150,
+    'Legendary': 350
+  };
+
+  const levelBonus = {
+    'Common': { 1: 0, 2: 3, 3: 6, 4: 9, 5: 15, 6: 18, 7: 21, 8: 25, 9: 30, 10: 35 },
+    'Uncommon': { 1: 0, 2: 4, 3: 8, 4: 12, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40 },
+    'Rare': { 1: 0, 2: 5, 3: 10, 4: 15, 5: 25, 6: 30, 7: 35, 8: 40, 9: 50, 10: 60 },
+    'Epic': { 1: 0, 2: 10, 3: 20, 4: 30, 5: 50, 6: 65, 7: 80, 8: 95, 9: 110, 10: 130 },
+    'Legendary': { 1: 0, 2: 20, 3: 40, 4: 60, 5: 100, 6: 130, 7: 160, 8: 190, 9: 220, 10: 250 }
+  };
+
+  const rarity = card.rarity || 'Common';
+  const level = card.level || 1;
+  const basePrice = basePrices[rarity] || 5;
+  const bonus = levelBonus[rarity]?.[level] || 0;
+  
+  return basePrice + bonus;
+};
+
   const currentLevel = card.level || 1;
   const isMaxLevel = currentLevel >= 10;
   const upgradeInfo = getUpgradeInfo(currentLevel);
   const canUpgrade = !isMaxLevel && (userGems || 0) >= upgradeInfo.cost;
+  const sellPrice = getSellPrice(card);
 
   const handleUpgrade = async () => {
     if (!canUpgrade) return;
@@ -51,6 +79,37 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to upgrade card');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Handle Sell Card
+  const handleSell = async () => {
+    if (!showSellConfirm) {
+      setShowSellConfirm(true);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post('/cards/sell', {
+        cardId: card.characterId
+      });
+
+      if (response.data.success) {
+        setSuccess(`✅ Card sold for ${response.data.gemsEarned} 💎 gems!`);
+        onUpgradeSuccess({ sold: true, gemsEarned: response.data.gemsEarned });
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to sell card');
+      setShowSellConfirm(false);
     } finally {
       setLoading(false);
     }
@@ -199,6 +258,40 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
             <p className="max-power">⚡ Power: {card.currentPower || card.powerLevel || 0}</p>
           </div>
         )}
+
+        {/* ✅ SELL SECTION - Below Upgrade */}
+        <div className="modal-sell">
+          <div className="sell-divider"></div>
+          <div className="sell-info">
+            <span className="sell-label">💰 Sell Card</span>
+            <span className="sell-price">{sellPrice} 💎</span>
+          </div>
+          <p className="sell-hint">
+            {showSellConfirm ? (
+              <span className="sell-warning-text">⚠️ Are you sure? This card will be permanently removed!</span>
+            ) : (
+              <span>Card will be removed from your collection</span>
+            )}
+          </p>
+          <div className="sell-buttons">
+            <button
+              className={`btn-sell ${showSellConfirm ? 'confirm' : ''}`}
+              onClick={handleSell}
+              disabled={loading}
+            >
+              {loading ? '⏳ Processing...' : showSellConfirm ? '✅ Confirm Sell' : '💰 Sell Card'}
+            </button>
+            {showSellConfirm && (
+              <button
+                className="btn-sell-cancel"
+                onClick={() => setShowSellConfirm(false)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="modal-footer">
           <button className="modal-close-btn" onClick={onClose}>Close</button>

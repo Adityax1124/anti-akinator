@@ -55,6 +55,33 @@ function calculateTotalCostToMax(currentLevel) {
 }
 
 // ============================================================
+// ✅ HELPER: Get Sell Price for Card (CORRECTED)
+// ============================================================
+function getSellPrice(card) {
+  const basePrices = {
+    'Common': 5,
+    'Uncommon': 25,
+    'Rare': 60,
+    'Epic': 150,
+    'Legendary': 350
+  };
+
+  const levelBonus = {
+    'Common': { 1: 0, 2: 3, 3: 6, 4: 9, 5: 15, 6: 18, 7: 21, 8: 25, 9: 30, 10: 35 },
+    'Uncommon': { 1: 0, 2: 4, 3: 8, 4: 12, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40 },
+    'Rare': { 1: 0, 2: 5, 3: 10, 4: 15, 5: 25, 6: 30, 7: 35, 8: 40, 9: 50, 10: 60 },
+    'Epic': { 1: 0, 2: 10, 3: 20, 4: 30, 5: 50, 6: 65, 7: 80, 8: 95, 9: 110, 10: 130 },
+    'Legendary': { 1: 0, 2: 20, 3: 40, 4: 60, 5: 100, 6: 130, 7: 160, 8: 190, 9: 220, 10: 250 }
+  };
+
+  const rarity = card.rarity || 'Common';
+  const level = card.level || 1;
+  const basePrice = basePrices[rarity] || 5;
+  const bonus = levelBonus[rarity]?.[level] || 0;
+  
+  return basePrice + bonus;
+}
+// ============================================================
 // ✅ GET USER'S CARD COLLECTION
 // ============================================================
 router.get('/collection', authMiddleware, async (req, res) => {
@@ -124,6 +151,7 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
     const currentLevel = card.level || 1;
     const upgradeInfo = getUpgradeInfo(currentLevel);
     const canUpgrade = currentLevel < 10 && (user.gems || 0) >= upgradeInfo.cost;
+    const sellPrice = getSellPrice(card);
 
     res.json({
       success: true,
@@ -135,7 +163,8 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
           gemsAvailable: user.gems || 0,
           gemsNeeded: upgradeInfo.cost,
           gemsShort: Math.max(0, upgradeInfo.cost - (user.gems || 0))
-        }
+        },
+        sellPrice: sellPrice
       }
     });
 
@@ -324,6 +353,90 @@ router.post('/upgrade-bulk', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
+// ✅ SELL CARD
+// ============================================================
+router.post('/sell', authMiddleware, async (req, res) => {
+  try {
+    const { cardId } = req.body;
+
+    if (!cardId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Card ID is required'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Find the card in user's collection
+    const cardIndex = user.cards.findIndex(c => 
+      c.characterId && c.characterId.toString() === cardId
+    );
+
+    if (cardIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Card not found in your collection'
+      });
+    }
+
+    const card = user.cards[cardIndex];
+
+    // Check if user has at least 10 cards (minimum for battle)
+    if (user.cards.length <= 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'You need at least 10 cards for battles. Cannot sell when you have 10 or fewer cards.',
+        totalCards: user.cards.length,
+        minimumRequired: 10
+      });
+    }
+
+    // Calculate sell price
+    const sellPrice = getSellPrice(card);
+
+    // Remove card from collection
+    user.cards.splice(cardIndex, 1);
+
+    // Add gems to user
+    user.gems = (user.gems || 0) + sellPrice;
+
+    await user.save();
+
+    console.log(`💰 ${user.username} sold ${card.characterName} (${card.rarity}) for ${sellPrice} gems`);
+
+    res.json({
+      success: true,
+      message: `✅ ${card.characterName} sold for ${sellPrice} gems!`,
+      cardSold: {
+        characterName: card.characterName,
+        rarity: card.rarity,
+        level: card.level,
+        power: card.currentPower || card.powerLevel,
+        sellPrice: sellPrice
+      },
+      gemsEarned: sellPrice,
+      gemsRemaining: user.gems,
+      totalCardsRemaining: user.cards.length
+    });
+
+  } catch (error) {
+    console.error('❌ Sell card error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to sell card: ' + error.message
+    });
+  }
+});
+
+// ============================================================
 // ✅ GET UPGRADE COST
 // ============================================================
 router.get('/upgrade-cost/:level', authMiddleware, async (req, res) => {
@@ -387,6 +500,55 @@ router.get('/rarity-colors', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get colors'
+    });
+  }
+});
+
+// ============================================================
+// ✅ GET SELL PRICE FOR A CARD (Preview)
+// ============================================================
+router.get('/sell-price/:cardId', authMiddleware, async (req, res) => {
+  try {
+    const { cardId } = req.params;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const card = user.cards.find(c => 
+      c.characterId && c.characterId.toString() === cardId
+    );
+
+    if (!card) {
+      return res.status(404).json({
+        success: false,
+        message: 'Card not found in your collection'
+      });
+    }
+
+    const sellPrice = getSellPrice(card);
+
+    res.json({
+      success: true,
+      sellPrice: sellPrice,
+      card: {
+        characterName: card.characterName,
+        rarity: card.rarity,
+        level: card.level,
+        power: card.currentPower || card.powerLevel
+      }
+    });
+
+  } catch (error) {
+    console.error('Get sell price error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get sell price'
     });
   }
 });

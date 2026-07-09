@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import CardModal from '../components/CardModal';
+import SellGuide from '../components/SellGuide';
 import './Collection.css';
 
 const Collection = () => {
@@ -57,7 +58,11 @@ const Collection = () => {
       )
     );
     fetchCollection();
-    setSuccess(`✅ ${updatedCard.characterName} upgraded to Level ${updatedCard.level}!`);
+    if (updatedCard.sold) {
+      setSuccess(`✅ Card sold for ${updatedCard.gemsEarned} 💎 gems!`);
+    } else {
+      setSuccess(`✅ ${updatedCard.characterName} upgraded to Level ${updatedCard.level}!`);
+    }
     setTimeout(() => setSuccess(''), 3000);
   };
 
@@ -183,6 +188,8 @@ const Collection = () => {
 
       {error && <div className="collection-alert error">{error}</div>}
       {success && <div className="collection-alert success">{success}</div>}
+
+      <SellGuide />
 
       <div className="collection-controls">
         <div className="search-box">

@@ -1,0 +1,262 @@
+/* ============================================================
+   SELL GUIDE - PREMIUM (CLEAN VERSION)
+   ============================================================ */
+
+.sell-guide-container {
+  background: rgba(10, 10, 30, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 16px;
+  border: 1px solid rgba(108, 99, 255, 0.05);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.sell-guide-container:hover {
+  border-color: rgba(108, 99, 255, 0.1);
+}
+
+.sell-guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.sell-guide-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sell-guide-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sell-guide-icon {
+  font-size: 18px;
+}
+
+.sell-guide-badge {
+  font-size: 8px;
+  background: linear-gradient(135deg, #ffd700, #f7971e);
+  color: #1a1a2e;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sell-guide-toggle {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 4px 8px;
+}
+
+.sell-guide-toggle:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sell-guide-body {
+  padding: 0 20px 18px;
+  animation: sellGuideSlide 0.3s ease;
+}
+
+@keyframes sellGuideSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sell-guide-description {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.sell-guide-description strong {
+  color: #ffd700;
+}
+
+/* ===== RARITY GRID ===== */
+.sell-guide-rarity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.sell-guide-rarity-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid;
+  transition: all 0.3s ease;
+}
+
+.sell-guide-rarity-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.sell-guide-rarity-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sell-guide-rarity-stars {
+  font-size: 11px;
+}
+
+.sell-guide-rarity-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sell-guide-rarity-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sell-guide-price-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 1px 0;
+}
+
+.sell-guide-price-item .sell-guide-price-value {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.sell-guide-price-item.highlight .sell-guide-price-value {
+  color: #ffd700;
+  font-weight: 700;
+}
+
+/* ===== TIP ===== */
+.sell-guide-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 215, 0, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.05);
+  border-radius: 10px;
+}
+
+.sell-guide-tip-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sell-guide-tip-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.5;
+}
+
+.sell-guide-tip-text strong {
+  color: #ffd700;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .sell-guide-rarity-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .sell-guide-header {
+    padding: 10px 16px;
+  }
+
+  .sell-guide-title {
+    font-size: 13px;
+  }
+
+  .sell-guide-body {
+    padding: 0 16px 14px;
+  }
+
+  .sell-guide-description {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sell-guide-rarity-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .sell-guide-title {
+    font-size: 12px;
+  }
+
+  .sell-guide-badge {
+    font-size: 7px;
+    padding: 1px 8px;
+  }
+
+  .sell-guide-rarity-card {
+    padding: 10px 10px;
+  }
+
+  .sell-guide-rarity-name {
+    font-size: 11px;
+  }
+
+  .sell-guide-rarity-stars {
+    font-size: 9px;
+  }
+
+  .sell-guide-price-item {
+    font-size: 10px;
+  }
+
+  .sell-guide-price-item .sell-guide-price-value {
+    font-size: 11px;
+  }
+
+  .sell-guide-tip-text {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 400px) {
+  .sell-guide-rarity-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .sell-guide-rarity-card {
+    padding: 8px 8px;
+  }
+
+  .sell-guide-title {
+    font-size: 11px;
+  }
+
+  .sell-guide-badge {
+    font-size: 6px;
+    padding: 1px 6px;
+  }
+}

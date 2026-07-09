@@ -291,7 +291,7 @@
   border-radius: 14px !important;
   padding: 1.3rem !important;
   border: 1px solid var(--border-soft) !important;
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.8rem !important;
 }
 
 .upgrade-info {
@@ -436,7 +436,7 @@
   background: rgba(255, 215, 0, 0.05) !important;
   border-radius: 14px !important;
   border: 1px solid rgba(255, 215, 0, 0.15) !important;
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.8rem !important;
 }
 
 .max-level-icon {
@@ -462,6 +462,119 @@
   font-size: 1.2rem !important;
   font-weight: 800 !important;
   margin-top: 0.6rem !important;
+}
+
+/* ============================================================
+   ✅ SELL SECTION - INSIDE MODAL
+   ============================================================ */
+.modal-sell {
+  position: relative !important;
+  z-index: 1 !important;
+  background: var(--glass) !important;
+  border-radius: 14px !important;
+  padding: 1.3rem !important;
+  border: 1px solid var(--border-soft) !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.sell-divider {
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent) !important;
+  margin-bottom: 12px !important;
+}
+
+.sell-info {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 2px !important;
+}
+
+.sell-label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.sell-price {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #ffd700 !important;
+}
+
+.sell-hint {
+  font-size: 12px !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  margin-bottom: 10px !important;
+  min-height: 18px !important;
+}
+
+.sell-warning-text {
+  color: #ff6b6b !important;
+  font-weight: 600 !important;
+}
+
+.sell-buttons {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.btn-sell {
+  width: 100% !important;
+  padding: 10px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  background: rgba(255, 215, 0, 0.08) !important;
+  color: #ffd700 !important;
+  border: 1px solid rgba(255, 215, 0, 0.12) !important;
+}
+
+.btn-sell:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.15) !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn-sell.confirm {
+  background: rgba(255, 107, 107, 0.12) !important;
+  color: #ff6b6b !important;
+  border-color: rgba(255, 107, 107, 0.2) !important;
+}
+
+.btn-sell.confirm:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.2) !important;
+}
+
+.btn-sell:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.btn-sell-cancel {
+  width: 100% !important;
+  padding: 8px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.btn-sell-cancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+
+.btn-sell-cancel:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
 }
 
 .modal-footer {
