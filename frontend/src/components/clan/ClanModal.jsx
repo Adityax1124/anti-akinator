@@ -47,7 +47,7 @@ const ClanModal = ({ isOpen, onClose, onClanAction }) => {
                   <span className="btn-icon">🏰</span>
                 </div>
                 <span className="btn-title">Create Clan</span>
-                <span className="btn-sub">Costs 200 💎</span>
+                <span className="btn-sub">Costs 200 Shards 🎴</span>
               </button>
               <button
                 className="clan-modal-btn join-btn"
