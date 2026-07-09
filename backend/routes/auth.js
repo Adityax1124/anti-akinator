@@ -114,7 +114,7 @@ router.post('/register', registerValidation, async (req, res) => {
     console.log(`📝 IP Address: ${ipAddress}`);
     console.log(`📝 Device Fingerprint: ${deviceFingerprint ? 'Provided' : 'Not provided'}`);
 
-    // ===== ✅ LAYER 1: IP ADDRESS LIMIT =====
+    // ===== ✅ LAYER 1: IP ADDRESS LIMIT (100 per 24 hours) =====
     const recentRegistrationsFromIP = await User.countDocuments({
       ipAddress: ipAddress,
       createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
@@ -122,13 +122,13 @@ router.post('/register', registerValidation, async (req, res) => {
 
     console.log(`📊 Recent registrations from IP ${ipAddress}: ${recentRegistrationsFromIP}`);
 
-    if (recentRegistrationsFromIP >= 3) {
+    if (recentRegistrationsFromIP >= 100) {
       console.log(`🚫 IP LIMIT REACHED: ${ipAddress} has ${recentRegistrationsFromIP} registrations in 24 hours`);
       return res.status(429).json({
         success: false,
-        message: 'Too many accounts created from this network. Maximum 3 accounts per IP in 24 hours.',
+        message: 'Too many accounts created from this network. Maximum 100 accounts per IP in 24 hours.',
         code: 'IP_LIMIT',
-        remaining: 3 - recentRegistrationsFromIP
+        remaining: 100 - recentRegistrationsFromIP
       });
     }
 
