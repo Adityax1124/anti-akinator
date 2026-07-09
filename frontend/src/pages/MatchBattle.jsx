@@ -6,7 +6,35 @@ import io from 'socket.io-client';
 import MatchChat from '../components/MatchChat';
 import './MatchBattle.css';
 
-const FightAnimation = ({ playerCard, opponentCard, winner, onComplete, mySide }) => {
+// ===== HELPER: Element Multiplier =====
+const getElementMultiplier = (attackerElement, defenderElement) => {
+  const advantages = {
+    'Fire': 'Wind',
+    'Wind': 'Earth',
+    'Earth': 'Water',
+    'Water': 'Fire'
+  };
+  
+  if (advantages[attackerElement] === defenderElement) return 1.2;
+  if (advantages[defenderElement] === attackerElement) return 0.8;
+  return 1.0;
+};
+
+// ===== HELPER: Get Element Advantage Message =====
+const getElementAdvantageMessage = (element1, element2) => {
+  const advantages = {
+    'Fire': 'Wind',
+    'Wind': 'Earth',
+    'Earth': 'Water',
+    'Water': 'Fire'
+  };
+  
+  if (advantages[element1] === element2) return `${element1} 🔥 beats ${element2}`;
+  if (advantages[element2] === element1) return `${element2} 💨 beats ${element1}`;
+  return '⚖️ No element advantage';
+};
+
+const FightAnimation = ({ playerCard, opponentCard, winner, onComplete, mySide, roundCardDetails }) => {
   const [stage, setStage] = useState('fly');
   const [sparkles, setSparkles] = useState([]);
   const [showResult, setShowResult] = useState(false);
@@ -48,6 +76,75 @@ const FightAnimation = ({ playerCard, opponentCard, winner, onComplete, mySide }
     <div className={`fight-modal-arena ${stage === 'impact' ? 'shaking' : ''}`}>
       <div className="fight-arena-glow"></div>
       <div className="fight-arena-rays"></div>
+
+      {/* ✅ CARD DETAILS ABOVE ARENA */}
+      {roundCardDetails && (
+        <div className="fight-card-details">
+          {/* Player 1 Card */}
+          <div className={`fight-card-detail player1-detail ${roundCardDetails.player1.isAdvantage ? 'has-advantage' : ''}`}>
+            <div className="detail-name">
+              {roundCardDetails.player1.name}
+              {roundCardDetails.player1.isAdvantage && <span className="advantage-badge">⚡ ADVANTAGE</span>}
+            </div>
+            <div className="detail-power">
+              <span className="detail-label">Current Power:</span>
+              <span className="detail-value">{roundCardDetails.player1.currentPower}</span>
+            </div>
+            <div className="detail-power">
+              <span className="detail-label">Element:</span>
+              <span className="detail-value element-badge">{roundCardDetails.player1.element}</span>
+            </div>
+            <div className="detail-power highlight">
+              <span className="detail-label">⚡ Effective Power:</span>
+              <span className="detail-value effective">{roundCardDetails.player1.effectivePower}</span>
+            </div>
+            <div className="detail-multiplier">
+              {roundCardDetails.player1.multiplier > 1 ? (
+                <span className="advantage-text">🔥 Advantage: {roundCardDetails.player1.multiplier}x</span>
+              ) : roundCardDetails.player1.multiplier < 1 ? (
+                <span className="disadvantage-text">⚠️ Disadvantage: {roundCardDetails.player1.multiplier}x</span>
+              ) : (
+                <span className="neutral-text">➖ Neutral: {roundCardDetails.player1.multiplier}x</span>
+              )}
+            </div>
+          </div>
+          
+          {/* VS Section */}
+          <div className="fight-vs-info">
+            <div className="advantage-message">{roundCardDetails.advantageMessage}</div>
+            <div className="vs-text">⚔️ VS ⚔️</div>
+          </div>
+          
+          {/* Player 2 Card */}
+          <div className={`fight-card-detail player2-detail ${roundCardDetails.player2.isAdvantage ? 'has-advantage' : ''}`}>
+            <div className="detail-name">
+              {roundCardDetails.player2.name}
+              {roundCardDetails.player2.isAdvantage && <span className="advantage-badge">⚡ ADVANTAGE</span>}
+            </div>
+            <div className="detail-power">
+              <span className="detail-label">Current Power:</span>
+              <span className="detail-value">{roundCardDetails.player2.currentPower}</span>
+            </div>
+            <div className="detail-power">
+              <span className="detail-label">Element:</span>
+              <span className="detail-value element-badge">{roundCardDetails.player2.element}</span>
+            </div>
+            <div className="detail-power highlight">
+              <span className="detail-label">⚡ Effective Power:</span>
+              <span className="detail-value effective">{roundCardDetails.player2.effectivePower}</span>
+            </div>
+            <div className="detail-multiplier">
+              {roundCardDetails.player2.multiplier > 1 ? (
+                <span className="advantage-text">🔥 Advantage: {roundCardDetails.player2.multiplier}x</span>
+              ) : roundCardDetails.player2.multiplier < 1 ? (
+                <span className="disadvantage-text">⚠️ Disadvantage: {roundCardDetails.player2.multiplier}x</span>
+              ) : (
+                <span className="neutral-text">➖ Neutral: {roundCardDetails.player2.multiplier}x</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="fight-cards-container">
         <div className={`fight-card player-card ${stage === 'fly' ? 'flying' : ''} ${stage === 'impact' ? 'battle-impact' : ''} ${stage === 'result' ? (isWinner ? 'winner-card' : isDraw ? 'draw-card' : 'loser-card') : ''}`}>
@@ -150,6 +247,8 @@ const MatchBattle = () => {
   const [showFightModal, setShowFightModal] = useState(false);
   const [fightData, setFightData] = useState(null);
   const [leaveLoading, setLeaveLoading] = useState(false);
+  // ✅ State for card details
+  const [roundCardDetails, setRoundCardDetails] = useState(null);
 
   useEffect(() => {
     if (!matchCode) return;
@@ -222,15 +321,6 @@ const MatchBattle = () => {
       setChatMessages(prev => [...prev, data]);
     });
 
-    // ✅ NEW: Match cancelled event
-    socket.on('match-cancelled', (data) => {
-      console.log('🚫 Match cancelled:', data);
-      setSuccess(`⚠️ ${data.message || 'Match has been cancelled'}`);
-      setTimeout(() => {
-        navigate('/match');
-      }, 2000);
-    });
-
     fetchMatchState();
 
     const interval = setInterval(fetchMatchState, 3000);
@@ -286,6 +376,47 @@ const MatchBattle = () => {
       const winner = match.roundResult.winner;
       
       if (playerCard && opponentCard) {
+        // ✅ Calculate powers
+        const p1CurrentPower = playerCard.currentPower || playerCard.powerLevel || 25;
+        const p2CurrentPower = opponentCard.currentPower || opponentCard.powerLevel || 25;
+        const p1Element = playerCard.element || 'Fire';
+        const p2Element = opponentCard.element || 'Fire';
+        
+        // ✅ Get element multipliers
+        const p1Multiplier = getElementMultiplier(p1Element, p2Element);
+        const p2Multiplier = getElementMultiplier(p2Element, p1Element);
+        
+        const p1Effective = Math.round((p1CurrentPower * p1Multiplier) * 10) / 10;
+        const p2Effective = Math.round((p2CurrentPower * p2Multiplier) * 10) / 10;
+        
+        // ✅ Determine advantage
+        let advantageSide = null;
+        if (p1Multiplier > p2Multiplier) advantageSide = 'player1';
+        else if (p2Multiplier > p1Multiplier) advantageSide = 'player2';
+        
+        const advantageMessage = getElementAdvantageMessage(p1Element, p2Element);
+        
+        setRoundCardDetails({
+          player1: {
+            name: playerCard.characterName || 'Your Card',
+            currentPower: p1CurrentPower,
+            effectivePower: p1Effective,
+            element: p1Element,
+            isAdvantage: advantageSide === 'player1',
+            multiplier: p1Multiplier
+          },
+          player2: {
+            name: opponentCard.characterName || 'Opponent',
+            currentPower: p2CurrentPower,
+            effectivePower: p2Effective,
+            element: p2Element,
+            isAdvantage: advantageSide === 'player2',
+            multiplier: p2Multiplier
+          },
+          advantageMessage: advantageMessage,
+          winner: winner
+        });
+        
         setFightData({ playerCard, opponentCard, winner });
         setShowFightModal(true);
         setShowFight(true);
@@ -477,57 +608,6 @@ const MatchBattle = () => {
     }
   };
 
-  // ============================================================
-  // ✅ CANCEL / DELETE MATCH (NEW)
-  // ============================================================
-  const handleCancelMatch = async () => {
-    if (!matchCode) {
-      setError('No active match to cancel');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    // ✅ Confirmation dialog
-    if (!window.confirm(
-      '⚠️ Are you sure you want to CANCEL this match?\n\n' +
-      'This will PERMANENTLY DELETE the match from the database.\n' +
-      'Both players will be sent back to matchmaking.\n\n' +
-      'This action CANNOT be undone!'
-    )) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await api.delete(`/match/cancel/${matchCode}`);
-      
-      if (response.data.success) {
-        setSuccess('✅ Match cancelled and deleted successfully');
-        
-        // ✅ Notify via socket
-        if (socketRef.current) {
-          socketRef.current.emit('match-cancelled', {
-            matchCode: matchCode,
-            userId: user?._id
-          });
-          socketRef.current.emit('leave-match-room', matchCode);
-          socketRef.current.disconnect();
-        }
-        
-        // ✅ Navigate back to matchmaking
-        setTimeout(() => {
-          navigate('/match');
-        }, 1500);
-      }
-    } catch (error) {
-      console.error('❌ Failed to cancel match:', error);
-      setError(error.response?.data?.message || 'Failed to cancel match');
-      setTimeout(() => setError(''), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSendChat = (message) => {
     if (socketRef.current && matchCode) {
       socketRef.current.emit('match-chat-message', {
@@ -630,6 +710,7 @@ const MatchBattle = () => {
                 <span>⏳ Waiting for <strong>{match.player1.username}</strong> to start the match...</span>
               </div>
             )}
+            {/* ✅ ONLY LEAVE BUTTON — NO CANCEL */}
             <button className="btn-leave-lobby" onClick={handleLeave}>
               Leave
             </button>
@@ -666,11 +747,13 @@ const MatchBattle = () => {
               opponentCard={fightData.opponentCard}
               winner={fightData.winner}
               mySide={mySide}
+              roundCardDetails={roundCardDetails}
               onComplete={() => {
                 setTimeout(() => {
                   setShowFightModal(false);
                   setShowFight(false);
                   setFightData(null);
+                  setRoundCardDetails(null);
                 }, 500);
               }}
             />
@@ -735,25 +818,7 @@ const MatchBattle = () => {
 
       {/* ===== HEADER ===== */}
       <div className="battle-header">
-        {/* ✅ CANCEL MATCH BUTTON */}
-        <button 
-          className="btn-cancel-match" 
-          onClick={handleCancelMatch} 
-          disabled={loading || isFinished}
-          style={{
-            background: 'rgba(255,0,0,0.15)',
-            border: '1px solid rgba(255,0,0,0.3)',
-            color: '#ff6b6b',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}
-        >
-          {loading ? '⏳ Cancelling...' : '🚫 Cancel Match'}
-        </button>
-
+        {/* ✅ ONLY LEAVE BUTTON — NO CANCEL */}
         <button className="btn-leave" onClick={handleLeave} disabled={leaveLoading}>
           {leaveLoading ? '⏳' : '🚪 Leave'}
         </button>
