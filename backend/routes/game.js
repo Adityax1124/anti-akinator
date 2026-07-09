@@ -52,20 +52,76 @@ const validateGuess = [
     .withMessage('Guess contains invalid characters')
 ];
 
-// ===================== START GAME =====================
-router.post('/start', async (req, res) => {
+// ============================================================
+// ✅ NEW: GET ANIME OPTIONS (4 random anime)
+// ============================================================
+router.get('/anime-options', async (req, res) => {
   try {
-    const characterCount = await Character.countDocuments();
+    // Get all unique anime names from Character collection
+    const allAnime = await Character.distinct('anime');
     
-    if (characterCount === 0) {
+    if (!allAnime || allAnime.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No characters available. Please contact support.'
+        message: 'No anime found in database.'
       });
     }
 
-    const randomIndex = Math.floor(Math.random() * characterCount);
-    const randomCharacter = await Character.findOne().skip(randomIndex);
+    if (allAnime.length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: 'Not enough anime in database. Need at least 4.',
+        total: allAnime.length
+      });
+    }
+
+    // Pick 4 random anime
+    const shuffled = allAnime.sort(() => 0.5 - Math.random());
+    const selectedAnime = shuffled.slice(0, 4);
+
+    res.json({
+      success: true,
+      anime: selectedAnime,
+      total: allAnime.length
+    });
+
+  } catch (error) {
+    console.error('Get anime options error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get anime options'
+    });
+  }
+});
+
+// ============================================================
+// ✅ MODIFIED: START GAME WITH SELECTED ANIME
+// ============================================================
+router.post('/start', async (req, res) => {
+  try {
+    const { anime } = req.body;
+
+    // ✅ Check if user selected an anime
+    if (!anime) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select an anime first!'
+      });
+    }
+
+    // ✅ Find characters from selected anime
+    const characters = await Character.find({ anime: anime });
+    
+    if (!characters || characters.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: `No characters found for "${anime}". Please try another anime.`
+      });
+    }
+
+    // Pick random character from that anime
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    const randomCharacter = characters[randomIndex];
 
     if (!randomCharacter) {
       return res.status(404).json({
@@ -74,6 +130,7 @@ router.post('/start', async (req, res) => {
       });
     }
 
+    // Check for active game
     const activeGame = await GameSession.findOne({
       user: req.user._id,
       status: 'active'
@@ -85,21 +142,25 @@ router.post('/start', async (req, res) => {
       await activeGame.save();
     }
 
+    // ✅ Create new game session with anime info
     const game = new GameSession({
       user: req.user._id,
       character: randomCharacter._id,
+      anime: anime, // ✅ Store selected anime
       status: 'active',
       startedAt: new Date()
     });
 
     await game.save();
 
-    console.log(`🎮 Game started: ${game._id} for user ${req.user.username}`);
+    console.log(`🎮 Game started: ${game._id} for user ${req.user.username} | Anime: ${anime} | Character: ${randomCharacter.name}`);
 
     res.json({
       success: true,
       gameId: game._id,
-      message: 'Game started! Ask your first question.'
+      anime: anime,
+      characterCount: characters.length,
+      message: `Game started! Guess the character from ${anime}.`
     });
 
   } catch (error) {

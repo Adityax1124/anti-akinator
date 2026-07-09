@@ -130,6 +130,170 @@
 }
 
 /* ============================================================
+   ✅ ANIME SELECTION - NEW STYLES
+   ============================================================ */
+.anime-selection {
+  margin: 20px 0 10px;
+  padding: 20px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(108, 99, 255, 0.06);
+}
+
+.anime-selection-header h2 {
+  color: #ffd700;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.anime-selection-header .selection-subtitle {
+  color: var(--game-text-muted);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.anime-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.anime-option-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 18px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.anime-option-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(108, 99, 255, 0.25);
+  background: rgba(108, 99, 255, 0.04);
+  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.05);
+}
+
+.anime-option-card.selected {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.06);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.06);
+}
+
+.anime-option-card.selected .anime-option-name {
+  color: #ffd700;
+}
+
+.anime-option-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
+.anime-option-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  transition: color 0.3s;
+}
+
+.anime-option-hover {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(108, 99, 255, 0.15);
+  color: #a78bfa;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px;
+  border-radius: 0 0 12px 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.anime-option-card:hover .anime-option-hover {
+  opacity: 1;
+}
+
+.anime-selection.loading {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.anime-selection.loading .loader {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(108, 99, 255, 0.1);
+  border-top-color: #6c63ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.anime-selection.loading p {
+  color: var(--game-text-muted);
+  font-size: 14px;
+}
+
+.anime-selection.error {
+  text-align: center;
+  padding: 20px;
+}
+
+.anime-selection.error .error-text {
+  color: #f87171;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.retry-btn {
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid rgba(108, 99, 255, 0.15);
+  color: #a78bfa;
+  padding: 8px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.retry-btn:hover {
+  background: rgba(108, 99, 255, 0.15);
+  border-color: rgba(108, 99, 255, 0.25);
+}
+
+.selection-hint {
+  color: var(--game-text-muted);
+  font-size: 12px;
+  margin-top: 14px;
+  text-align: center;
+  opacity: 0.5;
+}
+
+.game-anime {
+  background: rgba(255, 215, 0, 0.08);
+  color: #ffd700;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 215, 0, 0.06);
+}
+
+/* ============================================================
    GAME HEADER - PREMIUM
    ============================================================ */
 .game-header {
@@ -1342,6 +1506,11 @@
     font-size: 13px;
     min-width: 100px;
   }
+
+  /* ===== ANIME SELECTION ON TABLET ===== */
+  .anime-options-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
@@ -1588,6 +1757,38 @@
   .card-info .card-name {
     font-size: 13px;
   }
+
+  /* ===== ANIME SELECTION ON MOBILE ===== */
+  .anime-options-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .anime-option-card {
+    padding: 14px 10px;
+    min-height: 80px;
+  }
+
+  .anime-option-icon {
+    font-size: 24px;
+  }
+
+  .anime-option-name {
+    font-size: 13px;
+  }
+
+  .anime-selection-header h2 {
+    font-size: 18px;
+  }
+
+  .anime-selection-header .selection-subtitle {
+    font-size: 12px;
+  }
+
+  .anime-selection {
+    padding: 14px 12px;
+    margin: 14px 0 6px;
+  }
 }
 
 @media (max-width: 400px) {
@@ -1738,5 +1939,24 @@
 
   .unlock-popup-content .unlock-icon {
     font-size: 36px;
+  }
+
+  /* ===== ANIME SELECTION ON VERY SMALL ===== */
+  .anime-options-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .anime-option-card {
+    padding: 12px 8px;
+    min-height: 70px;
+  }
+
+  .anime-option-icon {
+    font-size: 20px;
+  }
+
+  .anime-option-name {
+    font-size: 12px;
   }
 }

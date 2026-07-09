@@ -135,6 +135,80 @@ const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) 
   );
 };
 
+// ===== ANIME SELECTION COMPONENT =====
+const AnimeSelection = ({ onSelectAnime, loading }) => {
+  const [animeOptions, setAnimeOptions] = useState([]);
+  const [selectedAnime, setSelectedAnime] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchAnimeOptions();
+  }, []);
+
+  const fetchAnimeOptions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get('/game/anime-options');
+      if (response.data.success) {
+        setAnimeOptions(response.data.anime);
+        setError('');
+      }
+    } catch (error) {
+      console.error('Failed to fetch anime options:', error);
+      setError('Failed to load anime options. Please refresh.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelect = (anime) => {
+    setSelectedAnime(anime);
+    onSelectAnime(anime);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="anime-selection loading">
+        <div className="loader"></div>
+        <p>Loading anime options...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="anime-selection error">
+        <p className="error-text">{error}</p>
+        <button onClick={fetchAnimeOptions} className="retry-btn">Retry</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="anime-selection">
+      <div className="anime-selection-header">
+        <h2>🎬 Select an Anime</h2>
+        <p className="selection-subtitle">Choose an anime to start guessing characters!</p>
+      </div>
+      <div className="anime-options-grid">
+        {animeOptions.map((anime, index) => (
+          <div 
+            key={index}
+            className={`anime-option-card ${selectedAnime === anime ? 'selected' : ''}`}
+            onClick={() => handleSelect(anime)}
+          >
+            <div className="anime-option-icon">🎬</div>
+            <span className="anime-option-name">{anime}</span>
+            <div className="anime-option-hover">Click to Play</div>
+          </div>
+        ))}
+      </div>
+      <p className="selection-hint">💡 Choose wisely! Each anime has different characters.</p>
+    </div>
+  );
+};
+
 // ===== MAIN GAME COMPONENT =====
 const Game = () => {
   const [gameState, setGameState] = useState({
@@ -162,6 +236,10 @@ const Game = () => {
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ✅ NEW: Anime selection state
+  const [showAnimeSelection, setShowAnimeSelection] = useState(true);
+  const [selectedAnime, setSelectedAnime] = useState(null);
 
   const [isBuyShardsOpen, setIsBuyShardsOpen] = useState(false);
   
@@ -395,6 +473,49 @@ const Game = () => {
       return () => clearTimeout(timer);
     }
   }, [cardNotification]);
+
+  // ✅ NEW: Handle anime selection and start game
+  const handleSelectAnime = async (anime) => {
+    setSelectedAnime(anime);
+    setShowAnimeSelection(false);
+    setError('');
+    setGameState(prev => ({ ...prev, loading: true }));
+    hasEnded.current = false;
+    hasWarned.current = false;
+    isNavigating.current = false;
+    isPaymentModalOpen.current = false;
+
+    try {
+      await fetchUserShards();
+      
+      const response = await api.post('/game/start', { anime });
+      
+      setGameState({
+        gameId: response.data.gameId,
+        status: 'playing',
+        questions: [],
+        questionCount: 0,
+        remainingGuesses: 3,
+        remainingQuestions: 10,
+        character: null,
+        characterImage: null,
+        powerLevel: null,
+        loading: false
+      });
+      setHintUsed(false);
+      setHintText('');
+      setError('');
+      setCardNotification(null);
+      
+      console.log(`🎮 Game started with anime: ${anime}`);
+    } catch (error) {
+      console.error('Failed to start game:', error);
+      setError(error.response?.data?.message || 'Failed to start game. Please try again.');
+      setGameState(prev => ({ ...prev, loading: false }));
+      // Show anime selection again on error
+      setShowAnimeSelection(true);
+    }
+  };
 
   const startGame = async () => {
     setError('');
@@ -665,6 +786,9 @@ const Game = () => {
     hasWarned.current = false;
     isNavigating.current = false;
     isPaymentModalOpen.current = false;
+    // ✅ Show anime selection again
+    setShowAnimeSelection(true);
+    setSelectedAnime(null);
   };
 
   const goHome = () => {
@@ -673,6 +797,29 @@ const Game = () => {
 
   const currentUnlock = unlockNotifications[currentUnlockIndex] || null;
 
+  // ✅ ANIME SELECTION SCREEN
+  if (showAnimeSelection) {
+    return (
+      <div className="game-container fade-in">
+        <div className="game-start">
+          <div className="game-start-content">
+            <h1>🎯 Ready to Play?</h1>
+            <p className="start-subtitle">AI will pick a secret anime character. You ask questions and guess!</p>
+            <div className="game-hint">💡 You have 3 wrong guesses before game over</div>
+            <div className="game-hint">📝 You have 10 questions per game</div>
+            <div className="game-hint">🎴 You have {shards} Shards</div>
+            <div className="game-hint-warning">⚠️ If you leave the game, your streak will be reset!</div>
+            
+            <AnimeSelection onSelectAnime={handleSelectAnime} loading={gameState.loading} />
+            
+            {error && <div className="game-error">{error}</div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ OLD START SCREEN (kept as fallback)
   if (gameState.status === 'idle') {
     return (
       <div className="game-container fade-in">
@@ -788,6 +935,9 @@ const Game = () => {
             <span className="game-guesses">💫 {gameState.remainingGuesses} guesses left</span>
           )}
           <span className="game-shards">🎴 {shards}</span>
+          {selectedAnime && (
+            <span className="game-anime">🎬 {selectedAnime}</span>
+          )}
         </div>
         <div className="game-header-buttons">
           {gameState.status === 'playing' && (

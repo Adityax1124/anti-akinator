@@ -11,6 +11,11 @@ const gameSessionSchema = new mongoose.Schema({
     ref: 'Character',
     required: true
   },
+  // ✅ NEW: Store selected anime for this game session
+  anime: {
+    type: String,
+    default: null
+  },
   questions: [{
     question: String,
     answer: String,
@@ -32,9 +37,9 @@ const gameSessionSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
   }],
   hintUsed: {
-  type: Boolean,
-  default: false
-},
+    type: Boolean,
+    default: false
+  },
   startedAt: {
     type: Date,
     default: Date.now
@@ -43,5 +48,9 @@ const gameSessionSchema = new mongoose.Schema({
     type: Date
   }
 });
+
+// ✅ Index for faster queries
+gameSessionSchema.index({ user: 1, status: 1 });
+gameSessionSchema.index({ character: 1 });
 
 module.exports = mongoose.model('GameSession', gameSessionSchema);
