@@ -160,6 +160,40 @@ const Matchmaking = () => {
     }
   };
 
+  // ============================================================
+  // ✅ CANCEL / DELETE ROOM
+  // ============================================================
+  const handleCancelRoom = async () => {
+    if (!createdMatchCode) {
+      setError('No room to cancel');
+      return;
+    }
+
+    if (!window.confirm('⚠️ Are you sure you want to cancel this room?\n\nThis will PERMANENTLY DELETE the room from the database.\n\nThis action CANNOT be undone!')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.delete(`/match/cancel/${createdMatchCode}`);
+      
+      if (response.data.success) {
+        setSuccess('✅ Room cancelled and deleted successfully');
+        setCreatedMatchCode(null);
+        setShowInviteDropdown(false);
+        setInviteMessage('');
+        
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (error) {
+      console.error('❌ Failed to cancel room:', error);
+      setError(error.response?.data?.message || 'Failed to cancel room');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInviteFriend = async (friendId, friendUsername) => {
     if (!createdMatchCode) {
       setInviteMessage('❌ Create a room first!');
@@ -479,6 +513,23 @@ const Matchmaking = () => {
                     onClick={goToBattle}
                   >
                     ⚔️ Enter Lobby
+                  </button>
+                  {/* ✅ NEW: Cancel Room Button */}
+                  <button
+                    className="premium-btn cancel-room-btn"
+                    onClick={handleCancelRoom}
+                    disabled={loading}
+                    style={{
+                      background: 'rgba(255,0,0,0.15)',
+                      border: '1px solid rgba(255,0,0,0.3)',
+                      color: '#ff6b6b',
+                      padding: '10px 20px',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {loading ? 'Cancelling...' : '🗑️ Cancel Room'}
                   </button>
                 </div>
 
