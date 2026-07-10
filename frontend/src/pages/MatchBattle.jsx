@@ -247,7 +247,6 @@ const MatchBattle = () => {
   const [showFightModal, setShowFightModal] = useState(false);
   const [fightData, setFightData] = useState(null);
   const [leaveLoading, setLeaveLoading] = useState(false);
-  // ✅ State for card details
   const [roundCardDetails, setRoundCardDetails] = useState(null);
 
   useEffect(() => {
@@ -376,20 +375,17 @@ const MatchBattle = () => {
       const winner = match.roundResult.winner;
       
       if (playerCard && opponentCard) {
-        // ✅ Calculate powers
         const p1CurrentPower = playerCard.currentPower || playerCard.powerLevel || 25;
         const p2CurrentPower = opponentCard.currentPower || opponentCard.powerLevel || 25;
         const p1Element = playerCard.element || 'Fire';
         const p2Element = opponentCard.element || 'Fire';
         
-        // ✅ Get element multipliers
         const p1Multiplier = getElementMultiplier(p1Element, p2Element);
         const p2Multiplier = getElementMultiplier(p2Element, p1Element);
         
         const p1Effective = Math.round((p1CurrentPower * p1Multiplier) * 10) / 10;
         const p2Effective = Math.round((p2CurrentPower * p2Multiplier) * 10) / 10;
         
-        // ✅ Determine advantage
         let advantageSide = null;
         if (p1Multiplier > p2Multiplier) advantageSide = 'player1';
         else if (p2Multiplier > p1Multiplier) advantageSide = 'player2';
@@ -555,9 +551,43 @@ const MatchBattle = () => {
   };
 
   // ============================================================
-  // ✅ LEAVE MATCH (Forfeit + Cleanup)
+  // ✅ LEAVE MATCH (Forfeit + Cleanup + Delete if waiting)
   // ============================================================
   const handleLeave = async () => {
+    // ✅ CASE 1: Match is in waiting/lobby state → DELETE match
+    if (match?.status === 'waiting') {
+      const confirmLeave = window.confirm(
+        '⚠️ Are you sure you want to leave the lobby?\n\n' +
+        'The match will be PERMANENTLY DELETED from the database.\n\n' +
+        'This action CANNOT be undone!'
+      );
+
+      if (!confirmLeave) return;
+
+      try {
+        setLeaveLoading(true);
+        const response = await api.delete(`/match/cancel/${matchCode}`);
+        
+        if (response.data.success) {
+          if (socketRef.current) {
+            socketRef.current.emit('leave-match-room', matchCode);
+            socketRef.current.disconnect();
+          }
+          setTimeout(() => {
+            navigate('/match');
+          }, 500);
+        }
+      } catch (error) {
+        console.error('❌ Failed to delete lobby:', error);
+        setError(error.response?.data?.message || 'Failed to leave lobby');
+        setTimeout(() => setError(''), 3000);
+      } finally {
+        setLeaveLoading(false);
+      }
+      return;
+    }
+
+    // ✅ CASE 2: Match is finished → Just leave
     if (isFinished) {
       if (socketRef.current) {
         socketRef.current.emit('leave-match-room', matchCode);
@@ -567,6 +597,7 @@ const MatchBattle = () => {
       return;
     }
 
+    // ✅ CASE 3: Match is in progress → Forfeit
     const confirmLeave = window.confirm(
       '⚠️ Are you sure you want to leave the match?\n\n' +
       'If you leave, you will LOSE the match and the opponent will get to steal one of your cards!\n\n' +
@@ -710,7 +741,6 @@ const MatchBattle = () => {
                 <span>⏳ Waiting for <strong>{match.player1.username}</strong> to start the match...</span>
               </div>
             )}
-            {/* ✅ ONLY LEAVE BUTTON — NO CANCEL */}
             <button className="btn-leave-lobby" onClick={handleLeave}>
               Leave
             </button>
@@ -818,7 +848,6 @@ const MatchBattle = () => {
 
       {/* ===== HEADER ===== */}
       <div className="battle-header">
-        {/* ✅ ONLY LEAVE BUTTON — NO CANCEL */}
         <button className="btn-leave" onClick={handleLeave} disabled={leaveLoading}>
           {leaveLoading ? '⏳' : '🚪 Leave'}
         </button>
