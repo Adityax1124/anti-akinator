@@ -6,7 +6,7 @@ console.log('========================================');
 console.log('🔧 Initializing AI Providers...');
 
 // ============================================================
-// 🔥 GROQ - FIRST PRIORITY (Single API Key)
+// 🔥 GROQ - FIRST PRIORITY (With timeout)
 // ============================================================
 if (process.env.GROQ_API_KEY) {
   try {
@@ -16,12 +16,22 @@ if (process.env.GROQ_API_KEY) {
       call: async (messages) => {
         try {
           console.log(`🔄 Groq processing...`);
-          const response = await groq.chat.completions.create({
-            messages,
-            model: 'llama-3.1-8b-instant',
-            temperature: 0.1,
-            max_tokens: 10
-          });
+          
+          // ✅ 10 second timeout for Groq
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Groq timeout after 10s')), 10000)
+          );
+          
+          const response = await Promise.race([
+            groq.chat.completions.create({
+              messages,
+              model: 'llama-3.1-8b-instant',
+              temperature: 0.1,
+              max_tokens: 10
+            }),
+            timeoutPromise
+          ]);
+          
           console.log(`✅ Groq succeeded`);
           return response.choices[0].message.content;
         } catch (err) {
@@ -37,7 +47,7 @@ if (process.env.GROQ_API_KEY) {
 }
 
 // ============================================================
-// 🔵 DEEPINFRA - SECOND PRIORITY (Backup)
+// 🔥 DEEPINFRA - SECOND PRIORITY (With timeout)
 // ============================================================
 if (process.env.DEEPINFRA_API_KEY) {
   try {
@@ -47,20 +57,28 @@ if (process.env.DEEPINFRA_API_KEY) {
         try {
           console.log(`🔄 DeepInfra processing...`);
           
-          const response = await fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${process.env.DEEPINFRA_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
-              messages: messages,
-              temperature: 0.1,
-              max_tokens: 10,
-              stream: false
-            })
-          });
+          // ✅ 20 second timeout for DeepInfra
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('DeepInfra timeout after 20s')), 20000)
+          );
+          
+          const response = await Promise.race([
+            fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.DEEPINFRA_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+                messages: messages,
+                temperature: 0.1,
+                max_tokens: 10,
+                stream: false
+              })
+            }),
+            timeoutPromise
+          ]);
 
           if (!response.ok) {
             const errorText = await response.text();
@@ -94,7 +112,7 @@ console.log('========================================');
 // ============================================================
 // 🔥 FALLBACK: Mock responses if all providers fail
 // ============================================================
-const fallbackAnswers = ['Yes', 'No', 'Maybe'];
+const fallbackAnswers = ['Yes', 'No', 'Maybe', 'IDK'];
 
 function getFallbackAnswer() {
   return fallbackAnswers[Math.floor(Math.random() * fallbackAnswers.length)];
@@ -123,6 +141,7 @@ async function askAI(messages, retryCount = 0) {
     return { answer: cleanAnswer || getFallbackAnswer(), provider: provider.name };
   } catch (error) {
     console.log(`❌ ${provider.name} failed:`, error.message);
+    // ✅ Always move to next provider
     return askAI(messages, retryCount + 1);
   }
 }

@@ -170,7 +170,7 @@ router.post('/start', async (req, res) => {
 });
 
 // ============================================================
-// ASK QUESTION (WITH IDK SUPPORT)
+// ASK QUESTION (Data-Only + IDK Support + Synonym Detection)
 // ============================================================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
@@ -232,9 +232,9 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
 
     const character = game.character;
 
-    // ✅ CONTEXT WITH CHARACTER DATA ONLY
+    // ✅ CONTEXT WITH CHARACTER DATA AND KEY EVENTS
     const context = `
-===== CHARACTER DATA (ONLY SOURCE OF TRUTH) =====
+===== CHARACTER DATA (ONLY SOURCE OF TRUTH - READ CAREFULLY) =====
 Name: ${character.name} (CONFIDENTIAL - DO NOT REVEAL)
 Anime: ${character.anime}
 Hair Color: ${character.traits?.hairColor || character.hairColor || 'Not Mentioned'}
@@ -244,20 +244,24 @@ Age: ${character.traits?.age || 'Not Mentioned'}
 Status (Alive/Dead): ${character.traits?.status || character.status || 'Not Mentioned'}
 Species: ${character.traits?.species || 'Not Mentioned'}
 Powers: ${character.traits?.powers?.slice(0, 3).join(', ') || 'Not Mentioned'}
-Personality: ${character.traits?.personality?.slice(0, 3).join(', ') || 'Not Mentioned'}
-Affiliations: ${character.traits?.affiliations?.slice(0, 2).join(', ') || 'Not Mentioned'}
-Relationships: ${character.traits?.relationships?.slice(0, 2).join(', ') || 'Not Mentioned'}
-Description: ${character.description ? character.description.substring(0, 500) : 'Not Mentioned'}
+
+===== KEY EVENTS / DESCRIPTION (LOOK FOR DEATH/ALIVE INFO) =====
+${character.description ? character.description.substring(0, 800) : 'Not Mentioned'}
 
 ===== USER QUESTION =====
 ${sanitizedQuestion}
 
 ===== INSTRUCTIONS =====
-1. Check the data above
-2. If data has the answer → "Yes" or "No"
-3. If data does NOT have the answer → "IDK"
-4. If question contains a character name → "IDK"
-5. Reply with ONLY one word: Yes, No, Maybe, or IDK`;
+1. Read the data AND key events carefully
+2. Look for synonyms:
+   - "died" = "dead" = "killed" = "deceased" = "passed away" = "was killed" = "mortally wounded"
+   - "alive" = "living" = "survived" = "still alive" = "surviving"
+   - "male" = "man" = "boy" = "guy" = "he" = "him"
+   - "female" = "woman" = "girl" = "lady" = "she" = "her"
+3. If data has the answer → "Yes" or "No"
+4. If data does NOT have the answer → "IDK"
+5. If question contains a character name → "IDK"
+6. Reply with ONLY one word: Yes, No, Maybe, or IDK`;
 
     const systemPrompt = `
 You are a STRICT answer machine. You answer ONLY based on the data provided.
@@ -272,22 +276,23 @@ You are a STRICT answer machine. You answer ONLY based on the data provided.
 - "IDK" → Data does NOT mention this AT ALL
 
 ===== RULE 1: READ THE DATA CAREFULLY =====
-- Read the entire CHARACTER DATA
+- Read the entire CHARACTER DATA and KEY EVENTS
 - Look for words that match the question
 
 ===== RULE 2: UNDERSTAND SYNONYMS =====
-- "died" = "dead" = "killed" = "deceased" = "passed away"
-- "alive" = "living" = "survived" = "still breathing"
-- "male" = "man" = "boy" = "guy"
-- "female" = "woman" = "girl" = "lady"
-- "blonde" = "yellow hair" = "golden hair"
+- "died" = "dead" = "killed" = "deceased" = "passed away" = "was killed" = "mortally wounded" = "his life ended"
+- "alive" = "living" = "survived" = "still alive" = "surviving" = "continued to live"
+- "male" = "man" = "boy" = "guy" = "he" = "him" = "his"
+- "female" = "woman" = "girl" = "lady" = "she" = "her" = "hers"
+- "blonde" = "yellow hair" = "golden hair" = "light hair"
 - "black" = "dark hair" = "raven hair"
+- "white" = "silver hair" = "grey hair"
 
 EXAMPLES:
-Data: "died" → "Is he dead?" = "Yes"
-Data: "died" → "Is he alive?" = "No"
-Data: "survived" → "Is he alive?" = "Yes"
-Data: "survived" → "Is he dead?" = "No"
+Data: "died protecting his friends" → "Is he dead?" = "Yes"
+Data: "died protecting his friends" → "Is he alive?" = "No"
+Data: "survived the battle" → "Is he alive?" = "Yes"
+Data: "survived the battle" → "Is he dead?" = "No"
 Data: "male" → "Is he a girl?" = "No"
 Data: "female" → "Is he a boy?" = "No"
 
@@ -300,6 +305,8 @@ If the data does NOT mention anything related to the question → Reply "IDK"
 ===== REMEMBER =====
 - "died" means DEAD → "Is he alive?" = "No"
 - "survived" means ALIVE → "Is he dead?" = "No"
+- "killed" means DEAD → "Is he alive?" = "No"
+- "was killed" means DEAD → "Is he alive?" = "No"
 - Read carefully. Think logically. Answer accurately.
 - Reply with ONLY one word: Yes, No, Maybe, or IDK`;
 
@@ -320,7 +327,7 @@ If the data does NOT mention anything related to the question → Reply "IDK"
       console.error('AI provider error:', error.message);
       return res.status(503).json({
         success: false,
-        message: 'AI service unavailable. Please try again.'
+        message: 'AI service temporarily unavailable. Please try again.'
       });
     }
 
@@ -341,7 +348,7 @@ If the data does NOT mention anything related to the question → Reply "IDK"
         finalAnswer = 'Yes';
       } 
       // Check for No
-      else if (lowerAnswer === 'no' || lowerAnswer.includes('not')) {
+      else if (lowerAnswer === 'no' || lowerAnswer.includes('not') || lowerAnswer.includes('isn\'t') || lowerAnswer.includes('doesn\'t')) {
         finalAnswer = 'No';
       } 
       // Check for Maybe
@@ -349,7 +356,7 @@ If the data does NOT mention anything related to the question → Reply "IDK"
         finalAnswer = 'Maybe';
       } 
       // Check for IDK
-      else if (lowerAnswer === 'idk' || lowerAnswer.includes('dont know') || lowerAnswer.includes("don't know") || lowerAnswer.includes('not sure')) {
+      else if (lowerAnswer === 'idk' || lowerAnswer.includes('dont know') || lowerAnswer.includes("don't know") || lowerAnswer.includes('not sure') || lowerAnswer.includes('unknown')) {
         finalAnswer = 'IDK';
       } 
       // Default to IDK

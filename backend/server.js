@@ -34,7 +34,7 @@ require('events').EventEmitter.defaultMaxListeners = 200;
 // 🚀 SERVER TIMEOUT (Keep-Alive for Long Connections)
 // ============================================================
 const server = http.createServer(app);
-server.timeout = 120000;
+server.timeout = 180000; // ✅ 120s → 180s (3 minutes)
 server.keepAliveTimeout = 65000;
 server.headersTimeout = 66000;
 
@@ -42,7 +42,7 @@ server.headersTimeout = 66000;
 // 🚀 REQUEST TIMEOUT MIDDLEWARE
 // ============================================================
 app.use((req, res, next) => {
-  req.setTimeout(120000, () => {
+  req.setTimeout(180000, () => {
     if (!res.headersSent) {
       res.status(408).json({
         success: false,
@@ -795,7 +795,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`🔌 Socket.io is ready`);
   console.log(`⚔️ Match routes loaded with socket events`);
   console.log(`🛡️ Clan routes loaded with socket events`);
-  console.log(`⏰ Server timeout: 120 seconds`);
+  console.log(`⏰ Server timeout: 180 seconds`); // ✅ Updated
   console.log(`📊 maxPoolSize: 100, maxListeners: 200, rate limits: 500/min`);
   console.log(`📊 Login: 100/15min, Register: 20/24hrs`);
 });
