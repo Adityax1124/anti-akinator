@@ -170,7 +170,7 @@ router.post('/start', async (req, res) => {
 });
 
 // ============================================================
-// ASK QUESTION (DATA ONLY - NO GOOGLE)
+// ASK QUESTION (WITH IDK SUPPORT)
 // ============================================================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
@@ -234,71 +234,69 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
 
     // ✅ CONTEXT WITH CHARACTER DATA ONLY
     const context = `
-CHARACTER DATA (ONLY SOURCE OF TRUTH - DO NOT USE ANY OTHER KNOWLEDGE):
+===== CHARACTER DATA (ONLY SOURCE OF TRUTH) =====
 Name: ${character.name} (CONFIDENTIAL - DO NOT REVEAL)
 Anime: ${character.anime}
-Hair Color: ${character.traits?.hairColor || character.hairColor || 'Unknown'}
-Eye Color: ${character.traits?.eyeColor || character.eyeColor || 'Unknown'}
-Gender: ${character.traits?.gender || 'Unknown'}
-Age: ${character.traits?.age || 'Unknown'}
-Status (Alive/Dead): ${character.traits?.status || character.status || 'Unknown'}
-Species: ${character.traits?.species || 'Unknown'}
-Powers: ${character.traits?.powers?.slice(0, 3).join(', ') || 'None'}
-Personality: ${character.traits?.personality?.slice(0, 3).join(', ') || 'Unknown'}
-Affiliations: ${character.traits?.affiliations?.slice(0, 2).join(', ') || 'None'}
-Relationships: ${character.traits?.relationships?.slice(0, 2).join(', ') || 'None'}
-Description: ${character.description ? character.description.substring(0, 500) : 'None'}
+Hair Color: ${character.traits?.hairColor || character.hairColor || 'Not Mentioned'}
+Eye Color: ${character.traits?.eyeColor || character.eyeColor || 'Not Mentioned'}
+Gender: ${character.traits?.gender || 'Not Mentioned'}
+Age: ${character.traits?.age || 'Not Mentioned'}
+Status (Alive/Dead): ${character.traits?.status || character.status || 'Not Mentioned'}
+Species: ${character.traits?.species || 'Not Mentioned'}
+Powers: ${character.traits?.powers?.slice(0, 3).join(', ') || 'Not Mentioned'}
+Personality: ${character.traits?.personality?.slice(0, 3).join(', ') || 'Not Mentioned'}
+Affiliations: ${character.traits?.affiliations?.slice(0, 2).join(', ') || 'Not Mentioned'}
+Relationships: ${character.traits?.relationships?.slice(0, 2).join(', ') || 'Not Mentioned'}
+Description: ${character.description ? character.description.substring(0, 500) : 'Not Mentioned'}
 
-USER QUESTION: "${sanitizedQuestion}"
+===== USER QUESTION =====
+${sanitizedQuestion}
 
-INSTRUCTIONS:
+===== INSTRUCTIONS =====
 1. Check the data above
-2. If data has the answer → Reply "Yes" or "No"
-3. If data does NOT have the answer → Reply "Maybe"
-4. If question contains a character name → Reply "Maybe"`;
+2. If data has the answer → "Yes" or "No"
+3. If data does NOT have the answer → "IDK"
+4. If question contains a character name → "IDK"
+5. Reply with ONLY one word: Yes, No, Maybe, or IDK`;
 
     const systemPrompt = `
 You are a STRICT answer machine. You answer ONLY based on the data provided.
 
 ===== YOUR ONLY ALLOWED RESPONSES =====
-"Yes", "No", or "Maybe". NOTHING ELSE.
+"Yes", "No", "Maybe", or "IDK". NOTHING ELSE.
 
-===== RULE 1: DATA IS THE SOURCE OF TRUTH =====
-- Read the CHARACTER DATA carefully
-- Answer ONLY based on what is in the data
-- If the data contains the information → Reply "Yes" or "No"
-- If the data does NOT contain the information → Reply "Maybe"
-- NEVER use your own knowledge. ONLY use the data provided.
+===== MEANING OF EACH RESPONSE =====
+- "Yes" → I am 100% sure the answer is YES
+- "No" → I am 100% sure the answer is NO
+- "Maybe" → I think so but not 100% sure
+- "IDK" → I DON'T KNOW. The data doesn't have this information.
 
-===== RULE 2: NEVER REVEAL THE CHARACTER NAME =====
-If the user asks ANY question that tries to identify the character:
-- "Is it [name]?"
-- "Is my character [name]?"
-- "Is the character [name]?"
-- "Is this [name]?"
-- "Are you [name]?"
-- ANY question containing a character name
+===== RULES =====
+1. Read the CHARACTER DATA carefully
+2. If the data has the answer → Reply "Yes" or "No"
+3. If the data does NOT have the answer → Reply "IDK"
+4. If the question asks "Is it [name]?" → Reply "IDK" (NEVER reveal identity)
+5. NEVER use your own knowledge. ONLY use the data provided.
+6. Reply with ONLY one word: Yes, No, Maybe, or IDK
 
-→ Reply "Maybe"
-
-===== RULE 3: JUST ANSWER =====
-- Read the data
-- If data has answer → "Yes" or "No"
-- If data doesn't have answer → "Maybe"
-- If question has a name → "Maybe"
-- Reply with ONLY one word: Yes, No, or Maybe`;
+===== REMEMBER =====
+- If data doesn't mention hair color → "IDK"
+- If data doesn't mention age → "IDK"
+- If data doesn't mention powers → "IDK"
+- If question has a name → "IDK"
+- You are NOT smart. You just read the data and answer.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
       { role: "user", content: context }
     ];
 
-    let answer = "Maybe";
+    let answer = "IDK";
     let usedProvider = 'none';
 
     try {
       const result = await askAI(messages);
-      answer = result.answer || 'Maybe';
+      answer = result.answer || 'IDK';
       usedProvider = result.provider || 'none';
       console.log(`🤖 AI Raw Answer: "${answer}"`);
     } catch (error) {
@@ -310,40 +308,36 @@ If the user asks ANY question that tries to identify the character:
     }
 
     // ✅ FORCE PARSE ANSWER
-    let finalAnswer = 'Maybe';
+    let finalAnswer = 'IDK';
     const lowerAnswer = answer.toLowerCase().trim();
 
     // Check if this is an identity question
     const identityKeywords = ['is it', 'is he', 'is she', 'is this', 'are you', 'is that'];
-    const isIdentityQuestion = identityKeywords.some(kw => lowerAnswer.includes(kw)) ||
-                               sanitizedQuestion.match(/[A-Z][a-z]+/g)?.some(word => 
-                                 ['naruto', 'sasuke', 'luffy', 'zoro', 'tanjiro', 'zenitsu', 
-                                  'inosuke', 'rengoku', 'giyu', 'shinobu', 'mitsuri', 'obanai', 
-                                  'muichiro', 'gyomei', 'sanemi', 'kanae', 'kanao', 'genya', 
-                                  'nezuko', 'kawaki', 'boruto', 'sarada', 'mitsuki', 'konohamaru', 
-                                  'kakashi', 'itachi', 'sakura', 'hinata', 'sai', 'shikamaru', 
-                                  'choji', 'ino', 'rock lee', 'neji', 'tenten', 'gaara', 
-                                  'kankuro', 'temari', 'killer bee', 'minato', 'kushina', 
-                                  'jiraiya', 'tsunade', 'orochimaru', 'madara', 'obito', 
-                                  'pain', 'nagato', 'konan', 'hidan', 'kakuzu', 'sasori', 
-                                  'deidara', 'itachi', 'kisame', 'zetsu', 'tobi', 'naruto'].includes(word.toLowerCase())
-                               );
+    const isIdentityQuestion = identityKeywords.some(kw => lowerAnswer.includes(kw));
 
     if (isIdentityQuestion) {
-      finalAnswer = 'Maybe';
-      console.log(`🔒 Identity question → "Maybe"`);
+      finalAnswer = 'IDK';
+      console.log(`🔒 Identity question → "IDK"`);
     } else {
-      if (lowerAnswer.includes('no') || 
-          lowerAnswer.includes('not') || 
-          lowerAnswer.includes('isn\'t') ||
-          lowerAnswer.includes('doesn\'t') ||
-          lowerAnswer.includes('is not') ||
-          lowerAnswer.includes('does not')) {
-        finalAnswer = 'No';
-      } else if (lowerAnswer.includes('yes')) {
+      // Check for Yes
+      if (lowerAnswer === 'yes') {
         finalAnswer = 'Yes';
-      } else {
+      } 
+      // Check for No
+      else if (lowerAnswer === 'no' || lowerAnswer.includes('not')) {
+        finalAnswer = 'No';
+      } 
+      // Check for Maybe
+      else if (lowerAnswer === 'maybe') {
         finalAnswer = 'Maybe';
+      } 
+      // Check for IDK
+      else if (lowerAnswer === 'idk' || lowerAnswer.includes('dont know') || lowerAnswer.includes("don't know") || lowerAnswer.includes('not sure')) {
+        finalAnswer = 'IDK';
+      } 
+      // Default to IDK
+      else {
+        finalAnswer = 'IDK';
       }
     }
 
