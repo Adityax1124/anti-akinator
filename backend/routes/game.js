@@ -53,7 +53,7 @@ const validateGuess = [
 ];
 
 // ============================================================
-// ✅ GET ANIME OPTIONS (4 random anime)
+// GET ANIME OPTIONS (4 random anime)
 // ============================================================
 router.get('/anime-options', async (req, res) => {
   try {
@@ -93,7 +93,7 @@ router.get('/anime-options', async (req, res) => {
 });
 
 // ============================================================
-// ✅ START GAME WITH SELECTED ANIME
+// START GAME WITH SELECTED ANIME
 // ============================================================
 router.post('/start', async (req, res) => {
   try {
@@ -170,7 +170,7 @@ router.post('/start', async (req, res) => {
 });
 
 // ============================================================
-// ✅ ASK QUESTION (UPDATED WITH CHARACTER NAME IN CONTEXT)
+// ASK QUESTION (100% ACCURATE)
 // ============================================================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
@@ -217,11 +217,23 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
       });
     }
 
+    // ✅ DUPLICATE QUESTION CHECK
+    const isDuplicate = game.questions.some(q => 
+      q.question.toLowerCase().trim() === sanitizedQuestion.toLowerCase().trim()
+    );
+
+    if (isDuplicate) {
+      return res.status(400).json({
+        success: false,
+        message: '❌ You already asked this question! Try something else.',
+        isDuplicate: true
+      });
+    }
+
     const character = game.character;
 
     const context = `
-IMPORTANT CHARACTER DATA:
-Character Name: ${character.name} (CONFIDENTIAL - DO NOT REVEAL)
+CHARACTER NAME (CONFIDENTIAL - USE FOR KNOWLEDGE, NEVER REVEAL): ${character.name}
 Anime: ${character.anime}
 Description: ${character.description ? character.description.substring(0, 500) : 'None'}...
 Gender: ${character.traits?.gender || 'Unknown'}
@@ -238,60 +250,55 @@ Female: ${character.attributes?.isFemale ? 'Yes' : 'No'}
 USER QUESTION: "${sanitizedQuestion}"`;
 
     const systemPrompt = `
-You are a highly intelligent Q&A assistant for a character guessing game. The player is trying to guess the secret character.
-
-===== IMPORTANT: YOU KNOW THE CHARACTER =====
-You have been given the character's name. Use this knowledge to answer questions accurately.
+You are an AI with a SINGLE JOB: Answer character questions with 100% accuracy.
 
 ===== YOUR ONLY ALLOWED RESPONSES =====
-"Yes", "No", or "Maybe". NOTHING ELSE. NO explanations, NO punctuation, NO extra words.
+"Yes", "No", or "Maybe". NOTHING ELSE.
 
-===== CRITICAL RULE #1: NEVER REVEAL THE NAME =====
-The player does NOT know the character's name. You must NEVER reveal it.
+===== RULE #1: YOU HAVE THE CHARACTER NAME =====
+You have been given the character's name in the data below.
+USE IT to search your knowledge and answer accurately.
 
-If the user asks ANY question that attempts to identify the character:
-- "Is it [name]?"
-- "Is my character [name]?"
-- "Is the character [name]?"
-- "Is this [name]?"
-- "Are you [name]?"
-- ANY question containing a character name
+===== RULE #2: NEVER REVEAL THE NAME =====
+If user asks "Is it [name]?" or ANY question with a character name → Reply "Maybe"
+This is the ONLY time you say "Maybe" for something you know.
 
-→ ALWAYS reply "Maybe" ONLY.
-→ This is the MOST IMPORTANT rule. NEVER break it.
+===== RULE #3: 100% ACCURACY =====
+- If you KNOW the answer from your knowledge → Reply "Yes" or "No"
+- If you are NOT 100% SURE → Reply "Maybe"
+- NEVER guess. NEVER assume. If unsure → "Maybe"
 
-===== CRITICAL RULE #2: USE THE CHARACTER NAME WISELY =====
-- You KNOW the character's name internally
-- Use it to look up and answer questions accurately
-- But NEVER say it out loud
-- If the question is about the character's identity → Reply "Maybe"
+===== RULE #4: FACT-CHECK YOURSELF =====
+Before answering, ask yourself:
+1. "Am I 100% sure about this fact?"
+2. "Does this contradict anything else I know about this character?"
+If the answer is NO to either question → Reply "Maybe"
 
-===== CRITICAL RULE #3: ANSWER BASED ON KNOWLEDGE =====
-- You know who the character is
-- Answer Yes/No based on your knowledge of that character
-- If you don't know something about the character → Reply "Maybe"
-- NEVER guess. If unsure → "Maybe"
+===== RULE #5: UNDERSTAND "ONLY" QUESTIONS =====
+- "Only X" means EXACTLY X, nothing more, nothing less
+- If character uses 3 swords → "only 1" = "No"
+- If character uses 3 swords → "only 3" = "Yes"
 
-===== RULE #4: IF DATA DOESN'T MENTION IT =====
-→ Reply "Maybe". NEVER assume or guess.
-- Data doesn't mention earrings → "Does he wear earrings?" = "Maybe"
-- Data doesn't mention height → "Is he tall?" = "Maybe"
-- Data doesn't mention family → "Does he have a brother?" = "Maybe"
+===== RULE #6: CONTRADICTION DETECTION =====
+If your answer would contradict a previous answer → STOP and re-evaluate.
+You CANNOT say "Yes" to both "uses 3 swords" and "uses 1 sword only".
 
-===== RULE #5: LOGICAL REASONING =====
-- Contradiction detection
-- "ONLY" / "EXACTLY" / "JUST" logic
-- Alive/dead logic
-- Gender logic
-- Number logic
+===== RULE #7: WHAT "MAYBE" MEANS =====
+"Maybe" = "I don't know" or "I'm not 100% sure"
+NEVER say "Maybe" if you know the answer.
+
+===== RULE #8: CHECK YOUR KNOWLEDGE =====
+Before answering ANY question, cross-check with your knowledge:
+- Is this character known for this trait?
+- Is there any anime/manga fact that contradicts this?
+- If you have ANY doubt → Reply "Maybe"
 
 ===== REMEMBER =====
-- You KNOW the character's name (use it internally)
-- You NEVER reveal the name
-- You answer EVERYTHING else accurately
-- Identity question → ALWAYS "Maybe"
-- If data doesn't mention something → "Maybe"
-- Reply with ONLY one word: Yes, No, or Maybe`;
+- You have the character's name → USE IT
+- You NEVER say the name → "Maybe" for identity questions
+- You answer EVERYTHING else with 100% accuracy
+- If not 100% sure → "Maybe"
+- No exceptions. No excuses.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -314,20 +321,16 @@ If the user asks ANY question that attempts to identify the character:
       });
     }
 
-    const validAnswers = ['Yes', 'No', 'Maybe', 'Very likely', 'Unlikely'];
-
-    const isAnimeName = !validAnswers.some(a => 
-      answer.toLowerCase().includes(a.toLowerCase())
-    );
-
-    let finalAnswer;
-    if (isAnimeName) {
-      finalAnswer = answer.trim();
+    // ✅ ENSURE ANSWER IS VALID
+    const validAnswers = ['Yes', 'No', 'Maybe'];
+    let finalAnswer = 'Maybe';
+    
+    if (validAnswers.includes(answer)) {
+      finalAnswer = answer;
     } else {
-      const matchedAnswer = validAnswers.find(a => 
-        answer.toLowerCase().includes(a.toLowerCase())
-      );
-      finalAnswer = matchedAnswer || 'Maybe';
+      // If AI returns anything else, default to Maybe
+      console.log(`⚠️ Invalid answer from AI: "${answer}", defaulting to Maybe`);
+      finalAnswer = 'Maybe';
     }
 
     console.log(`📝 Final answer: "${finalAnswer}"`);
@@ -335,7 +338,7 @@ If the user asks ANY question that attempts to identify the character:
     game.questions.push({ 
       question: sanitizedQuestion, 
       answer: finalAnswer, 
-      confidence: 0.8 
+      confidence: 0.9 
     });
     game.totalQuestions += 1;
     await game.save();
