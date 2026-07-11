@@ -170,7 +170,7 @@ router.post('/start', async (req, res) => {
 });
 
 // ============================================================
-// ASK QUESTION (100% AI PARSE)
+// ASK QUESTION (DATA ONLY - NO GOOGLE)
 // ============================================================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
@@ -232,44 +232,61 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
 
     const character = game.character;
 
+    // ✅ CONTEXT WITH CHARACTER DATA ONLY
     const context = `
-CHARACTER NAME: ${character.name} (CONFIDENTIAL - USE FOR KNOWLEDGE, NEVER REVEAL)
+CHARACTER DATA (ONLY SOURCE OF TRUTH - DO NOT USE ANY OTHER KNOWLEDGE):
+Name: ${character.name} (CONFIDENTIAL - DO NOT REVEAL)
 Anime: ${character.anime}
-Description: ${character.description ? character.description.substring(0, 500) : 'None'}...
+Hair Color: ${character.traits?.hairColor || character.hairColor || 'Unknown'}
+Eye Color: ${character.traits?.eyeColor || character.eyeColor || 'Unknown'}
 Gender: ${character.traits?.gender || 'Unknown'}
-Species: ${character.traits?.species || 'Unknown'}
 Age: ${character.traits?.age || 'Unknown'}
+Status (Alive/Dead): ${character.traits?.status || character.status || 'Unknown'}
+Species: ${character.traits?.species || 'Unknown'}
 Powers: ${character.traits?.powers?.slice(0, 3).join(', ') || 'None'}
 Personality: ${character.traits?.personality?.slice(0, 3).join(', ') || 'Unknown'}
 Affiliations: ${character.traits?.affiliations?.slice(0, 2).join(', ') || 'None'}
 Relationships: ${character.traits?.relationships?.slice(0, 2).join(', ') || 'None'}
+Description: ${character.description ? character.description.substring(0, 500) : 'None'}
 
-USER QUESTION: "${sanitizedQuestion}"`;
+USER QUESTION: "${sanitizedQuestion}"
+
+INSTRUCTIONS:
+1. Check the data above
+2. If data has the answer → Reply "Yes" or "No"
+3. If data does NOT have the answer → Reply "Maybe"
+4. If question contains a character name → Reply "Maybe"`;
 
     const systemPrompt = `
-You are a YES/NO answer machine. You DO NOT think. You DO NOT reason. You just answer.
+You are a STRICT answer machine. You answer ONLY based on the data provided.
 
-===== YOUR ONLY ALLOWED OUTPUT =====
-"Yes", "No", or "Maybe". NOTHING ELSE. Just one word.
+===== YOUR ONLY ALLOWED RESPONSES =====
+"Yes", "No", or "Maybe". NOTHING ELSE.
 
-===== HOW TO ANSWER =====
-1. If the question asks "Is it [name]?" or contains ANY character name → Say "Maybe"
-2. For ALL OTHER questions → Say "Yes" or "No" based on what you know
-3. If you are unsure → Say "Maybe"
+===== RULE 1: DATA IS THE SOURCE OF TRUTH =====
+- Read the CHARACTER DATA carefully
+- Answer ONLY based on what is in the data
+- If the data contains the information → Reply "Yes" or "No"
+- If the data does NOT contain the information → Reply "Maybe"
+- NEVER use your own knowledge. ONLY use the data provided.
 
-===== RULES =====
-- "Does he use 3 swords?" → If character uses 3 swords → "Yes"
-- "Does he use 1 sword only?" → If character uses 3 swords → "No"
-- "Is he alive?" → If character is alive → "Yes"
-- "Is he dead?" → If character is alive → "No"
-- "Is it [name]?" → ALWAYS "Maybe"
-- "Is he from [anime]?" → ALWAYS "Maybe"
+===== RULE 2: NEVER REVEAL THE CHARACTER NAME =====
+If the user asks ANY question that tries to identify the character:
+- "Is it [name]?"
+- "Is my character [name]?"
+- "Is the character [name]?"
+- "Is this [name]?"
+- "Are you [name]?"
+- ANY question containing a character name
 
-===== REMEMBER =====
-- You have the character name → Use it
-- You NEVER say the name → Say "Maybe" for identity questions
-- Just say Yes, No, or Maybe. Nothing else.
-`;
+→ Reply "Maybe"
+
+===== RULE 3: JUST ANSWER =====
+- Read the data
+- If data has answer → "Yes" or "No"
+- If data doesn't have answer → "Maybe"
+- If question has a name → "Maybe"
+- Reply with ONLY one word: Yes, No, or Maybe`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -292,36 +309,45 @@ You are a YES/NO answer machine. You DO NOT think. You DO NOT reason. You just a
       });
     }
 
-    // ============================================================
-    // ✅ FORCE PARSE AI ANSWER (100% RELIABLE)
-    // ============================================================
+    // ✅ FORCE PARSE ANSWER
     let finalAnswer = 'Maybe';
     const lowerAnswer = answer.toLowerCase().trim();
 
-    // Check if answer contains a character name (identity question)
-    const identityKeywords = ['is it', 'is he', 'is she', 'is this', 'is that', 'are you'];
-    const isIdentityQuestion = identityKeywords.some(kw => lowerAnswer.includes(kw));
-    
+    // Check if this is an identity question
+    const identityKeywords = ['is it', 'is he', 'is she', 'is this', 'are you', 'is that'];
+    const isIdentityQuestion = identityKeywords.some(kw => lowerAnswer.includes(kw)) ||
+                               sanitizedQuestion.match(/[A-Z][a-z]+/g)?.some(word => 
+                                 ['naruto', 'sasuke', 'luffy', 'zoro', 'tanjiro', 'zenitsu', 
+                                  'inosuke', 'rengoku', 'giyu', 'shinobu', 'mitsuri', 'obanai', 
+                                  'muichiro', 'gyomei', 'sanemi', 'kanae', 'kanao', 'genya', 
+                                  'nezuko', 'kawaki', 'boruto', 'sarada', 'mitsuki', 'konohamaru', 
+                                  'kakashi', 'itachi', 'sakura', 'hinata', 'sai', 'shikamaru', 
+                                  'choji', 'ino', 'rock lee', 'neji', 'tenten', 'gaara', 
+                                  'kankuro', 'temari', 'killer bee', 'minato', 'kushina', 
+                                  'jiraiya', 'tsunade', 'orochimaru', 'madara', 'obito', 
+                                  'pain', 'nagato', 'konan', 'hidan', 'kakuzu', 'sasori', 
+                                  'deidara', 'itachi', 'kisame', 'zetsu', 'tobi', 'naruto'].includes(word.toLowerCase())
+                               );
+
     if (isIdentityQuestion) {
-      // If the answer itself contains a name, it's an identity question
       finalAnswer = 'Maybe';
-      console.log(`🔒 Identity question detected → "Maybe"`);
+      console.log(`🔒 Identity question → "Maybe"`);
     } else {
-      // Parse Yes/No
-      if (lowerAnswer.includes('yes')) {
-        finalAnswer = 'Yes';
-      } else if (lowerAnswer.includes('no')) {
+      if (lowerAnswer.includes('no') || 
+          lowerAnswer.includes('not') || 
+          lowerAnswer.includes('isn\'t') ||
+          lowerAnswer.includes('doesn\'t') ||
+          lowerAnswer.includes('is not') ||
+          lowerAnswer.includes('does not')) {
         finalAnswer = 'No';
-      } else if (lowerAnswer.includes('maybe')) {
-        finalAnswer = 'Maybe';
+      } else if (lowerAnswer.includes('yes')) {
+        finalAnswer = 'Yes';
       } else {
-        // If AI says something else, default to Maybe
         finalAnswer = 'Maybe';
-        console.log(`⚠️ Unknown response: "${answer}", defaulting to "Maybe"`);
       }
     }
 
-    console.log(`📝 Final answer: "${finalAnswer}"`);
+    console.log(`📝 Final answer: "${finalAnswer}" (from: "${answer}")`);
 
     game.questions.push({ 
       question: sanitizedQuestion, 
