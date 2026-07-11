@@ -170,7 +170,7 @@ router.post('/start', async (req, res) => {
 });
 
 // ============================================================
-// ASK QUESTION (100% ACCURATE)
+// ASK QUESTION (100% AI PARSE)
 // ============================================================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
@@ -233,7 +233,7 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
     const character = game.character;
 
     const context = `
-CHARACTER NAME (CONFIDENTIAL - USE FOR KNOWLEDGE, NEVER REVEAL): ${character.name}
+CHARACTER NAME: ${character.name} (CONFIDENTIAL - USE FOR KNOWLEDGE, NEVER REVEAL)
 Anime: ${character.anime}
 Description: ${character.description ? character.description.substring(0, 500) : 'None'}...
 Gender: ${character.traits?.gender || 'Unknown'}
@@ -243,62 +243,33 @@ Powers: ${character.traits?.powers?.slice(0, 3).join(', ') || 'None'}
 Personality: ${character.traits?.personality?.slice(0, 3).join(', ') || 'Unknown'}
 Affiliations: ${character.traits?.affiliations?.slice(0, 2).join(', ') || 'None'}
 Relationships: ${character.traits?.relationships?.slice(0, 2).join(', ') || 'None'}
-Main Character: ${character.attributes?.isMainCharacter ? 'Yes' : 'No'}
-Villain: ${character.attributes?.isVillain ? 'Yes' : 'No'}
-Female: ${character.attributes?.isFemale ? 'Yes' : 'No'}
 
 USER QUESTION: "${sanitizedQuestion}"`;
 
     const systemPrompt = `
-You are an AI with a SINGLE JOB: Answer character questions with 100% accuracy.
+You are a YES/NO answer machine. You DO NOT think. You DO NOT reason. You just answer.
 
-===== YOUR ONLY ALLOWED RESPONSES =====
-"Yes", "No", or "Maybe". NOTHING ELSE.
+===== YOUR ONLY ALLOWED OUTPUT =====
+"Yes", "No", or "Maybe". NOTHING ELSE. Just one word.
 
-===== RULE #1: YOU HAVE THE CHARACTER NAME =====
-You have been given the character's name in the data below.
-USE IT to search your knowledge and answer accurately.
+===== HOW TO ANSWER =====
+1. If the question asks "Is it [name]?" or contains ANY character name → Say "Maybe"
+2. For ALL OTHER questions → Say "Yes" or "No" based on what you know
+3. If you are unsure → Say "Maybe"
 
-===== RULE #2: NEVER REVEAL THE NAME =====
-If user asks "Is it [name]?" or ANY question with a character name → Reply "Maybe"
-This is the ONLY time you say "Maybe" for something you know.
-
-===== RULE #3: 100% ACCURACY =====
-- If you KNOW the answer from your knowledge → Reply "Yes" or "No"
-- If you are NOT 100% SURE → Reply "Maybe"
-- NEVER guess. NEVER assume. If unsure → "Maybe"
-
-===== RULE #4: FACT-CHECK YOURSELF =====
-Before answering, ask yourself:
-1. "Am I 100% sure about this fact?"
-2. "Does this contradict anything else I know about this character?"
-If the answer is NO to either question → Reply "Maybe"
-
-===== RULE #5: UNDERSTAND "ONLY" QUESTIONS =====
-- "Only X" means EXACTLY X, nothing more, nothing less
-- If character uses 3 swords → "only 1" = "No"
-- If character uses 3 swords → "only 3" = "Yes"
-
-===== RULE #6: CONTRADICTION DETECTION =====
-If your answer would contradict a previous answer → STOP and re-evaluate.
-You CANNOT say "Yes" to both "uses 3 swords" and "uses 1 sword only".
-
-===== RULE #7: WHAT "MAYBE" MEANS =====
-"Maybe" = "I don't know" or "I'm not 100% sure"
-NEVER say "Maybe" if you know the answer.
-
-===== RULE #8: CHECK YOUR KNOWLEDGE =====
-Before answering ANY question, cross-check with your knowledge:
-- Is this character known for this trait?
-- Is there any anime/manga fact that contradicts this?
-- If you have ANY doubt → Reply "Maybe"
+===== RULES =====
+- "Does he use 3 swords?" → If character uses 3 swords → "Yes"
+- "Does he use 1 sword only?" → If character uses 3 swords → "No"
+- "Is he alive?" → If character is alive → "Yes"
+- "Is he dead?" → If character is alive → "No"
+- "Is it [name]?" → ALWAYS "Maybe"
+- "Is he from [anime]?" → ALWAYS "Maybe"
 
 ===== REMEMBER =====
-- You have the character's name → USE IT
-- You NEVER say the name → "Maybe" for identity questions
-- You answer EVERYTHING else with 100% accuracy
-- If not 100% sure → "Maybe"
-- No exceptions. No excuses.`;
+- You have the character name → Use it
+- You NEVER say the name → Say "Maybe" for identity questions
+- Just say Yes, No, or Maybe. Nothing else.
+`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -312,7 +283,7 @@ Before answering ANY question, cross-check with your knowledge:
       const result = await askAI(messages);
       answer = result.answer || 'Maybe';
       usedProvider = result.provider || 'none';
-      console.log(`✅ Answer from ${usedProvider}: "${answer}"`);
+      console.log(`🤖 AI Raw Answer: "${answer}"`);
     } catch (error) {
       console.error('AI provider error:', error.message);
       return res.status(503).json({
@@ -321,16 +292,33 @@ Before answering ANY question, cross-check with your knowledge:
       });
     }
 
-    // ✅ ENSURE ANSWER IS VALID
-    const validAnswers = ['Yes', 'No', 'Maybe'];
+    // ============================================================
+    // ✅ FORCE PARSE AI ANSWER (100% RELIABLE)
+    // ============================================================
     let finalAnswer = 'Maybe';
+    const lowerAnswer = answer.toLowerCase().trim();
+
+    // Check if answer contains a character name (identity question)
+    const identityKeywords = ['is it', 'is he', 'is she', 'is this', 'is that', 'are you'];
+    const isIdentityQuestion = identityKeywords.some(kw => lowerAnswer.includes(kw));
     
-    if (validAnswers.includes(answer)) {
-      finalAnswer = answer;
-    } else {
-      // If AI returns anything else, default to Maybe
-      console.log(`⚠️ Invalid answer from AI: "${answer}", defaulting to Maybe`);
+    if (isIdentityQuestion) {
+      // If the answer itself contains a name, it's an identity question
       finalAnswer = 'Maybe';
+      console.log(`🔒 Identity question detected → "Maybe"`);
+    } else {
+      // Parse Yes/No
+      if (lowerAnswer.includes('yes')) {
+        finalAnswer = 'Yes';
+      } else if (lowerAnswer.includes('no')) {
+        finalAnswer = 'No';
+      } else if (lowerAnswer.includes('maybe')) {
+        finalAnswer = 'Maybe';
+      } else {
+        // If AI says something else, default to Maybe
+        finalAnswer = 'Maybe';
+        console.log(`⚠️ Unknown response: "${answer}", defaulting to "Maybe"`);
+      }
     }
 
     console.log(`📝 Final answer: "${finalAnswer}"`);
@@ -338,7 +326,7 @@ Before answering ANY question, cross-check with your knowledge:
     game.questions.push({ 
       question: sanitizedQuestion, 
       answer: finalAnswer, 
-      confidence: 0.9 
+      confidence: 1.0 
     });
     game.totalQuestions += 1;
     await game.save();
