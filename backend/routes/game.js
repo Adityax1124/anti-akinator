@@ -53,11 +53,10 @@ const validateGuess = [
 ];
 
 // ============================================================
-// ✅ NEW: GET ANIME OPTIONS (4 random anime)
+// ✅ GET ANIME OPTIONS (4 random anime)
 // ============================================================
 router.get('/anime-options', async (req, res) => {
   try {
-    // Get all unique anime names from Character collection
     const allAnime = await Character.distinct('anime');
     
     if (!allAnime || allAnime.length === 0) {
@@ -75,7 +74,6 @@ router.get('/anime-options', async (req, res) => {
       });
     }
 
-    // Pick 4 random anime
     const shuffled = allAnime.sort(() => 0.5 - Math.random());
     const selectedAnime = shuffled.slice(0, 4);
 
@@ -95,13 +93,12 @@ router.get('/anime-options', async (req, res) => {
 });
 
 // ============================================================
-// ✅ MODIFIED: START GAME WITH SELECTED ANIME
+// ✅ START GAME WITH SELECTED ANIME
 // ============================================================
 router.post('/start', async (req, res) => {
   try {
     const { anime } = req.body;
 
-    // ✅ Check if user selected an anime
     if (!anime) {
       return res.status(400).json({
         success: false,
@@ -109,7 +106,6 @@ router.post('/start', async (req, res) => {
       });
     }
 
-    // ✅ Find characters from selected anime
     const characters = await Character.find({ anime: anime });
     
     if (!characters || characters.length === 0) {
@@ -119,7 +115,6 @@ router.post('/start', async (req, res) => {
       });
     }
 
-    // Pick random character from that anime
     const randomIndex = Math.floor(Math.random() * characters.length);
     const randomCharacter = characters[randomIndex];
 
@@ -130,7 +125,6 @@ router.post('/start', async (req, res) => {
       });
     }
 
-    // Check for active game
     const activeGame = await GameSession.findOne({
       user: req.user._id,
       status: 'active'
@@ -142,11 +136,10 @@ router.post('/start', async (req, res) => {
       await activeGame.save();
     }
 
-    // ✅ Create new game session with anime info
     const game = new GameSession({
       user: req.user._id,
       character: randomCharacter._id,
-      anime: anime, // ✅ Store selected anime
+      anime: anime,
       status: 'active',
       startedAt: new Date()
     });
@@ -176,7 +169,9 @@ router.post('/start', async (req, res) => {
   }
 });
 
-// ===================== ASK QUESTION =====================
+// ============================================================
+// ✅ ASK QUESTION (UPDATED WITH CHARACTER NAME IN CONTEXT)
+// ============================================================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -224,11 +219,11 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
 
     const character = game.character;
 
-const context = `
+    const context = `
 IMPORTANT CHARACTER DATA:
 Character Name: ${character.name} (CONFIDENTIAL - DO NOT REVEAL)
 Anime: ${character.anime}
-Description: ${character.description.substring(0, 500)}...
+Description: ${character.description ? character.description.substring(0, 500) : 'None'}...
 Gender: ${character.traits?.gender || 'Unknown'}
 Species: ${character.traits?.species || 'Unknown'}
 Age: ${character.traits?.age || 'Unknown'}
@@ -277,72 +272,26 @@ If the user asks ANY question that attempts to identify the character:
 - If you don't know something about the character → Reply "Maybe"
 - NEVER guess. If unsure → "Maybe"
 
-===== RULE #4: LOGICAL REASONING =====
+===== RULE #4: IF DATA DOESN'T MENTION IT =====
+→ Reply "Maybe". NEVER assume or guess.
+- Data doesn't mention earrings → "Does he wear earrings?" = "Maybe"
+- Data doesn't mention height → "Is he tall?" = "Maybe"
+- Data doesn't mention family → "Does he have a brother?" = "Maybe"
+
+===== RULE #5: LOGICAL REASONING =====
 - Contradiction detection
 - "ONLY" / "EXACTLY" / "JUST" logic
 - Alive/dead logic
 - Gender logic
 - Number logic
 
-===== EXAMPLES OF CORRECT BEHAVIOR =====
-
-You know the character is: Roronoa Zoro (One Piece)
-
-User: "Is it Luffy?"
-AI: "Maybe" (identity question → ALWAYS Maybe)
-
-User: "Is it Zoro?"
-AI: "Maybe" (identity question → ALWAYS Maybe)
-
-User: "Does he use 3 swords?"
-AI: "Yes" (you know Zoro uses 3 swords)
-
-User: "Does he use 1 sword only?"
-AI: "No" (Zoro uses 3 swords, not 1)
-
-User: "Is he from One Piece?"
-AI: "Maybe" (identity question → ALWAYS Maybe)
-
-User: "Does he have green hair?"
-AI: "Yes" (Zoro has green hair)
-
-User: "Is he a swordsman?"
-AI: "Yes" (Zoro is a swordsman)
-
-User: "Is he alive?"
-AI: "Yes" (Zoro is alive)
-
-You know the character is: Muichiro Tokito (Demon Slayer)
-
-User: "Is it Tanjiro?"
-AI: "Maybe" (identity question → ALWAYS Maybe)
-
-User: "Is he from Demon Slayer?"
-AI: "Maybe" (identity question → ALWAYS Maybe)
-
-User: "Does he wear kanafuda earrings?"
-AI: "Maybe" (Muichiro doesn't wear them, but data might not mention)
-
-User: "Is he a Hashira?"
-AI: "Yes" (Muichiro is the Mist Hashira)
-
-User: "Does he have black hair?"
-AI: "Yes" (Muichiro has black hair with teal tips)
-
-===== CRITICAL RULES (NEVER BREAK) =====
-1. NEVER say the character's name
-2. For identity questions ("Is it [name]?") → ALWAYS "Maybe"
-3. For "Which anime is he from?" → ALWAYS "Maybe" (identity)
-4. For "Is he from [anime]?" → ALWAYS "Maybe" (identity)
-5. For other questions → "Yes", "No", or "Maybe" based on knowledge
-6. If unsure → "Maybe"
-7. Reply with ONLY one word: Yes, No, or Maybe
-
 ===== REMEMBER =====
 - You KNOW the character's name (use it internally)
 - You NEVER reveal the name
 - You answer EVERYTHING else accurately
-- Identity question → ALWAYS "Maybe"`;
+- Identity question → ALWAYS "Maybe"
+- If data doesn't mention something → "Maybe"
+- Reply with ONLY one word: Yes, No, or Maybe`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -416,7 +365,9 @@ AI: "Yes" (Muichiro has black hair with teal tips)
   }
 });
 
-// ===================== USE HINT =====================
+// ============================================================
+// USE HINT
+// ============================================================
 router.post('/hint', validateGameId, async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -500,7 +451,9 @@ router.post('/hint', validateGameId, async (req, res) => {
   }
 });
 
-// ===================== MAKE GUESS =====================
+// ============================================================
+// MAKE GUESS
+// ============================================================
 router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -572,7 +525,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
     game.guesses.push({ guess: sanitizedGuess, isCorrect });
 
     if (isCorrect) {
-      // ===== WIN =====
       game.status = 'won';
       game.endedAt = new Date();
       game.totalQuestions = game.questions.length;
@@ -607,7 +559,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
 
       user.shards += 10;
 
-      // ✅ NEW: Add character to user's card collection
       const character = game.character;
       const cardAdded = user.addCard(character);
       
@@ -617,7 +568,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         console.log(`ℹ️ Card already in collection: ${character.name}`);
       }
 
-      // ===== REFERRAL REWARD CHECK =====
       const isFirstWin = user.stats.gamesWon === 1;
 
       if (user.referredBy && isFirstWin) {
@@ -684,7 +634,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       const newWrongGuesses = game.guesses.filter(g => !g.isCorrect);
       
       if (newWrongGuesses.length >= 3) {
-        // ===== LOSE =====
         game.status = 'lost';
         game.endedAt = new Date();
         game.totalQuestions = game.questions.length;
@@ -740,7 +689,9 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
   }
 });
 
-// ===================== GIVE UP =====================
+// ============================================================
+// GIVE UP
+// ============================================================
 router.post('/giveup', validateGameId, async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -823,7 +774,9 @@ router.post('/giveup', validateGameId, async (req, res) => {
   }
 });
 
-// ===================== GET HISTORY =====================
+// ============================================================
+// GET HISTORY
+// ============================================================
 router.get('/history', async (req, res) => {
   try {
     const games = await GameSession.find({ user: req.user._id })
