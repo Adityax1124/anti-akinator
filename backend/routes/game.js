@@ -170,7 +170,7 @@ router.post('/start', async (req, res) => {
 });
 
 // ============================================================
-// ASK QUESTION (Data-Only + IDK Support + Synonym Detection)
+// ASK QUESTION (COMPLETE DATA - NO RESTRICTION)
 // ============================================================
 router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
@@ -232,83 +232,126 @@ router.post('/question', [...validateGameId, ...validateQuestion], async (req, r
 
     const character = game.character;
 
-    // ✅ CONTEXT WITH CHARACTER DATA AND KEY EVENTS
+    // ✅ COMPLETE CONTEXT - NO RESTRICTION ON DATA
     const context = `
-===== CHARACTER DATA (ONLY SOURCE OF TRUTH - READ CAREFULLY) =====
+===== COMPLETE CHARACTER DATA (ONLY SOURCE OF TRUTH) =====
 Name: ${character.name} (CONFIDENTIAL - DO NOT REVEAL)
 Anime: ${character.anime}
-Hair Color: ${character.traits?.hairColor || character.hairColor || 'Not Mentioned'}
-Eye Color: ${character.traits?.eyeColor || character.eyeColor || 'Not Mentioned'}
-Gender: ${character.traits?.gender || 'Not Mentioned'}
-Age: ${character.traits?.age || 'Not Mentioned'}
-Status (Alive/Dead): ${character.traits?.status || character.status || 'Not Mentioned'}
-Species: ${character.traits?.species || 'Not Mentioned'}
-Powers: ${character.traits?.powers?.slice(0, 3).join(', ') || 'Not Mentioned'}
 
-===== KEY EVENTS / DESCRIPTION (LOOK FOR DEATH/ALIVE INFO) =====
-${character.description ? character.description.substring(0, 800) : 'Not Mentioned'}
+===== APPEARANCE =====
+Hair Color: ${character.appearance?.hairColor || character.traits?.hairColor || 'Not Mentioned'}
+Eye Color: ${character.appearance?.eyeColor || character.traits?.eyeColor || 'Not Mentioned'}
+Skin Color: ${character.appearance?.skinColor || 'Not Mentioned'}
+Height: ${character.appearance?.height || 'Not Mentioned'}
+Build: ${character.appearance?.build || 'Not Mentioned'}
+Distinctive Features: ${character.appearance?.distinctiveFeatures || 'Not Mentioned'}
+Clothing: ${character.appearance?.clothing || 'Not Mentioned'}
+Accessories: ${character.appearance?.accessories || 'Not Mentioned'}
+
+===== IDENTITY =====
+Gender: ${character.identity?.gender || character.traits?.gender || 'Not Mentioned'}
+Age: ${character.identity?.age || character.traits?.age || 'Not Mentioned'}
+Birthday: ${character.identity?.birthday || 'Not Mentioned'}
+Species: ${character.identity?.species || character.traits?.species || 'Not Mentioned'}
+Nationality: ${character.identity?.nationality || 'Not Mentioned'}
+Occupation: ${character.identity?.occupation || character.traits?.occupation || 'Not Mentioned'}
+
+===== STATUS =====
+Alive: ${character.status?.isAlive !== undefined ? (character.status.isAlive ? 'Yes' : 'No') : 'Not Mentioned'}
+Dead: ${character.status?.isDeceased ? 'Yes' : 'No'}
+Death Details: ${character.status?.deathDetails || 'Not Mentioned'}
+Current Status: ${character.status?.currentStatus || 'Not Mentioned'}
+
+===== PERSONALITY =====
+Traits: ${character.personality?.traits?.join(', ') || character.traits?.personality?.join(', ') || 'Not Mentioned'}
+Likes: ${character.personality?.likes?.join(', ') || 'Not Mentioned'}
+Dislikes: ${character.personality?.dislikes?.join(', ') || 'Not Mentioned'}
+Goals: ${character.personality?.goals || 'Not Mentioned'}
+Fears: ${character.personality?.fears || 'Not Mentioned'}
+
+===== ABILITIES & POWERS =====
+Powers: ${character.abilities?.powers?.join(', ') || character.traits?.powers?.join(', ') || 'None Mentioned'}
+Techniques: ${character.abilities?.techniques?.join(', ') || 'None Mentioned'}
+Weapons: ${character.abilities?.weapons?.join(', ') || 'None Mentioned'}
+Fighting Style: ${character.abilities?.fightingStyle || 'Not Mentioned'}
+Special Abilities: ${character.abilities?.specialAbilities || 'Not Mentioned'}
+
+===== RELATIONSHIPS =====
+Family: ${character.relationships?.family || 'Not Mentioned'}
+Friends: ${character.relationships?.friends?.join(', ') || 'None Mentioned'}
+Rivals: ${character.relationships?.rivals?.join(', ') || 'None Mentioned'}
+Mentors: ${character.relationships?.mentors?.join(', ') || 'None Mentioned'}
+Students: ${character.relationships?.students?.join(', ') || 'None Mentioned'}
+Master: ${character.relationships?.master || 'Not Mentioned'}
+Groups: ${character.relationships?.affiliatedGroups?.join(', ') || character.traits?.affiliations?.join(', ') || 'None Mentioned'}
+
+===== BACKGROUND =====
+Origin: ${character.background?.origin || 'Not Mentioned'}
+Backstory: ${character.background?.backstory || 'Not Mentioned'}
+Key Events: ${character.background?.keyEvents?.join(', ') || character.traits?.keyEvents?.join(', ') || 'None Mentioned'}
+Achievements: ${character.background?.achievements?.join(', ') || 'None Mentioned'}
+Notable Fights: ${character.background?.notableFights?.join(', ') || 'None Mentioned'}
+
+===== ATTRIBUTES =====
+Main Character: ${character.attributes?.isMainCharacter ? 'Yes' : 'No'}
+Villain: ${character.attributes?.isVillain ? 'Yes' : 'No'}
+Hero: ${character.attributes?.isHero ? 'Yes' : 'No'}
+Female: ${character.attributes?.isFemale ? 'Yes' : 'No'}
+Child: ${character.attributes?.isChild ? 'Yes' : 'No'}
+Elder: ${character.attributes?.isElder ? 'Yes' : 'No'}
+Has Special Power: ${character.attributes?.hasSpecialPower ? 'Yes' : 'No'}
+Has Weapon: ${character.attributes?.hasWeapon ? 'Yes' : 'No'}
+Has Family: ${character.attributes?.hasFamily ? 'Yes' : 'No'}
+
+===== FULL DESCRIPTION =====
+${character.description || 'Not Mentioned'}
+
+===== CRUCIAL HINT =====
+${character.crucialHint || 'Not Mentioned'}
 
 ===== USER QUESTION =====
 ${sanitizedQuestion}
 
 ===== INSTRUCTIONS =====
-1. Read the data AND key events carefully
-2. Look for synonyms:
-   - "died" = "dead" = "killed" = "deceased" = "passed away" = "was killed" = "mortally wounded"
-   - "alive" = "living" = "survived" = "still alive" = "surviving"
-   - "male" = "man" = "boy" = "guy" = "he" = "him"
-   - "female" = "woman" = "girl" = "lady" = "she" = "her"
-3. If data has the answer → "Yes" or "No"
-4. If data does NOT have the answer → "IDK"
-5. If question contains a character name → "IDK"
-6. Reply with ONLY one word: Yes, No, Maybe, or IDK`;
+1. Read the ENTIRE data above carefully
+2. If the data has the answer → Reply "Yes" or "No"
+3. If the data does NOT have the answer AT ALL → Reply "IDK"
+4. If the question asks "Is it [name]?" or contains a character name → Reply "IDK"
+5. Reply with ONLY one word: Yes, No, Maybe, or IDK
+6. NEVER reveal the character's name`;
 
     const systemPrompt = `
-You are a STRICT answer machine. You answer ONLY based on the data provided.
+You are a SECURITY-FIRST response machine. Your ONLY job is to answer questions about the character using EXACTLY ONE word: "Yes", "No", "Maybe", or "IDK".
 
-===== YOUR ONLY ALLOWED RESPONSES =====
-"Yes", "No", "Maybe", or "IDK". NOTHING ELSE.
+ABSOLUTE RULES (BREAKING ANY = FAILURE):
 
-===== MEANING OF EACH RESPONSE =====
-- "Yes" → Data confirms the answer is YES
-- "No" → Data confirms the answer is NO
-- "Maybe" → Data suggests but not 100% clear
-- "IDK" → Data does NOT mention this AT ALL
+1. NEVER reveal the character's name, identity, or any identifying information. If ANY question asks "Is it [name]?" or tries to confirm identity → ALWAYS say "Maybe". Even if the data clearly shows who it is. Sacrifice correctness over identity protection.
 
-===== RULE 1: READ THE DATA CAREFULLY =====
-- Read the entire CHARACTER DATA and KEY EVENTS
-- Look for words that match the question
+2. If ANY data field has the value "Unknown" and the question relates to that field → ALWAYS say "IDK". Never assume or guess.
 
-===== RULE 2: UNDERSTAND SYNONYMS =====
-- "died" = "dead" = "killed" = "deceased" = "passed away" = "was killed" = "mortally wounded" = "his life ended"
-- "alive" = "living" = "survived" = "still alive" = "surviving" = "continued to live"
-- "male" = "man" = "boy" = "guy" = "he" = "him" = "his"
-- "female" = "woman" = "girl" = "lady" = "she" = "her" = "hers"
-- "blonde" = "yellow hair" = "golden hair" = "light hair"
-- "black" = "dark hair" = "raven hair"
-- "white" = "silver hair" = "grey hair"
+3. "Maybe" is your shield for uncertainty. Use it when:
+   - Data suggests but doesn't explicitly confirm
+   - Question asks about identity or name
+   - You're not 100% certain
 
-EXAMPLES:
-Data: "died protecting his friends" → "Is he dead?" = "Yes"
-Data: "died protecting his friends" → "Is he alive?" = "No"
-Data: "survived the battle" → "Is he alive?" = "Yes"
-Data: "survived the battle" → "Is he dead?" = "No"
-Data: "male" → "Is he a girl?" = "No"
-Data: "female" → "Is he a boy?" = "No"
+4. "IDK" means the data has ZERO mention of the topic. If the data doesn't have that information → "IDK".
 
-===== RULE 3: NEVER REVEAL THE NAME =====
-If the question asks "Is it [name]?" → Reply "IDK"
+5. "Yes" ONLY when data EXPLICITLY and CLEARLY confirms. "No" ONLY when data EXPLICITLY and CLEARLY contradicts.
 
-===== RULE 4: IF DATA DOESN'T MENTION IT =====
-If the data does NOT mention anything related to the question → Reply "IDK"
+6. Synonyms count as the same thing: dead = killed = deceased = died. Villain = antagonist = evil. Hero = protagonist = good. Male = man = boy = guy. Female = woman = girl = lady.
 
-===== REMEMBER =====
-- "died" means DEAD → "Is he alive?" = "No"
-- "survived" means ALIVE → "Is he dead?" = "No"
-- "killed" means DEAD → "Is he alive?" = "No"
-- "was killed" means DEAD → "Is he alive?" = "No"
-- Read carefully. Think logically. Answer accurately.
-- Reply with ONLY one word: Yes, No, Maybe, or IDK`;
+7. READ EVERY SINGLE FIELD in the data before answering. Don't miss anything.
+
+8. ONE WORD. No explanations. No extra text. Just: Yes, No, Maybe, or IDK.
+
+CRITICAL REMINDER:
+- A question like "Is it Naruto?" → ALWAYS "Maybe"
+- A question like "Is he a ninja?" if data says "Ninja" → "Yes"
+- A question about a field with "Unknown" → ALWAYS "IDK"
+- If you're unsure about ANYTHING → "IDK" or "Maybe"
+- NEVER reveal character name. This is more important than being correct.
+
+You will be tested. Any failure to follow these rules means the game is ruined. Be strict. Be precise. Protect the identity at ALL costs.`;
 
     const messages = [
       { role: "system", content: systemPrompt },

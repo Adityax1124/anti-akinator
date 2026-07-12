@@ -52,7 +52,7 @@ router.post('/reset-season', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// CHARACTER CRUD (WITH POWER LEVEL + ELEMENT + RARITY)
+// CHARACTER CRUD (WITH COMPLETE DATA)
 // ============================================================
 router.get('/characters', adminMiddleware, async (req, res) => {
   try {
@@ -76,16 +76,116 @@ router.get('/characters', adminMiddleware, async (req, res) => {
 
 router.post('/characters', adminMiddleware, async (req, res) => {
   try {
+    // ✅ COMPLETE CHARACTER DATA
     const characterData = {
-      ...req.body,
+      // Basic Info
       name: sanitizeInput(req.body.name),
       anime: sanitizeInput(req.body.anime),
-      description: sanitizeInput(req.body.description),
+      image: req.body.image || '',
+      description: sanitizeInput(req.body.description) || '',
+      crucialHint: sanitizeInput(req.body.crucialHint) || '',
+      
+      // Appearance
+      appearance: {
+        hairColor: req.body.appearance?.hairColor || 'Unknown',
+        eyeColor: req.body.appearance?.eyeColor || 'Unknown',
+        skinColor: req.body.appearance?.skinColor || 'Unknown',
+        height: req.body.appearance?.height || 'Unknown',
+        build: req.body.appearance?.build || 'Unknown',
+        distinctiveFeatures: req.body.appearance?.distinctiveFeatures || 'Unknown',
+        clothing: req.body.appearance?.clothing || 'Unknown',
+        accessories: req.body.appearance?.accessories || 'Unknown'
+      },
+      
+      // Identity
+      identity: {
+        gender: req.body.identity?.gender || 'Unknown',
+        age: req.body.identity?.age || 'Unknown',
+        birthday: req.body.identity?.birthday || 'Unknown',
+        species: req.body.identity?.species || 'Unknown',
+        nationality: req.body.identity?.nationality || 'Unknown',
+        occupation: req.body.identity?.occupation || 'Unknown'
+      },
+      
+      // Status
+      status: {
+        isAlive: req.body.status?.isAlive !== undefined ? req.body.status.isAlive : true,
+        isDeceased: req.body.status?.isDeceased || false,
+        deathDetails: req.body.status?.deathDetails || 'Unknown',
+        currentStatus: req.body.status?.currentStatus || 'Alive'
+      },
+      
+      // Personality
+      personality: {
+        traits: req.body.personality?.traits || [],
+        likes: req.body.personality?.likes || [],
+        dislikes: req.body.personality?.dislikes || [],
+        goals: req.body.personality?.goals || 'Unknown',
+        fears: req.body.personality?.fears || 'Unknown'
+      },
+      
+      // Abilities
+      abilities: {
+        powers: req.body.abilities?.powers || [],
+        techniques: req.body.abilities?.techniques || [],
+        weapons: req.body.abilities?.weapons || [],
+        fightingStyle: req.body.abilities?.fightingStyle || 'Unknown',
+        specialAbilities: req.body.abilities?.specialAbilities || 'Unknown'
+      },
+      
+      // Relationships
+      relationships: {
+        family: req.body.relationships?.family || 'Unknown',
+        friends: req.body.relationships?.friends || [],
+        rivals: req.body.relationships?.rivals || [],
+        mentors: req.body.relationships?.mentors || [],
+        students: req.body.relationships?.students || [],
+        master: req.body.relationships?.master || 'Unknown',
+        affiliatedGroups: req.body.relationships?.affiliatedGroups || []
+      },
+      
+      // Background
+      background: {
+        origin: req.body.background?.origin || 'Unknown',
+        backstory: req.body.background?.backstory || 'Unknown',
+        keyEvents: req.body.background?.keyEvents || [],
+        achievements: req.body.background?.achievements || [],
+        notableFights: req.body.background?.notableFights || []
+      },
+      
+      // Attributes
+      attributes: {
+        isMainCharacter: req.body.attributes?.isMainCharacter || false,
+        isVillain: req.body.attributes?.isVillain || false,
+        isHero: req.body.attributes?.isHero || false,
+        isFemale: req.body.attributes?.isFemale || false,
+        isChild: req.body.attributes?.isChild || false,
+        isElder: req.body.attributes?.isElder || false,
+        hasSpecialPower: req.body.attributes?.hasSpecialPower || false,
+        hasWeapon: req.body.attributes?.hasWeapon || false,
+        hasFamily: req.body.attributes?.hasFamily || false,
+        isFromAnime: req.body.attributes?.isFromAnime !== undefined ? req.body.attributes.isFromAnime : true
+      },
+      
+      // Battle Data
       powerLevel: parseFloat(req.body.powerLevel) || 25,
-      // ✅ NEW: Element, Rarity, BasePower
+      basePower: parseFloat(req.body.basePower) || parseFloat(req.body.powerLevel) || 25,
       element: req.body.element || 'Fire',
       rarity: req.body.rarity || 'Common',
-      basePower: parseFloat(req.body.basePower) || parseFloat(req.body.powerLevel) || 25,
+      
+      // Legacy Traits
+      traits: {
+        gender: req.body.traits?.gender || req.body.identity?.gender || 'Unknown',
+        species: req.body.traits?.species || req.body.identity?.species || 'Human',
+        age: req.body.traits?.age || null,
+        occupation: req.body.traits?.occupation || req.body.identity?.occupation || '',
+        powers: req.body.traits?.powers || req.body.abilities?.powers || [],
+        personality: req.body.traits?.personality || req.body.personality?.traits || [],
+        affiliations: req.body.traits?.affiliations || req.body.relationships?.affiliatedGroups || [],
+        relationships: req.body.traits?.relationships || [],
+        keyEvents: req.body.traits?.keyEvents || req.body.background?.keyEvents || []
+      },
+      
       createdBy: req.user._id
     };
 
@@ -103,7 +203,7 @@ router.post('/characters', adminMiddleware, async (req, res) => {
     console.error('Admin create character error:', error.message);
     res.status(500).json({ 
       success: false, 
-      message: 'Error creating character' 
+      message: 'Error creating character: ' + error.message
     });
   }
 });
@@ -111,14 +211,109 @@ router.post('/characters', adminMiddleware, async (req, res) => {
 router.put('/characters/:id', adminMiddleware, async (req, res) => {
   try {
     const updateData = { ...req.body };
+    
+    // Sanitize
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.anime) updateData.anime = sanitizeInput(updateData.anime);
     if (updateData.description) updateData.description = sanitizeInput(updateData.description);
+    if (updateData.crucialHint) updateData.crucialHint = sanitizeInput(updateData.crucialHint);
+    
+    // Update nested fields
+    if (updateData.appearance) {
+      updateData.appearance = {
+        hairColor: updateData.appearance.hairColor || 'Unknown',
+        eyeColor: updateData.appearance.eyeColor || 'Unknown',
+        skinColor: updateData.appearance.skinColor || 'Unknown',
+        height: updateData.appearance.height || 'Unknown',
+        build: updateData.appearance.build || 'Unknown',
+        distinctiveFeatures: updateData.appearance.distinctiveFeatures || 'Unknown',
+        clothing: updateData.appearance.clothing || 'Unknown',
+        accessories: updateData.appearance.accessories || 'Unknown'
+      };
+    }
+    
+    if (updateData.identity) {
+      updateData.identity = {
+        gender: updateData.identity.gender || 'Unknown',
+        age: updateData.identity.age || 'Unknown',
+        birthday: updateData.identity.birthday || 'Unknown',
+        species: updateData.identity.species || 'Unknown',
+        nationality: updateData.identity.nationality || 'Unknown',
+        occupation: updateData.identity.occupation || 'Unknown'
+      };
+    }
+    
+    if (updateData.status) {
+      updateData.status = {
+        isAlive: updateData.status.isAlive !== undefined ? updateData.status.isAlive : true,
+        isDeceased: updateData.status.isDeceased || false,
+        deathDetails: updateData.status.deathDetails || 'Unknown',
+        currentStatus: updateData.status.currentStatus || 'Alive'
+      };
+    }
+    
+    if (updateData.personality) {
+      updateData.personality = {
+        traits: updateData.personality.traits || [],
+        likes: updateData.personality.likes || [],
+        dislikes: updateData.personality.dislikes || [],
+        goals: updateData.personality.goals || 'Unknown',
+        fears: updateData.personality.fears || 'Unknown'
+      };
+    }
+    
+    if (updateData.abilities) {
+      updateData.abilities = {
+        powers: updateData.abilities.powers || [],
+        techniques: updateData.abilities.techniques || [],
+        weapons: updateData.abilities.weapons || [],
+        fightingStyle: updateData.abilities.fightingStyle || 'Unknown',
+        specialAbilities: updateData.abilities.specialAbilities || 'Unknown'
+      };
+    }
+    
+    if (updateData.relationships) {
+      updateData.relationships = {
+        family: updateData.relationships.family || 'Unknown',
+        friends: updateData.relationships.friends || [],
+        rivals: updateData.relationships.rivals || [],
+        mentors: updateData.relationships.mentors || [],
+        students: updateData.relationships.students || [],
+        master: updateData.relationships.master || 'Unknown',
+        affiliatedGroups: updateData.relationships.affiliatedGroups || []
+      };
+    }
+    
+    if (updateData.background) {
+      updateData.background = {
+        origin: updateData.background.origin || 'Unknown',
+        backstory: updateData.background.backstory || 'Unknown',
+        keyEvents: updateData.background.keyEvents || [],
+        achievements: updateData.background.achievements || [],
+        notableFights: updateData.background.notableFights || []
+      };
+    }
+    
+    if (updateData.attributes) {
+      updateData.attributes = {
+        isMainCharacter: updateData.attributes.isMainCharacter || false,
+        isVillain: updateData.attributes.isVillain || false,
+        isHero: updateData.attributes.isHero || false,
+        isFemale: updateData.attributes.isFemale || false,
+        isChild: updateData.attributes.isChild || false,
+        isElder: updateData.attributes.isElder || false,
+        hasSpecialPower: updateData.attributes.hasSpecialPower || false,
+        hasWeapon: updateData.attributes.hasWeapon || false,
+        hasFamily: updateData.attributes.hasFamily || false,
+        isFromAnime: updateData.attributes.isFromAnime !== undefined ? updateData.attributes.isFromAnime : true
+      };
+    }
+    
+    // Battle Data
     if (updateData.powerLevel) updateData.powerLevel = Number(updateData.powerLevel);
-    // ✅ NEW: Element, Rarity, BasePower update
+    if (updateData.basePower) updateData.basePower = Number(updateData.basePower);
     if (updateData.element) updateData.element = updateData.element;
     if (updateData.rarity) updateData.rarity = updateData.rarity;
-    if (updateData.basePower) updateData.basePower = Number(updateData.basePower);
 
     const character = await Character.findByIdAndUpdate(
       req.params.id,
@@ -144,7 +339,7 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
     console.error('Admin update character error:', error.message);
     res.status(500).json({ 
       success: false, 
-      message: 'Error updating character' 
+      message: 'Error updating character: ' + error.message
     });
   }
 });
@@ -263,6 +458,61 @@ router.post('/banners', adminMiddleware, async (req, res) => {
       message: 'Error creating banner: ' + error.message,
       error: error.message
     });
+  }
+});
+
+router.put('/banners/:id', adminMiddleware, async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    if (updateData.name) updateData.name = sanitizeInput(updateData.name);
+    if (updateData.gifUrl) updateData.gifUrl = updateData.gifUrl.trim();
+
+    const banner = await Banner.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!banner) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Banner not found' 
+      });
+    }
+
+    console.log(`📝 Admin ${req.user.username} updated banner: ${banner.name}`);
+
+    res.json({ 
+      success: true, 
+      banner,
+      message: 'Banner updated successfully'
+    });
+  } catch (error) {
+    console.error('Admin update banner error:', error.message);
+    res.status(500).json({ success: false, message: 'Error updating banner' });
+  }
+});
+
+router.delete('/banners/:id', adminMiddleware, async (req, res) => {
+  try {
+    const banner = await Banner.findByIdAndDelete(req.params.id);
+    
+    if (!banner) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Banner not found' 
+      });
+    }
+
+    console.log(`🗑️ Admin ${req.user.username} deleted banner: ${banner.name}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Banner deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Admin delete banner error:', error.message);
+    res.status(500).json({ success: false, message: 'Error deleting banner' });
   }
 });
 
@@ -600,10 +850,10 @@ router.get('/users', adminMiddleware, async (req, res) => {
       role: user.role,
       stats: user.stats,
       shards: user.shards,
-      // ✅ NEW: Show gems
       gems: user.gems || 0,
       createdAt: user.createdAt,
-      equipped: user.equipped
+      equipped: user.equipped,
+      clanId: user.clanId || null
     }));
 
     res.json({ 
@@ -640,7 +890,6 @@ router.get('/stats', adminMiddleware, async (req, res) => {
     const sanitizedTopPlayers = topPlayers.map(player => ({
       username: player.username,
       stats: player.stats,
-      // ✅ NEW: Show gems
       gems: player.gems || 0,
       profilePhoto: player.equipped?.profilePhoto || null
     }));
