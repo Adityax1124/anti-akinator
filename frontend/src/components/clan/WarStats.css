@@ -1,0 +1,353 @@
+/* War Stats Container */
+.war-stats {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 16px;
+}
+
+.war-stats.compact {
+  padding: 12px 16px;
+}
+
+/* Phase Indicator */
+.stats-phase {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.phase-icon {
+  font-size: 20px;
+}
+
+.phase-text {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.phase-timer {
+  margin-left: auto;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.stat-icon {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* MVP Section */
+.stats-mvp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  margin-bottom: 12px;
+}
+
+.mvp-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.mvp-icon {
+  font-size: 18px;
+}
+
+.mvp-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mvp-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.mvp-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.mvp-wins {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Top Performers */
+.stats-performers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.performer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.performer-icon {
+  font-size: 14px;
+}
+
+.performer-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.performer-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: auto;
+}
+
+.performer-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0 6px;
+  border-radius: 4px;
+}
+
+/* Clan Comparison */
+.stats-clan-comparison {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.clan-comp-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clan-comp-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 60px;
+}
+
+.clan-comp-score {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 24px;
+  text-align: center;
+}
+
+.clan-comp-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.clan-comp-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+.clan-comp-vs {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.15);
+  padding: 0 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .war-stats {
+    padding: 12px 14px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-item {
+    padding: 8px 6px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+
+  .stats-performers {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .phase-text {
+    font-size: 12px;
+  }
+
+  .phase-timer {
+    font-size: 11px;
+  }
+
+  .stats-clan-comparison {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .clan-comp-item {
+    flex: 1 1 100%;
+  }
+
+  .clan-comp-vs {
+    display: none;
+  }
+
+  .clan-comp-name {
+    min-width: 40px;
+    font-size: 11px;
+  }
+
+  .clan-comp-score {
+    font-size: 14px;
+    min-width: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .war-stats {
+    padding: 10px;
+  }
+
+  .war-stats.compact {
+    padding: 8px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .stat-item {
+    padding: 6px 4px;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
+
+  .stat-icon {
+    font-size: 12px;
+  }
+
+  .stats-mvp {
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+    padding: 8px 12px;
+  }
+
+  .mvp-info {
+    margin-left: 0;
+  }
+
+  .mvp-name {
+    font-size: 12px;
+  }
+
+  .performer-item {
+    padding: 6px 10px;
+    flex-wrap: wrap;
+  }
+
+  .performer-name {
+    font-size: 11px;
+  }
+
+  .phase-icon {
+    font-size: 16px;
+  }
+
+  .phase-text {
+    font-size: 10px;
+  }
+
+  .clan-comp-item {
+    gap: 4px;
+  }
+
+  .clan-comp-name {
+    font-size: 10px;
+    min-width: 30px;
+  }
+
+  .clan-comp-score {
+    font-size: 12px;
+  }
+}

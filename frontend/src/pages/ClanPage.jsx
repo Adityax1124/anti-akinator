@@ -4,6 +4,7 @@ import axios from '../api/axios';
 import ClanChat from '../components/clan/ClanChat';
 import ClanMembers from '../components/clan/ClanMembers';
 import ClanDonateModal from '../components/clan/ClanDonateModal';
+import WarPage from '../components/clan/WarPage';
 import './ClanPage.css';
 
 const ClanPage = () => {
@@ -15,11 +16,14 @@ const ClanPage = () => {
   const [showDonateModal, setShowDonateModal] = useState(false);
   const [userRole, setUserRole] = useState('member');
   const [isVisible, setIsVisible] = useState(false);
+  const [hasActiveWar, setHasActiveWar] = useState(false);
+  const [warStatus, setWarStatus] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     setIsVisible(true);
     fetchClanData();
+    checkWarStatus();
   }, []);
 
   const fetchClanData = async () => {
@@ -46,6 +50,23 @@ const ClanPage = () => {
     }
   };
 
+  const checkWarStatus = async () => {
+    try {
+      const response = await axios.get('/clan-war/status');
+      if (response.data.success && response.data.hasWar) {
+        setHasActiveWar(true);
+        setWarStatus(response.data.war);
+      } else {
+        setHasActiveWar(false);
+        setWarStatus(null);
+      }
+    } catch (err) {
+      // No active war or error - ignore
+      setHasActiveWar(false);
+      setWarStatus(null);
+    }
+  };
+
   const handleLeave = () => {
     navigate('/');
   };
@@ -56,6 +77,14 @@ const ClanPage = () => {
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
+    // Refresh war status when switching to war tab
+    if (tab === 'war') {
+      checkWarStatus();
+    }
+  };
+
+  const handleWarAction = () => {
+    checkWarStatus();
   };
 
   if (loading) {
@@ -114,6 +143,11 @@ const ClanPage = () => {
             <span className="clan-stat-pill">
               👥 {clanData.totalMembers || 0}/{clanData.maxMembers || 20}
             </span>
+            {hasActiveWar && (
+              <span className="clan-stat-pill war-active">
+                ⚔️ War in Progress!
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -130,6 +164,12 @@ const ClanPage = () => {
           onClick={() => handleTabSwitch('members')}
         >
           👥 Members
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'war' ? 'active' : ''} ${hasActiveWar ? 'war-active' : ''}`}
+          onClick={() => handleTabSwitch('war')}
+        >
+          ⚔️ War {hasActiveWar && '🔥'}
         </button>
         <button
           className="tab-btn donate-btn-header"
@@ -153,6 +193,14 @@ const ClanPage = () => {
             members={members}
             userRole={userRole}
             onLeave={handleLeave}
+            onWarCardUpdate={checkWarStatus}
+          />
+        )}
+        {activeTab === 'war' && (
+          // ✅ FIXED: Pass userRole to WarPage
+          <WarPage 
+            onWarAction={handleWarAction} 
+            userRole={userRole} 
           />
         )}
       </div>

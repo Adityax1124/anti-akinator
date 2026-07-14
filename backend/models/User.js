@@ -295,6 +295,15 @@ const userSchema = new mongoose.Schema({
   }],
 
   // ============================================================
+  // ===== ⚔️ WAR CARD (Selected for Clan Wars) =====
+  // ============================================================
+  warCard: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Character',
+    default: null
+  },
+
+  // ============================================================
   // ===== 🏆 MATCH STATS =====
   // ============================================================
   matchStats: {
@@ -427,6 +436,8 @@ userSchema.index({ 'cards.currentPower': -1 });
 userSchema.index({ 'cards.level': -1 });
 // ✅ Clan index
 userSchema.index({ clanId: 1 });
+// ✅ War card index
+userSchema.index({ warCard: 1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -489,6 +500,44 @@ userSchema.methods.resetFailedAttempts = async function() {
   this.lockedUntil = null;
   this.lastLogin = new Date();
   await this.save();
+};
+
+// ============================================================
+// ✅ WAR CARD METHODS
+// ============================================================
+
+// Select war card
+userSchema.methods.selectWarCard = function(cardId) {
+  // Check if user owns this card
+  const ownsCard = this.cards.some(c => 
+    c.characterId.toString() === cardId.toString()
+  );
+  
+  if (!ownsCard) {
+    return { success: false, message: 'You don\'t own this card' };
+  }
+  
+  this.warCard = cardId;
+  return { success: true, message: 'War card selected!' };
+};
+
+// Get war card details
+userSchema.methods.getWarCard = function() {
+  if (!this.warCard) return null;
+  return this.cards.find(c => 
+    c.characterId.toString() === this.warCard.toString()
+  );
+};
+
+// Clear war card
+userSchema.methods.clearWarCard = function() {
+  this.warCard = null;
+  return { success: true, message: 'War card cleared' };
+};
+
+// Check if user has war card selected
+userSchema.methods.hasWarCard = function() {
+  return this.warCard !== null;
 };
 
 // ============================================================

@@ -30,7 +30,11 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refund from './pages/Refund';
 import Contact from './pages/Contact';
-import ClanPage from './pages/ClanPage'; // ✅ ADDED
+import ClanPage from './pages/ClanPage';
+import WarPage from './components/clan/WarPage';
+import WarHistory from './pages/WarHistory';
+import WarLeaderboard from './pages/WarLeaderboard';
+import Notifications from './pages/Notifications';
 import './App.css';
 
 // ✅ NEW: ScrollToTop component to fix scroll position on route change
@@ -136,7 +140,7 @@ const AppContent = () => {
 
   return (
     <>
-      <ScrollToTop /> {/* ✅ ADD THIS LINE - fixes scroll position */}
+      <ScrollToTop />
       <Navbar />
       <Stars />
       <main className="main-content">
@@ -201,9 +205,27 @@ const AppContent = () => {
             <PrivateRouteWrapper><BuyShards /></PrivateRouteWrapper>
           } />
           
-          {/* ✅ ADDED: Clan Route */}
+          {/* ===== CLAN ROUTES ===== */}
           <Route path="/clan" element={
             <PrivateRouteWrapper><ClanPage /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== CLAN WAR ROUTES ===== */}
+          <Route path="/clan/war" element={
+            <PrivateRouteWrapper><WarPage /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/clan/war/history" element={
+            <PrivateRouteWrapper><WarHistory /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/clan/war/leaderboard" element={
+            <PrivateRouteWrapper><WarLeaderboard /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== NOTIFICATIONS ROUTE ===== */}
+          <Route path="/notifications" element={
+            <PrivateRouteWrapper><Notifications /></PrivateRouteWrapper>
           } />
           
           <Route path="/admin" element={

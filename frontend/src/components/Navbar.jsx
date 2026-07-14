@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import ReferralModal from './ReferralModal';
 import FriendModal from './FriendModal';
 import ClanModal from './clan/ClanModal';
+import NotificationBell from './NotificationBell';
 import axios from '../api/axios';
 import './Navbar.css';
 
@@ -18,7 +19,7 @@ const Navbar = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [hoveredDropdown, setHoveredDropdown] = useState(null);
   
-  // ✅ NEW: Clan state
+  // ✅ Clan state
   const [isInClan, setIsInClan] = useState(false);
   const [clanData, setClanData] = useState(null);
   const [checkingClan, setCheckingClan] = useState(true);
@@ -30,7 +31,7 @@ const Navbar = () => {
   const leaderboardRef = useRef(null);
   const profileRef = useRef(null);
 
-  // ✅ NEW: Check if user is in a clan
+  // ✅ Check if user is in a clan
   useEffect(() => {
     checkClanStatus();
   }, [isAuthenticated]);
@@ -120,7 +121,7 @@ const Navbar = () => {
 
   const closeFriendModal = () => setIsFriendModalOpen(false);
 
-  // ✅ UPDATED: Clan button handler - Check if in clan
+  // ✅ Clan button handler - Check if in clan
   const handleClanClick = () => {
     closeAllDropdowns();
     
@@ -140,7 +141,7 @@ const Navbar = () => {
 
   const closeClanModal = () => setIsClanModalOpen(false);
 
-  // ✅ UPDATED: After clan action, refresh status and navigate
+  // ✅ After clan action, refresh status and navigate
   const handleClanAction = (clan) => {
     console.log('🛡️ Clan action completed:', clan);
     closeClanModal();
@@ -249,7 +250,7 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* ✅ UPDATED: Clan Button with check */}
+                {/* ✅ Clan Button with check */}
                 <div
                   className="dropdown-wrapper"
                   ref={clanRef}
@@ -257,7 +258,7 @@ const Navbar = () => {
                   onMouseLeave={() => setHoveredDropdown(null)}
                 >
                   <button 
-                    className="nav-link" 
+                    className={`nav-link ${isInClan ? 'clan-active' : ''}`} 
                     onClick={handleClanClick}
                     disabled={checkingClan}
                   >
@@ -265,6 +266,7 @@ const Navbar = () => {
                     <span className="nav-label">
                       {checkingClan ? 'Loading...' : isInClan ? clanData?.name || 'Clan' : 'Clan'}
                     </span>
+                    {isInClan && <span className="clan-status-dot"></span>}
                   </button>
                 </div>
 
@@ -290,6 +292,10 @@ const Navbar = () => {
                       <span className="dropdown-icon">🏅</span>
                       Season Winners
                     </Link>
+                    <Link to="/clan/war/leaderboard" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">⚔️</span>
+                      Clan War Leaderboard
+                    </Link>
                   </div>
                 </div>
 
@@ -299,6 +305,11 @@ const Navbar = () => {
                     <span className="nav-label">Admin</span>
                   </Link>
                 )}
+
+                {/* ✅ Notification Bell */}
+                <div className="nav-notification-bell">
+                  <NotificationBell />
+                </div>
 
                 <div
                   className="dropdown-wrapper profile-wrapper"

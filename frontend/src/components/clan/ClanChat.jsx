@@ -8,25 +8,22 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const chatContainerRef = useRef(null);
-  const messagesEndRef = useRef(null);
   const intervalRef = useRef(null);
 
-  // ✅ FIX: Sirf chat container ko scroll karega
+  // ✅ Scroll to bottom only on initial load
   const scrollToBottom = () => {
-    if (chatContainerRef.current) {
+    if (chatContainerRef.current && isInitialLoad) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      setIsInitialLoad(false);
     }
   };
 
-  // ✅ Scroll when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
+  // ✅ Fetch messages on mount
   useEffect(() => {
     fetchMessages();
-    setupWebSocket();
+    setupPolling();
 
     return () => {
       if (intervalRef.current) {
@@ -35,7 +32,15 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
     };
   }, [clanId]);
 
-  const setupWebSocket = () => {
+  // ✅ Scroll to bottom when messages load for the first time
+  useEffect(() => {
+    if (messages.length > 0 && isInitialLoad) {
+      scrollToBottom();
+    }
+  }, [messages]);
+
+  // ✅ Setup polling every 5 seconds
+  const setupPolling = () => {
     intervalRef.current = setInterval(() => {
       fetchMessages();
     }, 5000);
@@ -47,6 +52,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
     };
   };
 
+  // ✅ Fetch messages from API
   const fetchMessages = async () => {
     try {
       const response = await axios.get(`/clan/chat/${clanId}?limit=50`);
@@ -60,6 +66,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
     }
   };
 
+  // ✅ Send message
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
@@ -75,7 +82,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
       if (response.data && response.data.data) {
         setMessages(prev => [...prev, response.data.data]);
         setNewMessage('');
-        setTimeout(scrollToBottom, 100);
+        // ✅ DO NOT auto-scroll after sending - user stays where they are
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -85,6 +92,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
     }
   };
 
+  // ✅ Format time
   const formatTime = (date) => {
     try {
       return new Date(date).toLocaleTimeString('en-US', {
@@ -96,6 +104,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
     }
   };
 
+  // ✅ Get message icon based on type
   const getMessageIcon = (type) => {
     switch (type) {
       case 'donation':
@@ -109,6 +118,7 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
     }
   };
 
+  // ✅ Loading state
   if (loading) {
     return (
       <div className="clan-chat-loading">
@@ -120,12 +130,13 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
 
   return (
     <div className="clan-chat">
+      {/* Chat Header */}
       <div className="chat-header">
         <h3>💬 Clan Chat</h3>
         <span className="member-badge">{clanName || 'Clan'}</span>
       </div>
 
-      {/* ✅ Yeh container scroll karega, poora page nahi */}
+      {/* Chat Messages Container */}
       <div className="chat-messages" ref={chatContainerRef}>
         {error && (
           <div className="chat-error">
@@ -152,10 +163,9 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
             </div>
           ))
         )}
-        
-        <div ref={messagesEndRef} />
       </div>
 
+      {/* Chat Input Form */}
       <form className="chat-input-form" onSubmit={sendMessage}>
         <input
           type="text"

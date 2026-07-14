@@ -1,0 +1,244 @@
+/* Attack Button Wrapper */
+.attack-button-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.attack-button-wrapper.compact .attack-btn {
+  padding: 4px 10px;
+  font-size: 10px;
+}
+
+.attack-button-wrapper.compact .attack-btn .btn-icon {
+  font-size: 12px;
+}
+
+.attack-button-wrapper.compact .attack-btn .btn-text {
+  font-size: 10px;
+}
+
+/* Attack Button */
+.attack-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-width: 100px;
+  justify-content: center;
+}
+
+.attack-btn:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+}
+
+.attack-btn:active:not(.disabled) {
+  transform: scale(0.95);
+}
+
+.attack-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.attack-btn.hover {
+  animation: pulse-attack 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-attack {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0);
+  }
+}
+
+.attack-btn .btn-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.attack-btn .btn-text {
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.attack-btn .btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Confirmation State */
+.attack-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  animation: slide-down 0.2s ease;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.confirm-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.confirm-btn {
+  padding: 4px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.confirm-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.confirm-yes {
+  background: #4ecdc4;
+  color: #fff;
+}
+
+.confirm-yes:hover:not(:disabled) {
+  background: #45b7ae;
+  box-shadow: 0 2px 12px rgba(78, 205, 196, 0.3);
+}
+
+.confirm-no {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.confirm-no:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .attack-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 80px;
+  }
+
+  .attack-btn .btn-icon {
+    font-size: 14px;
+  }
+
+  .attack-btn .btn-text {
+    font-size: 10px;
+  }
+
+  .confirm-text {
+    font-size: 11px;
+  }
+
+  .confirm-btn {
+    padding: 3px 10px;
+    font-size: 10px;
+  }
+
+  .attack-confirm {
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .attack-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-width: 60px;
+    border-radius: 6px;
+  }
+
+  .attack-btn .btn-icon {
+    font-size: 12px;
+  }
+
+  .attack-btn .btn-text {
+    font-size: 9px;
+  }
+
+  .attack-confirm {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .confirm-text {
+    font-size: 10px;
+  }
+
+  .confirm-btn {
+    padding: 2px 8px;
+    font-size: 9px;
+  }
+
+  .attack-button-wrapper.compact .attack-btn {
+    padding: 3px 6px;
+    font-size: 9px;
+    min-width: 40px;
+  }
+
+  .attack-button-wrapper.compact .attack-btn .btn-icon {
+    font-size: 10px;
+  }
+
+  .attack-button-wrapper.compact .attack-btn .btn-text {
+    font-size: 8px;
+  }
+}

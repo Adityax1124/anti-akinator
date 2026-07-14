@@ -1,0 +1,352 @@
+/* War Header Container */
+.war-header {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.war-header-bg {
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(ellipse at center, rgba(78, 205, 196, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Header Top */
+.war-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.war-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.war-header-icon {
+  font-size: 22px;
+}
+
+.war-header-name {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.war-header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Score Section */
+.war-header-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.score-clan {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.score-clan-name {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.score-clan-value {
+  font-size: 48px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+.score-vs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.vs-text {
+  font-size: 24px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.2);
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+  letter-spacing: 2px;
+}
+
+.vs-timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.timer-icon {
+  font-size: 14px;
+}
+
+.timer-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Score Bar */
+.war-score-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin: 8px 0 4px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.war-score-bar-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.war-score-bar-fill.clan1 {
+  left: 0;
+  background: linear-gradient(90deg, #4ecdc4, #44b3a8);
+  border-radius: 4px 0 0 4px;
+}
+
+.war-score-bar-fill.clan2 {
+  right: 0;
+  background: linear-gradient(270deg, #ff6b6b, #ee5a24);
+  border-radius: 0 4px 4px 0;
+}
+
+/* Score Labels */
+.war-score-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.score-label.clan1-label {
+  color: rgba(78, 205, 196, 0.6);
+}
+
+.score-label.clan2-label {
+  color: rgba(255, 107, 107, 0.6);
+}
+
+.score-label.total-label {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+/* Attack Counters */
+.war-attack-counters {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+
+.attack-counter.clan1 {
+  color: rgba(78, 205, 196, 0.7);
+}
+
+.attack-counter.clan2 {
+  color: rgba(255, 107, 107, 0.7);
+}
+
+/* Winner Announcement */
+.war-winner-announcement {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  animation: slide-up 0.5s ease;
+}
+
+.war-winner-announcement.victory {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(78, 205, 196, 0.05));
+  border: 1px solid rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+}
+
+.war-winner-announcement.draw {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.winner-emoji {
+  font-size: 24px;
+}
+
+.winner-text {
+  font-size: 16px;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .war-header {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .war-header-title {
+    font-size: 14px;
+  }
+
+  .war-header-status {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .score-clan-value {
+    font-size: 32px;
+  }
+
+  .score-clan-name {
+    font-size: 12px;
+  }
+
+  .vs-text {
+    font-size: 18px;
+  }
+
+  .vs-timer {
+    font-size: 11px;
+  }
+
+  .war-winner-announcement {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  .winner-text {
+    font-size: 13px;
+  }
+
+  .war-attack-counters {
+    font-size: 10px;
+  }
+
+  .war-score-labels {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .war-header {
+    padding: 12px;
+  }
+
+  .war-header-top {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .score-clan-value {
+    font-size: 24px;
+  }
+
+  .score-vs {
+    padding: 0 12px;
+  }
+
+  .vs-text {
+    font-size: 14px;
+  }
+
+  .vs-timer {
+    font-size: 10px;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .war-winner-announcement {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .winner-text {
+    font-size: 12px;
+  }
+}

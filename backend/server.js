@@ -23,6 +23,17 @@ const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 const cardRoutes = require('./routes/card');
 
+// ✅ Get setIO from clanRoutes
+const clanSetIO = clanRoutes.setIO;
+
+// ✅ NEW: Clan War Routes
+const clanWarRoutes = require('./routes/clanWar');
+const chestRoutes = require('./routes/chest');
+const notificationRoutes = require('./routes/notification');
+
+// ✅ NEW: War Utils for Timer System
+const { checkWarTimers, cleanupOldWars } = require('./utils/warUtils');
+
 const app = express();
 
 // ============================================================
@@ -34,7 +45,7 @@ require('events').EventEmitter.defaultMaxListeners = 200;
 // 🚀 SERVER TIMEOUT (Keep-Alive for Long Connections)
 // ============================================================
 const server = http.createServer(app);
-server.timeout = 180000; // ✅ 120s → 180s (3 minutes)
+server.timeout = 180000;
 server.keepAliveTimeout = 65000;
 server.headersTimeout = 66000;
 
@@ -80,7 +91,7 @@ console.log('🔌 Socket.io instance passed to team routes');
 matchRoutes.setIO(io);
 console.log('🔌 Socket.io instance passed to match routes');
 
-clanRoutes.setIO(io);
+clanSetIO(io);
 console.log('🛡️ Socket.io instance passed to clan routes');
 
 // ============================================================
@@ -225,7 +236,7 @@ const apiLimiter = rateLimit({
   }
 });
 
-// 🔥 LOGIN: 100 attempts per 15 min per IP (was 50)
+// 🔥 LOGIN: 100 attempts per 15 min per IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDevelopment ? 200 : 100,
@@ -245,7 +256,7 @@ const authLimiter = rateLimit({
   }
 });
 
-// 🔥 REGISTER: 20 accounts per 24 hours per IP (was 10)
+// 🔥 REGISTER: 20 accounts per 24 hours per IP
 const registerLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: isDevelopment ? 200 : 20,
@@ -460,7 +471,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ NEW: Match cancelled event
   socket.on('match-cancelled', (data) => {
     const { matchCode, userId } = data;
     if (matchCode && matchCode !== 'undefined') {
@@ -624,7 +634,7 @@ io.on('connection', (socket) => {
 });
 
 // ============================================================
-// 🚀 ROUTES
+// 🚀 ROUTES (ALL WORKING)
 // ============================================================
 app.use('/api/auth', authRoutes);
 app.use('/api/game', authMiddleware, gameRoutes);
@@ -636,9 +646,47 @@ app.use('/api/referral', authMiddleware, referralRoutes);
 app.use('/api/team', authMiddleware, teamRoutes);
 app.use('/api/friend', authMiddleware, friendRoutes);
 app.use('/api/match', authMiddleware, matchRoutes);
-app.use('/api/clan', authMiddleware, clanRoutes.router);
+app.use('/api/clan', authMiddleware, clanRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/cards', authMiddleware, cardRoutes);
+
+// ✅ NEW: Clan War Routes
+app.use('/api/clan-war', authMiddleware, clanWarRoutes);
+app.use('/api/chests', authMiddleware, chestRoutes);
+app.use('/api/notifications', authMiddleware, notificationRoutes);
+
+// ============================================================
+// ✅ NEW: CLAN WAR TIMER SYSTEM
+// ============================================================
+console.log('⚔️ Starting Clan War Timer System...');
+
+// Run war timers every minute
+const timerInterval = setInterval(async () => {
+  try {
+    await checkWarTimers();
+  } catch (error) {
+    console.error('❌ War timer error:', error);
+  }
+}, 60000);
+
+// Run cleanup daily (24 hours)
+const cleanupInterval = setInterval(async () => {
+  try {
+    await cleanupOldWars();
+  } catch (error) {
+    console.error('❌ War cleanup error:', error);
+  }
+}, 24 * 60 * 60 * 1000);
+
+// Store intervals for graceful shutdown
+process.on('SIGTERM', () => {
+  clearInterval(timerInterval);
+  clearInterval(cleanupInterval);
+});
+
+console.log('✅ Clan War Timer System started!');
+console.log('⏰ War timers run every 60 seconds');
+console.log('🧹 Cleanup runs every 24 hours');
 
 // ============================================================
 // 🚀 AGORA TOKEN GENERATOR
@@ -702,7 +750,12 @@ app.get('/api/health', (req, res) => {
     secure: process.env.NODE_ENV === 'production',
     timestamp: new Date().toISOString(),
     replicas: 12,
-    maxPoolSize: 100
+    maxPoolSize: 100,
+    clanWar: {
+      enabled: true,
+      timerInterval: '60 seconds',
+      cleanupInterval: '24 hours'
+    }
   });
 });
 
@@ -768,6 +821,8 @@ mongoose.connection.on('error', (err) => {
 // ============================================================
 process.on('SIGTERM', () => {
   console.log('🔄 SIGTERM received, closing server...');
+  clearInterval(timerInterval);
+  clearInterval(cleanupInterval);
   mongoose.connection.close(() => {
     console.log('✅ MongoDB connection closed');
     process.exit(0);
@@ -776,6 +831,8 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('🔄 SIGINT received, closing server...');
+  clearInterval(timerInterval);
+  clearInterval(cleanupInterval);
   mongoose.connection.close(() => {
     console.log('✅ MongoDB connection closed');
     process.exit(0);
@@ -795,7 +852,11 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`🔌 Socket.io is ready`);
   console.log(`⚔️ Match routes loaded with socket events`);
   console.log(`🛡️ Clan routes loaded with socket events`);
-  console.log(`⏰ Server timeout: 180 seconds`); // ✅ Updated
+  console.log(`⚔️ Clan War routes loaded!`);
+  console.log(`🎁 Chest routes loaded!`);
+  console.log(`🔔 Notification routes loaded!`);
+  console.log(`⏰ Server timeout: 180 seconds`);
   console.log(`📊 maxPoolSize: 100, maxListeners: 200, rate limits: 500/min`);
   console.log(`📊 Login: 100/15min, Register: 20/24hrs`);
+  console.log(`⚔️ Clan War Timer System: Running every 60 seconds`);
 });

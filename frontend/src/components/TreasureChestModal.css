@@ -1,0 +1,721 @@
+/* Chest Modal Overlay */
+.chest-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Chest Modal */
+.chest-modal {
+  position: relative;
+  max-width: 480px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-radius: 20px;
+  padding: 30px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slide-up-modal 0.3s ease;
+}
+
+@keyframes slide-up-modal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Close Button */
+.chest-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.chest-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* Loading */
+.chest-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 16px;
+}
+
+.chest-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.chest-loading p {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Error */
+.chest-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 48px;
+}
+
+.chest-error p {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.error-btn {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.error-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Header */
+.chest-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.chest-icon {
+  font-size: 28px;
+}
+
+.chest-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.chest-opened-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 12px;
+  border-radius: 12px;
+  background: rgba(78, 205, 196, 0.1);
+  color: #4ecdc4;
+  border: 1px solid rgba(78, 205, 196, 0.1);
+}
+
+.chest-expires {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.2);
+  margin-left: auto;
+}
+
+/* Chest Visual */
+.chest-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  margin-bottom: 20px;
+  position: relative;
+  min-height: 200px;
+}
+
+/* Chest Closed */
+.chest-closed {
+  position: relative;
+}
+
+.chest-box {
+  position: relative;
+  width: 120px;
+  height: 100px;
+}
+
+.chest-lid {
+  position: absolute;
+  top: -30px;
+  left: 0;
+  width: 120px;
+  height: 40px;
+  background: linear-gradient(180deg, #8B6914, #6B4F12);
+  border-radius: 8px 8px 0 0;
+  border: 2px solid #5a3e0e;
+  transform-origin: bottom center;
+  animation: lid-bounce 2s ease-in-out infinite;
+}
+
+.chest-lid-line {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: #5a3e0e;
+  border-radius: 2px;
+}
+
+@keyframes lid-bounce {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.chest-body {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 120px;
+  height: 70px;
+  background: linear-gradient(180deg, #A67C1E, #7A5A12);
+  border-radius: 0 0 12px 12px;
+  border: 2px solid #5a3e0e;
+  border-top: none;
+  overflow: hidden;
+}
+
+.chest-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), transparent);
+}
+
+.chest-lock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 20px;
+  background: #4a3a0e;
+  border-radius: 4px;
+  border: 2px solid #3a2a08;
+}
+
+.chest-lock::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 8px;
+  border: 2px solid #3a2a08;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.chest-strap {
+  position: absolute;
+  height: 100%;
+  width: 6px;
+  background: #5a3e0e;
+}
+
+.chest-strap-1 {
+  left: 20%;
+}
+
+.chest-strap-2 {
+  right: 20%;
+}
+
+.chest-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.1), transparent 70%);
+  border-radius: 50%;
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+
+/* Chest Opened */
+.chest-opened {
+  animation: chest-open 0.5s ease;
+}
+
+@keyframes chest-open {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Card Reward */
+.card-reward {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.card-reward-visual {
+  width: 140px;
+  height: 180px;
+  border-radius: 12px;
+  border: 3px solid;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-reward-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.card-reward-placeholder {
+  font-size: 48px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.1);
+}
+
+.card-reward-rarity {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.card-reward-element {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.card-reward-power {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.card-reward-info {
+  text-align: center;
+}
+
+.card-reward-info h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.card-reward-rarity-text {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Gems Reward */
+.gems-reward {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.gems-reward-visual {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 40px;
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 16px;
+  border: 2px solid rgba(255, 215, 0, 0.1);
+}
+
+.gems-icon {
+  font-size: 48px;
+}
+
+.gems-amount {
+  font-size: 48px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.gems-reward-info {
+  text-align: center;
+}
+
+.gems-reward-info h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.gems-duplicate-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 4px 0;
+}
+
+.gems-amount-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fbbf24;
+  margin: 4px 0 0 0;
+}
+
+/* Action Buttons */
+.chest-open-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.chest-open-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3);
+}
+
+.chest-open-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.chest-open-btn .btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.chest-close-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(78, 205, 196, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chest-close-btn:hover {
+  background: rgba(78, 205, 196, 0.2);
+}
+
+/* War Details */
+.chest-war-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.war-detail-result {
+  font-weight: 600;
+}
+
+.war-detail-result.win {
+  color: #4ecdc4;
+}
+
+.war-detail-result.loss {
+  color: #ff6b6b;
+}
+
+.war-detail-result.draw {
+  color: #f59e0b;
+}
+
+/* Confetti */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10px;
+  animation: confetti-fall linear forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chest-modal {
+    padding: 24px 18px;
+    max-width: 95%;
+  }
+
+  .chest-header h2 {
+    font-size: 18px;
+  }
+
+  .chest-visual {
+    padding: 20px 10px;
+    min-height: 160px;
+  }
+
+  .chest-box {
+    width: 100px;
+    height: 84px;
+  }
+
+  .chest-lid {
+    width: 100px;
+    height: 34px;
+    top: -26px;
+  }
+
+  .chest-body {
+    width: 100px;
+    height: 60px;
+  }
+
+  .card-reward-visual {
+    width: 120px;
+    height: 160px;
+  }
+
+  .gems-reward-visual {
+    padding: 16px 30px;
+  }
+
+  .gems-icon {
+    font-size: 36px;
+  }
+
+  .gems-amount {
+    font-size: 36px;
+  }
+
+  .chest-open-btn,
+  .chest-close-btn {
+    font-size: 16px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chest-modal {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+
+  .chest-header {
+    gap: 8px;
+  }
+
+  .chest-icon {
+    font-size: 22px;
+  }
+
+  .chest-header h2 {
+    font-size: 16px;
+  }
+
+  .chest-expires {
+    font-size: 10px;
+  }
+
+  .chest-visual {
+    padding: 16px 8px;
+    min-height: 140px;
+  }
+
+  .chest-box {
+    width: 80px;
+    height: 68px;
+  }
+
+  .chest-lid {
+    width: 80px;
+    height: 28px;
+    top: -22px;
+  }
+
+  .chest-body {
+    width: 80px;
+    height: 48px;
+  }
+
+  .chest-lock {
+    width: 12px;
+    height: 16px;
+  }
+
+  .chest-lock::after {
+    width: 8px;
+    height: 6px;
+  }
+
+  .card-reward-visual {
+    width: 100px;
+    height: 140px;
+    padding: 8px;
+  }
+
+  .card-reward-placeholder {
+    font-size: 36px;
+  }
+
+  .card-reward-info h3 {
+    font-size: 16px;
+  }
+
+  .gems-reward-visual {
+    padding: 12px 20px;
+  }
+
+  .gems-icon {
+    font-size: 28px;
+  }
+
+  .gems-amount {
+    font-size: 28px;
+  }
+
+  .gems-reward-info h3 {
+    font-size: 16px;
+  }
+
+  .chest-open-btn,
+  .chest-close-btn {
+    font-size: 14px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .chest-war-details {
+    font-size: 10px;
+    gap: 4px 12px;
+    padding: 8px 12px;
+  }
+
+  .chest-modal-close {
+    top: 8px;
+    right: 12px;
+    font-size: 16px;
+  }
+}

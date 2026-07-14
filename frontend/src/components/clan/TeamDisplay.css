@@ -1,0 +1,320 @@
+/* Team Display Container */
+.team-display {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.team-display.our-team {
+  border-color: rgba(78, 205, 196, 0.15);
+}
+
+.team-display.opponent-team {
+  border-color: rgba(255, 107, 107, 0.15);
+}
+
+.team-display.compact {
+  padding: 12px;
+}
+
+/* Team Header */
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.team-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-icon {
+  font-size: 20px;
+}
+
+.team-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.team-member-count {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+.team-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.team-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 12px;
+  border-radius: 16px;
+}
+
+.status-emoji {
+  font-size: 14px;
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.team-win-rate {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.win-rate-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #4ecdc4;
+}
+
+.win-rate-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Progress Bar */
+.team-progress {
+  margin-bottom: 14px;
+}
+
+.progress-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.progress-fill.win {
+  background: #4ecdc4;
+}
+
+.progress-fill.loss {
+  background: #ff6b6b;
+}
+
+.progress-fill.pending {
+  background: #f59e0b;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.progress-label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.progress-label.win {
+  color: rgba(78, 205, 196, 0.6);
+}
+
+.progress-label.loss {
+  color: rgba(255, 107, 107, 0.6);
+}
+
+.progress-label.pending {
+  color: rgba(245, 158, 11, 0.6);
+}
+
+/* Players Grid */
+.players-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.players-grid.compact {
+  gap: 4px;
+}
+
+/* Show More Button */
+.show-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.show-more-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-arrow {
+  font-size: 10px;
+}
+
+/* Empty State */
+.team-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Attack Summary */
+.team-attack-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.summary-text {
+  font-weight: 500;
+}
+
+.summary-complete {
+  font-weight: 600;
+  padding: 2px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .team-display {
+    padding: 12px;
+  }
+
+  .team-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .team-header-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .team-name {
+    font-size: 14px;
+  }
+
+  .team-status-badge {
+    font-size: 10px;
+    padding: 2px 10px;
+  }
+
+  .win-rate-value {
+    font-size: 14px;
+  }
+
+  .progress-labels {
+    font-size: 9px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .team-attack-summary {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .team-display {
+    padding: 8px;
+  }
+
+  .team-display.compact {
+    padding: 6px;
+  }
+
+  .players-grid {
+    gap: 4px;
+  }
+
+  .team-name {
+    font-size: 12px;
+  }
+
+  .team-icon {
+    font-size: 16px;
+  }
+
+  .team-member-count {
+    font-size: 11px;
+  }
+
+  .team-status-badge {
+    font-size: 9px;
+    padding: 2px 8px;
+  }
+
+  .show-more-btn {
+    font-size: 10px;
+    padding: 6px 12px;
+  }
+
+  .team-attack-summary {
+    font-size: 10px;
+  }
+}
