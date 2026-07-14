@@ -2,6 +2,7 @@ const Clan = require('../models/Clan');
 const ClanMember = require('../models/ClanMember');
 const ClanMessage = require('../models/ClanMessage');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // Create Clan
 exports.createClan = async (req, res) => {
@@ -601,6 +602,90 @@ exports.transferLeadership = async (req, res) => {
     res.status(200).json({ message: 'Leadership transferred successfully' });
   } catch (error) {
     console.error('Transfer leadership error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
+// ✅ KICK MEMBER FROM CLAN (Leader only)
+exports.kickMember = async (req, res) => {
+  try {
+    const { clanId, memberId } = req.body;
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    // Check if user is leader
+    const leader = await ClanMember.findOne({ userId, clanId, role: 'leader' });
+    if (!leader) {
+      return res.status(403).json({ message: 'Only the clan leader can kick members' });
+    }
+
+    // Check if member exists in clan
+    const member = await ClanMember.findOne({ userId: memberId, clanId });
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found in this clan' });
+    }
+
+    // Prevent kicking yourself
+    if (memberId.toString() === userId.toString()) {
+      return res.status(400).json({ message: 'You cannot kick yourself' });
+    }
+
+    // Prevent kicking other leaders (if co-leaders exist)
+    if (member.role === 'leader') {
+      return res.status(400).json({ message: 'Cannot kick the clan leader' });
+    }
+
+    // Get clan name before removing
+    const clan = await Clan.findById(clanId);
+    const clanName = clan ? clan.name : 'Unknown Clan';
+
+    // Remove member from clan
+    await ClanMember.findByIdAndDelete(member._id);
+
+    // Update total members in clan
+    if (clan) {
+      clan.totalMembers -= 1;
+      await clan.save();
+    }
+
+    // Update user's clanId to null
+    const user = await User.findById(memberId);
+    if (user) {
+      user.clanId = null;
+      await user.save();
+    }
+
+    // Send notification to kicked user
+    await Notification.createNotification({
+      userId: memberId,
+      type: 'system',
+      title: '⚠️ You were kicked from the clan!',
+      message: `You have been kicked from ${clanName} by the leader.`,
+      icon: '🚫',
+      color: 'red',
+      priority: 'high'
+    });
+
+    // Log in clan chat
+    const kickMessage = new ClanMessage({
+      clanId,
+      userId: userId,
+      username: leader.username || 'Leader',
+      message: `🚫 Kicked ${user ? user.username : 'member'} from the clan.`,
+      type: 'system'
+    });
+    await kickMessage.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Member kicked successfully'
+    });
+
+  } catch (error) {
+    console.error('Kick member error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };

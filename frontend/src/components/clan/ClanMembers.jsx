@@ -15,6 +15,11 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
   const [showWarCardSelector, setShowWarCardSelector] = useState(false);
   const [userCards, setUserCards] = useState([]);
   const [loadingUserCards, setLoadingUserCards] = useState(false);
+  
+  // ✅ NEW: Kick state
+  const [showKickConfirm, setShowKickConfirm] = useState(false);
+  const [kicking, setKicking] = useState(false);
+  const [targetMember, setTargetMember] = useState(null);
 
   useEffect(() => {
     fetchMembers();
@@ -95,6 +100,44 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
     }
   };
 
+  // ✅ NEW: Handle kick member
+  const handleKickMember = (member) => {
+    setTargetMember(member);
+    setShowKickConfirm(true);
+  };
+
+  // ✅ NEW: Confirm kick member
+  const confirmKickMember = async () => {
+    if (!targetMember) return;
+
+    setKicking(true);
+    try {
+      const response = await axios.post('/clan/kick', {
+        clanId: clanId,
+        memberId: targetMember.id
+      });
+
+      if (response.data.success) {
+        // Remove member from list
+        setMembers(prev => prev.filter(m => m.id !== targetMember.id));
+        setShowKickConfirm(false);
+        setTargetMember(null);
+        alert(`✅ ${targetMember.username} has been kicked from the clan.`);
+      }
+    } catch (error) {
+      console.error('Failed to kick member:', error);
+      alert(error.response?.data?.message || 'Failed to kick member');
+    } finally {
+      setKicking(false);
+    }
+  };
+
+  // ✅ NEW: Cancel kick
+  const cancelKick = () => {
+    setShowKickConfirm(false);
+    setTargetMember(null);
+  };
+
   const handleLeave = async () => {
     setLeaving(true);
     try {
@@ -160,6 +203,22 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
     return warCard;
   };
 
+  // Get current user ID from localStorage or context
+  const getCurrentUserId = () => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        return user?._id || user?.id;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  };
+
+  const currentUserId = getCurrentUserId();
+
   if (loading) {
     return (
       <div className="clan-members-loading">
@@ -224,7 +283,9 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
       <div className="members-grid">
         {members.map((member) => {
           const warCard = getMemberWarCard(member.id);
-          const isCurrentUser = member.id === warCards.find(wc => wc.userId === member.id)?.userId;
+          const isCurrentUser = member.id === currentUserId;
+          const isLeader = userRole === 'leader';
+          const canKick = isLeader && !isCurrentUser && member.role !== 'leader';
           
           return (
             <div key={member.id} className="member-card">
@@ -238,6 +299,16 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
                   <span className="member-username">{member.username}</span>
                   <span className="member-role-badge">{getRoleBadge(member.role)}</span>
                 </div>
+                {/* ✅ NEW: Kick Button for Leader */}
+                {canKick && (
+                  <button 
+                    className="kick-btn"
+                    onClick={() => handleKickMember(member)}
+                    title="Kick member"
+                  >
+                    🚫
+                  </button>
+                )}
               </div>
               
               <div className="member-card-body">
@@ -319,6 +390,34 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
                 disabled={leaving}
               >
                 {leaving ? 'Leaving...' : 'Yes, Leave'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NEW: Kick Confirmation Modal */}
+      {showKickConfirm && targetMember && (
+        <div className="leave-confirm-overlay">
+          <div className="leave-confirm-modal">
+            <h4 style={{ color: '#ff6b6b' }}>Kick Member?</h4>
+            <p>Are you sure you want to kick <strong>{targetMember.username}</strong> from the clan?</p>
+            <p className="warning-text">⚠️ This action cannot be undone!</p>
+            <div className="confirm-buttons">
+              <button
+                className="cancel-btn"
+                onClick={cancelKick}
+                disabled={kicking}
+              >
+                Cancel
+              </button>
+              <button
+                className="confirm-leave-btn"
+                onClick={confirmKickMember}
+                disabled={kicking}
+                style={{ background: 'linear-gradient(135deg, #f43f5e, #dc2645)' }}
+              >
+                {kicking ? 'Kicking...' : 'Yes, Kick'}
               </button>
             </div>
           </div>

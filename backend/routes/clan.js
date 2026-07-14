@@ -16,7 +16,8 @@ const {
   sendChatMessage,
   donateDiamonds,
   requestDiamonds,
-  transferLeadership
+  transferLeadership,
+  kickMember  // ✅ ADDED
 } = require('../controllers/clanController');
 
 // ✅ NEW: Import war card controller functions
@@ -55,6 +56,9 @@ router.post('/request', authMiddleware, requestDiamonds);
 
 // ===== CLAN LEADERSHIP =====
 router.post('/transfer-leadership', authMiddleware, transferLeadership);
+
+// ===== CLAN KICK =====
+router.post('/kick', authMiddleware, kickMember);  // ✅ ADDED
 
 // ============================================================
 // ✅ WAR CARD ROUTES (Added to clan routes)
