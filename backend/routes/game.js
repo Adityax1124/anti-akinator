@@ -554,15 +554,15 @@ router.post('/hint', validateGameId, async (req, res) => {
       });
     }
 
-    if (user.shards < 50) {
+    if (user.shards < 100) {
       return res.status(400).json({
         success: false,
-        message: `Not enough Character Shards! You have ${user.shards}, need 50.`,
+        message: `Not enough Character Shards! You have ${user.shards}, need 100.`,
         shards: user.shards
       });
     }
 
-    user.shards -= 50;
+    user.shards -= 100;
     game.hintUsed = true;
 
     await user.save();
@@ -576,7 +576,7 @@ router.post('/hint', validateGameId, async (req, res) => {
       success: true,
       hint: hint,
       shards: user.shards,
-      message: '💡 Hint used! -50 Shards'
+      message: '💡 Hint used! -100 Shards'
     });
 
   } catch (error) {
