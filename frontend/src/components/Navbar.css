@@ -518,3 +518,8 @@
     margin-top: 2px;
   }
 }
+/* ===== Notification Nav Item ===== */
+.nav-notification-wrapper {
+  display: flex;
+  align-items: center;
+}

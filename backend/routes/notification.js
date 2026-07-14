@@ -19,6 +19,9 @@ const {
   bulkCreateNotifications
 } = require('../controllers/notificationController');
 
+// ✅ NEW: Import claimGift from adminController
+const { claimGift } = require('../controllers/adminController');
+
 // ============================================================
 // ✅ ALL ROUTES REQUIRE AUTHENTICATION
 // ============================================================
@@ -142,6 +145,18 @@ router.post('/custom', createCustomNotification);
  * @body    { userIds: string[], title: string, message: string, type: string, data: object, priority: string }
  */
 router.post('/bulk', bulkCreateNotifications);
+
+// ============================================================
+// ✅ GIFT ROUTES
+// ============================================================
+
+/**
+ * @route   POST /api/notifications/claim-gift/:notificationId
+ * @desc    Claim a gift from notification
+ * @access  Private
+ * @params  notificationId: string
+ */
+router.post('/claim-gift/:notificationId', authMiddleware, claimGift);
 
 // ============================================================
 // ✅ EXPORT: Router directly

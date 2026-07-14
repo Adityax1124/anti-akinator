@@ -9,6 +9,11 @@ const Title = require('../models/Title');
 const ProfilePhoto = require('../models/ProfilePhoto');
 const ShopItem = require('../models/ShopItem');
 
+// ✅ NEW: Import admin controller functions
+const {
+  sendGift
+} = require('../controllers/adminController');
+
 // ===== HELPER: Sanitize input =====
 function sanitizeInput(str) {
   if (!str) return '';
@@ -913,5 +918,10 @@ router.get('/stats', adminMiddleware, async (req, res) => {
     });
   }
 });
+
+// ============================================================
+// ✅ SEND GIFT TO USER (ADMIN ONLY)
+// ============================================================
+router.post('/gift', adminMiddleware, sendGift);
 
 module.exports = router;

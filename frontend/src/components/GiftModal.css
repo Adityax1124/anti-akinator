@@ -1,0 +1,377 @@
+/* ============================================================
+   GIFT MODAL
+   ============================================================ */
+
+.gift-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: gift-fade-in 0.3s ease;
+}
+
+@keyframes gift-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.gift-modal {
+  position: relative;
+  max-width: 420px;
+  width: 95%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-radius: 20px;
+  padding: 30px 24px;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: gift-slide-up 0.3s ease;
+}
+
+@keyframes gift-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gift-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.gift-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.gift-modal-icon {
+  font-size: 56px;
+  margin-bottom: 8px;
+  animation: gift-bounce 2s ease-in-out infinite;
+}
+
+@keyframes gift-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.gift-modal h2 {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+/* ===== GIFT DETAILS ===== */
+.gift-details {
+  margin: 16px 0 20px 0;
+}
+
+.gift-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px solid;
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.3s ease;
+}
+
+.gift-type-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* ===== CARD DISPLAY ===== */
+.gift-card-display {
+  display: flex;
+  justify-content: center;
+}
+
+.gift-card-visual {
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 2px solid;
+  background: rgba(255, 255, 255, 0.02);
+  min-width: 160px;
+}
+
+.gift-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.gift-card-rarity {
+  font-size: 14px;
+}
+
+.gift-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.gift-card-element {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.gift-card-power {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== TITLE DISPLAY ===== */
+.gift-title-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.gift-title-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.gift-title-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ===== BANNER DISPLAY ===== */
+.gift-banner-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.gift-banner-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.gift-banner-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ===== PROFILE PHOTO DISPLAY ===== */
+.gift-photo-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.gift-photo-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.gift-photo-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ===== AMOUNT DISPLAY (Shards/Gems) ===== */
+.gift-amount-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.gift-amount-icon {
+  font-size: 28px;
+}
+
+.gift-amount-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.gift-amount-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== GENERIC DISPLAY ===== */
+.gift-generic-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.gift-generic-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ===== MESSAGE ===== */
+.gift-message {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-style: italic;
+}
+
+/* ===== ERROR / SUCCESS ===== */
+.gift-error {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.gift-success {
+  color: #4ecdc4;
+  background: rgba(78, 205, 196, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+  animation: gift-success-pulse 0.5s ease;
+}
+
+@keyframes gift-success-pulse {
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* ===== CLAIM BUTTON ===== */
+.gift-claim-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.gift-claim-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3);
+}
+
+.gift-claim-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.gift-claim-btn.loading {
+  background: linear-gradient(135deg, #7c7c7c, #5a5a5a);
+}
+
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: gift-spin 0.8s linear infinite;
+}
+
+@keyframes gift-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .gift-modal {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .gift-modal-icon {
+    font-size: 40px;
+  }
+
+  .gift-modal h2 {
+    font-size: 18px;
+  }
+
+  .gift-item {
+    padding: 12px 16px;
+  }
+
+  .gift-card-visual {
+    padding: 12px 16px;
+    min-width: 120px;
+  }
+
+  .gift-card-name {
+    font-size: 16px;
+  }
+
+  .gift-amount-value {
+    font-size: 24px;
+  }
+
+  .gift-amount-icon {
+    font-size: 22px;
+  }
+
+  .gift-claim-btn {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .gift-message {
+    font-size: 12px;
+  }
+}

@@ -25,7 +25,6 @@ const AdminPanel = () => {
     element: 'Fire',
     rarity: 'Common',
     basePower: 25,
-    // ✅ NEW: Complete Character Fields
     appearance: {
       hairColor: 'Unknown',
       eyeColor: 'Unknown',
@@ -161,6 +160,22 @@ const AdminPanel = () => {
   });
   const [editingShopId, setEditingShopId] = useState(null);
 
+  // ✅ NEW: Gift System States
+  const [giftForm, setGiftForm] = useState({
+    userId: '',
+    giftType: 'card',
+    itemId: '',
+    itemName: '',
+    amount: '',
+    message: ''
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [giftItems, setGiftItems] = useState([]);
+  const [loadingGiftItems, setLoadingGiftItems] = useState(false);
+  const [sendingGift, setSendingGift] = useState(false);
+
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
 
@@ -194,11 +209,132 @@ const AdminPanel = () => {
       setShopItems(shopRes.data.items || []);
       setStats(statsRes.data.stats);
       setUsers(usersRes.data.users);
+      setFilteredUsers(usersRes.data.users);
       setError('');
     } catch (err) {
       setError('Failed to load admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ NEW: Fetch gift items based on type
+  const fetchGiftItems = async (type) => {
+    setLoadingGiftItems(true);
+    try {
+      let endpoint = '';
+      if (type === 'card') endpoint = '/admin/characters';
+      else if (type === 'banner') endpoint = '/admin/banners';
+      else if (type === 'title') endpoint = '/admin/titles';
+      else if (type === 'profilePhoto') endpoint = '/admin/profile-photos';
+      else {
+        setGiftItems([]);
+        setLoadingGiftItems(false);
+        return;
+      }
+      
+      const response = await api.get(endpoint);
+      const items = response.data.characters || response.data.banners || response.data.titles || response.data.photos || [];
+      setGiftItems(items);
+    } catch (err) {
+      console.error('Failed to fetch gift items:', err);
+      setGiftItems([]);
+    } finally {
+      setLoadingGiftItems(false);
+    }
+  };
+
+  // ✅ NEW: Handle gift form change
+  const handleGiftChange = (e) => {
+    const { name, value } = e.target;
+    setGiftForm(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'giftType') {
+      fetchGiftItems(value);
+      setGiftForm(prev => ({ ...prev, itemId: '', itemName: '', amount: '' }));
+    }
+  };
+
+  // ✅ NEW: Handle user search
+  const handleUserSearch = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+    setGiftForm(prev => ({ ...prev, userId: '' }));
+    
+    if (term.length > 0) {
+      const filtered = users.filter(u => 
+        u.username.toLowerCase().includes(term) || 
+        u.email.toLowerCase().includes(term)
+      );
+      setFilteredUsers(filtered);
+      setShowUserDropdown(true);
+    } else {
+      setFilteredUsers(users);
+      setShowUserDropdown(false);
+    }
+  };
+
+  // ✅ NEW: Select user
+  const selectUser = (user) => {
+    setGiftForm(prev => ({ ...prev, userId: user._id }));
+    setSearchTerm(user.username);
+    setShowUserDropdown(false);
+  };
+
+  // ✅ NEW: Select gift item
+  const selectGiftItem = (item) => {
+    setGiftForm(prev => ({
+      ...prev,
+      itemId: item._id,
+      itemName: item.name || item.displayName || item.characterName
+    }));
+  };
+
+  // ✅ NEW: Send Gift
+  const sendGift = async (e) => {
+    e.preventDefault();
+    if (!giftForm.userId) {
+      setError('Please select a user');
+      return;
+    }
+    if (!giftForm.giftType) {
+      setError('Please select a gift type');
+      return;
+    }
+
+    setSendingGift(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const payload = {
+        userId: giftForm.userId,
+        giftType: giftForm.giftType,
+        itemId: giftForm.itemId || null,
+        itemName: giftForm.itemName || null,
+        amount: giftForm.amount ? parseInt(giftForm.amount) : null,
+        message: giftForm.message || `You received a ${giftForm.giftType} from Admin!`
+      };
+
+      const response = await api.post('/admin/gift', payload);
+      
+      if (response.data.success) {
+        setSuccess(`✅ Gift sent successfully to ${searchTerm}!`);
+        setGiftForm({
+          userId: '',
+          giftType: 'card',
+          itemId: '',
+          itemName: '',
+          amount: '',
+          message: ''
+        });
+        setSearchTerm('');
+        setGiftItems([]);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send gift');
+    } finally {
+      setSendingGift(false);
     }
   };
 
@@ -234,11 +370,9 @@ const AdminPanel = () => {
   const handleCharChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    // Handle nested fields (appearance., identity., etc.)
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       
-      // Handle nested objects
       if (parent === 'appearance' || parent === 'identity' || parent === 'status' || 
           parent === 'personality' || parent === 'abilities' || parent === 'relationships' || 
           parent === 'background' || parent === 'attributes' || parent === 'traits') {
@@ -253,13 +387,11 @@ const AdminPanel = () => {
       }
     }
 
-    // Handle direct fields
     if (type === 'checkbox') {
       setCharForm(prev => ({ ...prev, [name]: checked }));
       return;
     }
 
-    // Handle number fields
     if (name === 'powerLevel' || name === 'basePower') {
       setCharForm(prev => ({ ...prev, [name]: parseFloat(value) || 25 }));
       return;
@@ -882,6 +1014,161 @@ const AdminPanel = () => {
     }
   };
 
+  // ===== RENDER GIFT TAB =====
+  const renderGiftTab = () => (
+    <div className="admin-section">
+      <div className="admin-form-card">
+        <h2>🎁 Send Gift to Player</h2>
+        <form onSubmit={sendGift} className="admin-form">
+          {/* User Selection */}
+          <div className="form-group">
+            <label>Search Player *</label>
+            <div className="user-search-container">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Type username or email..."
+                value={searchTerm}
+                onChange={handleUserSearch}
+                onFocus={() => searchTerm.length > 0 && setShowUserDropdown(true)}
+                required
+              />
+              {showUserDropdown && filteredUsers.length > 0 && (
+                <div className="user-dropdown">
+                  {filteredUsers.slice(0, 10).map(u => (
+                    <div key={u._id} className="user-dropdown-item" onClick={() => selectUser(u)}>
+                      <span className="user-name">{u.username}</span>
+                      <span className="user-email">{u.email}</span>
+                      <span className="user-id">ID: {u._id}</span>
+                    </div>
+                  ))}
+                  {filteredUsers.length > 10 && (
+                    <div className="user-dropdown-more">+ {filteredUsers.length - 10} more users</div>
+                  )}
+                </div>
+              )}
+              {showUserDropdown && filteredUsers.length === 0 && searchTerm.length > 0 && (
+                <div className="user-dropdown-empty">No users found</div>
+              )}
+            </div>
+            {giftForm.userId && (
+              <small className="form-hint success">✅ User selected: {searchTerm}</small>
+            )}
+          </div>
+
+          {/* Gift Type */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Gift Type *</label>
+              <select name="giftType" className="form-control" value={giftForm.giftType} onChange={handleGiftChange} required>
+                <option value="card">🃏 Card</option>
+                <option value="title">🏆 Title</option>
+                <option value="banner">🎨 Banner</option>
+                <option value="profilePhoto">📸 Profile Photo</option>
+                <option value="shards">🎴 Shards</option>
+                <option value="gems">💎 Gems</option>
+              </select>
+            </div>
+
+            {giftForm.giftType === 'shards' || giftForm.giftType === 'gems' ? (
+              <div className="form-group">
+                <label>Amount *</label>
+                <input
+                  type="number"
+                  name="amount"
+                  className="form-control"
+                  value={giftForm.amount}
+                  onChange={handleGiftChange}
+                  placeholder="e.g., 100"
+                  min="1"
+                  required
+                />
+              </div>
+            ) : (
+              <div className="form-group">
+                <label>Item Name *</label>
+                <input
+                  type="text"
+                  name="itemName"
+                  className="form-control"
+                  value={giftForm.itemName}
+                  onChange={handleGiftChange}
+                  placeholder="e.g., Red Hair Shanks"
+                  required
+                />
+                <small className="form-hint">Enter the name of the item</small>
+              </div>
+            )}
+          </div>
+
+          {/* Item Selection for Cards/Titles/Banners/Photos */}
+          {(giftForm.giftType === 'card' || giftForm.giftType === 'title' || 
+            giftForm.giftType === 'banner' || giftForm.giftType === 'profilePhoto') && (
+            <div className="form-group">
+              <label>Select Item (Optional - Auto-fill Name)</label>
+              <select 
+                className="form-control" 
+                onChange={(e) => {
+                  const item = giftItems.find(i => i._id === e.target.value);
+                  if (item) selectGiftItem(item);
+                }}
+                value=""
+              >
+                <option value="">-- Select from existing --</option>
+                {loadingGiftItems ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  giftItems.map(item => (
+                    <option key={item._id} value={item._id}>
+                      {item.name || item.displayName || item.characterName || 'Unknown'}
+                    </option>
+                  ))
+                )}
+              </select>
+              <small className="form-hint">Selecting an item auto-fills the name above</small>
+            </div>
+          )}
+
+          {/* Message */}
+          <div className="form-group">
+            <label>Custom Message (Optional)</label>
+            <input
+              type="text"
+              name="message"
+              className="form-control"
+              value={giftForm.message}
+              onChange={handleGiftChange}
+              placeholder="e.g., Congrats on your achievement!"
+            />
+            <small className="form-hint">This message will appear in the notification</small>
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary" disabled={sendingGift}>
+              {sendingGift ? 'Sending...' : '🎁 Send Gift'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="admin-list-card">
+        <h2>📋 Gift Instructions</h2>
+        <div className="gift-instructions">
+          <p><strong>How to send a gift:</strong></p>
+          <ol>
+            <li>Search and select a player by username or email</li>
+            <li>Choose the gift type (Card, Title, Banner, Profile Photo, Shards, Gems)</li>
+            <li>Enter the item name or select from existing items</li>
+            <li>For shards/gems, enter the amount</li>
+            <li>Add a custom message (optional)</li>
+            <li>Click "Send Gift"</li>
+          </ol>
+          <p className="gift-note">💡 The player will receive a notification with the gift and can claim it from their notifications page.</p>
+        </div>
+      </div>
+    </div>
+  );
+
   if (user?.role !== 'admin') {
     return (
       <div className="admin-container">
@@ -955,6 +1242,12 @@ const AdminPanel = () => {
             onClick={() => setActiveTab('stats')}
           >
             Stats
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'gift' ? 'active' : ''}`}
+            onClick={() => setActiveTab('gift')}
+          >
+            🎁 Gift
           </button>
         </div>
       </div>
@@ -1402,1112 +1695,1114 @@ const AdminPanel = () => {
                   type="text"
                   name="abilities.specialAbilities"
                   className="form-control"
-                    value={charForm.abilities.specialAbilities}
+                  value={charForm.abilities.specialAbilities}
+                  onChange={handleCharChange}
+                  placeholder="e.g., Can shrink objects, Time manipulation"
+                />
+              </div>
+
+              {/* Relationships */}
+              <h3 style={{ color: '#a89bff', marginTop: 20 }}>Relationships</h3>
+              <div className="form-group">
+                <label>Family</label>
+                <input
+                  type="text"
+                  name="relationships.family"
+                  className="form-control"
+                  value={charForm.relationships.family}
+                  onChange={handleCharChange}
+                  placeholder="e.g., Son of Dragon, Brother of Ace"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Friends (comma separated)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={charForm.relationships.friends.join(', ')}
+                    onChange={(e) => handleCharArray(e, 'relationships', 'friends')}
+                    placeholder="e.g., Zoro, Nami"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Rivals (comma separated)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={charForm.relationships.rivals.join(', ')}
+                    onChange={(e) => handleCharArray(e, 'relationships', 'rivals')}
+                    placeholder="e.g., Sasuke, Vegeta"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Mentors (comma separated)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={charForm.relationships.mentors.join(', ')}
+                    onChange={(e) => handleCharArray(e, 'relationships', 'mentors')}
+                    placeholder="e.g., Rayleigh, Jiraiya"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Students (comma separated)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={charForm.relationships.students.join(', ')}
+                    onChange={(e) => handleCharArray(e, 'relationships', 'students')}
+                    placeholder="e.g., Naruto, Konohamaru"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Master</label>
+                  <input
+                    type="text"
+                    name="relationships.master"
+                    className="form-control"
+                    value={charForm.relationships.master}
                     onChange={handleCharChange}
-                    placeholder="e.g., Can shrink objects, Time manipulation"
+                    placeholder="e.g., Mihawk, Kakashi"
                   />
                 </div>
-
-                {/* Relationships */}
-                <h3 style={{ color: '#a89bff', marginTop: 20 }}>Relationships</h3>
                 <div className="form-group">
-                  <label>Family</label>
+                  <label>Affiliated Groups (comma separated)</label>
                   <input
                     type="text"
-                    name="relationships.family"
                     className="form-control"
-                    value={charForm.relationships.family}
+                    value={charForm.relationships.affiliatedGroups.join(', ')}
+                    onChange={(e) => handleCharArray(e, 'relationships', 'affiliatedGroups')}
+                    placeholder="e.g., Straw Hat Pirates, Akatsuki"
+                  />
+                </div>
+              </div>
+
+              {/* Background */}
+              <h3 style={{ color: '#a89bff', marginTop: 20 }}>Background</h3>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Origin</label>
+                  <input
+                    type="text"
+                    name="background.origin"
+                    className="form-control"
+                    value={charForm.background.origin}
                     onChange={handleCharChange}
-                    placeholder="e.g., Son of Dragon, Brother of Ace"
+                    placeholder="e.g., East Blue, Konoha"
                   />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Friends (comma separated)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={charForm.relationships.friends.join(', ')}
-                      onChange={(e) => handleCharArray(e, 'relationships', 'friends')}
-                      placeholder="e.g., Zoro, Nami"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Rivals (comma separated)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={charForm.relationships.rivals.join(', ')}
-                      onChange={(e) => handleCharArray(e, 'relationships', 'rivals')}
-                      placeholder="e.g., Sasuke, Vegeta"
-                    />
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Mentors (comma separated)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={charForm.relationships.mentors.join(', ')}
-                      onChange={(e) => handleCharArray(e, 'relationships', 'mentors')}
-                      placeholder="e.g., Rayleigh, Jiraiya"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Students (comma separated)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={charForm.relationships.students.join(', ')}
-                      onChange={(e) => handleCharArray(e, 'relationships', 'students')}
-                      placeholder="e.g., Naruto, Konohamaru"
-                    />
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Master</label>
-                    <input
-                      type="text"
-                      name="relationships.master"
-                      className="form-control"
-                      value={charForm.relationships.master}
-                      onChange={handleCharChange}
-                      placeholder="e.g., Mihawk, Kakashi"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Affiliated Groups (comma separated)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={charForm.relationships.affiliatedGroups.join(', ')}
-                      onChange={(e) => handleCharArray(e, 'relationships', 'affiliatedGroups')}
-                      placeholder="e.g., Straw Hat Pirates, Akatsuki"
-                    />
-                  </div>
-                </div>
-
-                {/* Background */}
-                <h3 style={{ color: '#a89bff', marginTop: 20 }}>Background</h3>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Origin</label>
-                    <input
-                      type="text"
-                      name="background.origin"
-                      className="form-control"
-                      value={charForm.background.origin}
-                      onChange={handleCharChange}
-                      placeholder="e.g., East Blue, Konoha"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Backstory</label>
-                    <input
-                      type="text"
-                      name="background.backstory"
-                      className="form-control"
-                      value={charForm.background.backstory}
-                      onChange={handleCharChange}
-                      placeholder="Brief backstory of the character"
-                    />
-                  </div>
-                </div>
                 <div className="form-group">
-                  <label>Key Events (comma separated)</label>
+                  <label>Backstory</label>
                   <input
                     type="text"
+                    name="background.backstory"
                     className="form-control"
-                    value={charForm.background.keyEvents.join(', ')}
-                    onChange={(e) => handleCharArray(e, 'background', 'keyEvents')}
-                    placeholder="e.g., Ate Gum-Gum Fruit, Defeated Kaido"
-                  />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Achievements (comma separated)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={charForm.background.achievements.join(', ')}
-                      onChange={(e) => handleCharArray(e, 'background', 'achievements')}
-                      placeholder="e.g., Became Pirate King, Defeated Akatsuki"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Notable Fights (comma separated)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={charForm.background.notableFights.join(', ')}
-                      onChange={(e) => handleCharArray(e, 'background', 'notableFights')}
-                      placeholder="e.g., vs Kaido, vs Sasuke"
-                    />
-                  </div>
-                </div>
-
-                {/* Attributes */}
-                <h3 style={{ color: '#a89bff', marginTop: 20 }}>Attributes</h3>
-                <div className="form-row checkboxes">
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.isMainCharacter" checked={charForm.attributes.isMainCharacter} onChange={handleCharChange} /> Main Character
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.isVillain" checked={charForm.attributes.isVillain} onChange={handleCharChange} /> Villain
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.isHero" checked={charForm.attributes.isHero} onChange={handleCharChange} /> Hero
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.isFemale" checked={charForm.attributes.isFemale} onChange={handleCharChange} /> Female
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.isChild" checked={charForm.attributes.isChild} onChange={handleCharChange} /> Child
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.isElder" checked={charForm.attributes.isElder} onChange={handleCharChange} /> Elder
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.hasSpecialPower" checked={charForm.attributes.hasSpecialPower} onChange={handleCharChange} /> Has Special Power
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.hasWeapon" checked={charForm.attributes.hasWeapon} onChange={handleCharChange} /> Has Weapon
-                  </label>
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="attributes.hasFamily" checked={charForm.attributes.hasFamily} onChange={handleCharChange} /> Has Family
-                  </label>
-                </div>
-
-                {/* Image & Description */}
-                <div className="form-group">
-                  <label>Image URL</label>
-                  <input
-                    type="text"
-                    name="image"
-                    className="form-control"
-                    value={charForm.image}
+                    value={charForm.background.backstory}
                     onChange={handleCharChange}
-                    placeholder="https://example.com/image.jpg"
+                    placeholder="Brief backstory of the character"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Key Events (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.background.keyEvents.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'background', 'keyEvents')}
+                  placeholder="e.g., Ate Gum-Gum Fruit, Defeated Kaido"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Achievements (comma separated)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={charForm.background.achievements.join(', ')}
+                    onChange={(e) => handleCharArray(e, 'background', 'achievements')}
+                    placeholder="e.g., Became Pirate King, Defeated Akatsuki"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Crucial Hint</label>
+                  <label>Notable Fights (comma separated)</label>
                   <input
                     type="text"
-                    name="crucialHint"
                     className="form-control"
-                    value={charForm.crucialHint || ''}
+                    value={charForm.background.notableFights.join(', ')}
+                    onChange={(e) => handleCharArray(e, 'background', 'notableFights')}
+                    placeholder="e.g., vs Kaido, vs Sasuke"
+                  />
+                </div>
+              </div>
+
+              {/* Attributes */}
+              <h3 style={{ color: '#a89bff', marginTop: 20 }}>Attributes</h3>
+              <div className="form-row checkboxes">
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.isMainCharacter" checked={charForm.attributes.isMainCharacter} onChange={handleCharChange} /> Main Character
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.isVillain" checked={charForm.attributes.isVillain} onChange={handleCharChange} /> Villain
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.isHero" checked={charForm.attributes.isHero} onChange={handleCharChange} /> Hero
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.isFemale" checked={charForm.attributes.isFemale} onChange={handleCharChange} /> Female
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.isChild" checked={charForm.attributes.isChild} onChange={handleCharChange} /> Child
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.isElder" checked={charForm.attributes.isElder} onChange={handleCharChange} /> Elder
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.hasSpecialPower" checked={charForm.attributes.hasSpecialPower} onChange={handleCharChange} /> Has Special Power
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.hasWeapon" checked={charForm.attributes.hasWeapon} onChange={handleCharChange} /> Has Weapon
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="attributes.hasFamily" checked={charForm.attributes.hasFamily} onChange={handleCharChange} /> Has Family
+                </label>
+              </div>
+
+              {/* Image & Description */}
+              <div className="form-group">
+                <label>Image URL</label>
+                <input
+                  type="text"
+                  name="image"
+                  className="form-control"
+                  value={charForm.image}
+                  onChange={handleCharChange}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div className="form-group">
+                <label>Crucial Hint</label>
+                <input
+                  type="text"
+                  name="crucialHint"
+                  className="form-control"
+                  value={charForm.crucialHint || ''}
+                  onChange={handleCharChange}
+                  placeholder="e.g., This character ate a Devil Fruit"
+                />
+              </div>
+              <div className="form-group">
+                <label>Description *</label>
+                <textarea
+                  name="description"
+                  className="form-control"
+                  rows="4"
+                  value={charForm.description}
+                  onChange={handleCharChange}
+                  required
+                  placeholder="Full description of the character (will be sent to AI)"
+                />
+              </div>
+
+              {/* Legacy Traits (Backward Compatibility) */}
+              <h3 style={{ color: '#a89bff', marginTop: 20 }}>Legacy Traits</h3>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Traits Gender</label>
+                  <select name="traits.gender" className="form-control" value={charForm.traits.gender} onChange={handleCharChange}>
+                    <option value="Unknown">Unknown</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Traits Species</label>
+                  <input
+                    type="text"
+                    name="traits.species"
+                    className="form-control"
+                    value={charForm.traits.species}
                     onChange={handleCharChange}
-                    placeholder="e.g., This character ate a Devil Fruit"
+                    placeholder="e.g., Human, Saiyan"
                   />
                 </div>
+              </div>
+              <div className="form-row">
                 <div className="form-group">
-                  <label>Description *</label>
-                  <textarea
-                    name="description"
+                  <label>Traits Age</label>
+                  <input
+                    type="number"
+                    name="traits.age"
                     className="form-control"
-                    rows="4"
-                    value={charForm.description}
+                    value={charForm.traits.age}
                     onChange={handleCharChange}
-                    required
-                    placeholder="Full description of the character (will be sent to AI)"
-                  />
-                </div>
-
-                {/* Legacy Traits (Backward Compatibility) */}
-                <h3 style={{ color: '#a89bff', marginTop: 20 }}>Legacy Traits</h3>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Traits Gender</label>
-                    <select name="traits.gender" className="form-control" value={charForm.traits.gender} onChange={handleCharChange}>
-                      <option value="Unknown">Unknown</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Traits Species</label>
-                    <input
-                      type="text"
-                      name="traits.species"
-                      className="form-control"
-                      value={charForm.traits.species}
-                      onChange={handleCharChange}
-                      placeholder="e.g., Human, Saiyan"
-                    />
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Traits Age</label>
-                    <input
-                      type="number"
-                      name="traits.age"
-                      className="form-control"
-                      value={charForm.traits.age}
-                      onChange={handleCharChange}
-                      placeholder="e.g., 19"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Traits Occupation</label>
-                    <input
-                      type="text"
-                      name="traits.occupation"
-                      className="form-control"
-                      value={charForm.traits.occupation}
-                      onChange={handleCharChange}
-                      placeholder="e.g., Pirate, Ninja"
-                    />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Traits Powers (comma separated)</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={charForm.traits.powers.join(', ')}
-                    onChange={(e) => handleCharArray(e, 'traits', 'powers')}
-                    placeholder="e.g., Gum-Gum Fruit, Haki"
+                    placeholder="e.g., 19"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Traits Personality (comma separated)</label>
+                  <label>Traits Occupation</label>
                   <input
                     type="text"
+                    name="traits.occupation"
                     className="form-control"
-                    value={charForm.traits.personality.join(', ')}
-                    onChange={(e) => handleCharArray(e, 'traits', 'personality')}
-                    placeholder="e.g., Carefree, Determined"
+                    value={charForm.traits.occupation}
+                    onChange={handleCharChange}
+                    placeholder="e.g., Pirate, Ninja"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Traits Affiliations (comma separated)</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={charForm.traits.affiliations.join(', ')}
-                    onChange={(e) => handleCharArray(e, 'traits', 'affiliations')}
-                    placeholder="e.g., Straw Hat Pirates"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Traits Relationships (comma separated)</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={charForm.traits.relationships.join(', ')}
-                    onChange={(e) => handleCharArray(e, 'traits', 'relationships')}
-                    placeholder="e.g., Brother of Ace"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Traits Key Events (comma separated)</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={charForm.traits.keyEvents.join(', ')}
-                    onChange={(e) => handleCharArray(e, 'traits', 'keyEvents')}
-                    placeholder="e.g., Ate Gum-Gum Fruit"
-                  />
-                </div>
+              </div>
+              <div className="form-group">
+                <label>Traits Powers (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.powers.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'traits', 'powers')}
+                  placeholder="e.g., Gum-Gum Fruit, Haki"
+                />
+              </div>
+              <div className="form-group">
+                <label>Traits Personality (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.personality.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'traits', 'personality')}
+                  placeholder="e.g., Carefree, Determined"
+                />
+              </div>
+              <div className="form-group">
+                <label>Traits Affiliations (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.affiliations.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'traits', 'affiliations')}
+                  placeholder="e.g., Straw Hat Pirates"
+                />
+              </div>
+              <div className="form-group">
+                <label>Traits Relationships (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.relationships.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'traits', 'relationships')}
+                  placeholder="e.g., Brother of Ace"
+                />
+              </div>
+              <div className="form-group">
+                <label>Traits Key Events (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={charForm.traits.keyEvents.join(', ')}
+                  onChange={(e) => handleCharArray(e, 'traits', 'keyEvents')}
+                  placeholder="e.g., Ate Gum-Gum Fruit"
+                />
+              </div>
 
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">{editingCharId ? 'Update' : 'Add'} Character</button>
-                  {editingCharId && <button type="button" className="btn btn-secondary" onClick={resetCharForm}>Cancel</button>}
-                </div>
-              </form>
-            </div>
-
-            <div className="admin-list-card">
-              <h2>All Characters ({characters.length})</h2>
-              {characters.length === 0 ? <p className="empty-message">No characters added.</p> : (
-                <div className="character-grid">
-                  {characters.map(char => (
-                    <div key={char._id} className="character-card">
-                      {char.image && <img src={char.image} alt={char.name} className="char-image" />}
-                      <div className="char-info">
-                        <h3>{char.name}</h3>
-                        <p className="char-anime">{char.anime}</p>
-                        <p className="char-power">Power: {char.powerLevel || 25}</p>
-
-                        <div className="char-badges">
-                          <span className={`element-badge ${char.element?.toLowerCase()}`}>
-                            {char.element || 'Fire'}
-                          </span>
-                          <span className={`rarity-badge ${char.rarity?.toLowerCase()}`}>
-                            {char.rarity || 'Common'}
-                          </span>
-                        </div>
-
-                        {char.appearance?.hairColor && (
-                          <p className="char-desc" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-                            Hair: {char.appearance.hairColor} | Eyes: {char.appearance.eyeColor || 'Unknown'}
-                          </p>
-                        )}
-
-                        <p className="char-desc">{char.description?.substring(0, 80)}...</p>
-                        <div className="char-actions">
-                          <button className="btn btn-secondary btn-sm" onClick={() => editCharacter(char)}>Edit</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => deleteCharacter(char._id)}>Delete</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">{editingCharId ? 'Update' : 'Add'} Character</button>
+                {editingCharId && <button type="button" className="btn btn-secondary" onClick={resetCharForm}>Cancel</button>}
+              </div>
+            </form>
           </div>
-        )}
 
-        {activeTab === 'banners' && (
-          <div className="admin-section">
-            <div className="admin-form-card">
-              <h2>{editingBannerId ? 'Edit Banner' : 'Add New Banner'}</h2>
-              <form onSubmit={submitBanner} className="admin-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Banner Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      className="form-control"
-                      value={bannerForm.name}
-                      onChange={handleBannerChange}
-                      required
-                      placeholder="e.g., Legendary Pirate"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>GIF URL *</label>
-                    <input
-                      type="text"
-                      name="gifUrl"
-                      className="form-control"
-                      value={bannerForm.gifUrl}
-                      onChange={handleBannerChange}
-                      placeholder="https://example.com/banner.gif"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <input
-                    type="text"
-                    name="description"
-                    className="form-control"
-                    value={bannerForm.description}
-                    onChange={handleBannerChange}
-                    placeholder="Brief description of this banner"
-                  />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Unlock Type</label>
-                    <select name="unlockType" className="form-control" value={bannerForm.unlockType} onChange={handleBannerChange}>
-                      <option value="total_guesses">Total Guesses</option>
-                      <option value="anime_guesses">Anime-specific Guesses</option>
-                      <option value="season_rank">Season Rank</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Rarity</label>
-                    <select name="rarity" className="form-control" value={bannerForm.rarity} onChange={handleBannerChange}>
-                      <option value="Common">Common</option>
-                      <option value="Uncommon">Uncommon</option>
-                      <option value="Rare">Rare</option>
-                      <option value="Epic">Epic</option>
-                      <option value="Legendary">Legendary</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Category</label>
-                    <select name="category" className="form-control" value={bannerForm.category} onChange={handleBannerChange}>
-                      <option value="bronze">Bronze</option>
-                      <option value="silver">Silver</option>
-                      <option value="gold">Gold</option>
-                      <option value="platinum">Platinum</option>
-                      <option value="diamond">Diamond</option>
-                      <option value="anime">Anime</option>
-                      <option value="season">Season</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Condition</label>
-                    {bannerForm.unlockType === 'total_guesses' && (
-                      <input
-                        type="number"
-                        name="cond.totalGuesses"
-                        className="form-control"
-                        value={bannerForm.unlockCondition.totalGuesses || ''}
-                        onChange={handleBannerChange}
-                        placeholder="e.g., 100"
-                        min="1"
-                      />
-                    )}
-                    {bannerForm.unlockType === 'anime_guesses' && (
-                      <>
-                        <input
-                          type="text"
-                          name="cond.anime"
-                          className="form-control"
-                          value={bannerForm.unlockCondition.anime || ''}
-                          onChange={handleBannerChange}
-                          placeholder="e.g., One Piece"
-                        />
-                        <input
-                          type="number"
-                          name="cond.count"
-                          className="form-control"
-                          value={bannerForm.unlockCondition.count || ''}
-                          onChange={handleBannerChange}
-                          placeholder="e.g., 30"
-                          min="1"
-                          style={{ marginTop: 6 }}
-                        />
-                      </>
-                    )}
-                    {bannerForm.unlockType === 'season_rank' && (
-                      <input
-                        type="number"
-                        name="cond.seasonRank"
-                        className="form-control"
-                        value={bannerForm.unlockCondition.seasonRank || ''}
-                        onChange={handleBannerChange}
-                        placeholder="e.g., 1"
-                        min="1"
-                      />
-                    )}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="isActive" checked={bannerForm.isActive} onChange={handleBannerChange} /> Active
-                  </label>
-                </div>
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">{editingBannerId ? 'Update' : 'Add'} Banner</button>
-                  {editingBannerId && <button type="button" className="btn btn-secondary" onClick={resetBannerForm}>Cancel</button>}
-                </div>
-              </form>
-            </div>
+          <div className="admin-list-card">
+            <h2>All Characters ({characters.length})</h2>
+            {characters.length === 0 ? <p className="empty-message">No characters added.</p> : (
+              <div className="character-grid">
+                {characters.map(char => (
+                  <div key={char._id} className="character-card">
+                    {char.image && <img src={char.image} alt={char.name} className="char-image" />}
+                    <div className="char-info">
+                      <h3>{char.name}</h3>
+                      <p className="char-anime">{char.anime}</p>
+                      <p className="char-power">Power: {char.powerLevel || 25}</p>
 
-            <div className="admin-list-card">
-              <h2>All Banners ({banners.length})</h2>
-              {banners.length === 0 ? <p className="empty-message">No banners added.</p> : (
-                <div className="banner-admin-grid">
-                  {banners.map(b => (
-                    <div key={b._id} className="banner-admin-card">
-                      {b.gifUrl && <div className="banner-preview" style={{ backgroundImage: `url(${b.gifUrl})` }} />}
-                      <div className="banner-info">
-                        <h4>{b.name}</h4>
-                        <p>{b.description}</p>
-                        <div className="banner-meta">
-                          <span className={`rarity-${b.rarity?.toLowerCase()}`}>{b.rarity}</span>
-                          <span>{b.unlockType}</span>
-                        </div>
-                        <div className="char-actions">
-                          <button className="btn btn-secondary btn-sm" onClick={() => editBanner(b)}>Edit</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => deleteBanner(b._id)}>Delete</button>
-                        </div>
+                      <div className="char-badges">
+                        <span className={`element-badge ${char.element?.toLowerCase()}`}>
+                          {char.element || 'Fire'}
+                        </span>
+                        <span className={`rarity-badge ${char.rarity?.toLowerCase()}`}>
+                          {char.rarity || 'Common'}
+                        </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
-        {activeTab === 'titles' && (
-          <div className="admin-section">
-            <div className="admin-form-card">
-              <h2>{editingTitleId ? 'Edit Title' : 'Add New Title'}</h2>
-              <form onSubmit={submitTitle} className="admin-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Title ID (internal) *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      className="form-control"
-                      value={titleForm.name}
-                      onChange={handleTitleChange}
-                      required
-                      placeholder="e.g., the_rookie"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Display Name *</label>
-                    <input
-                      type="text"
-                      name="displayName"
-                      className="form-control"
-                      value={titleForm.displayName}
-                      onChange={handleTitleChange}
-                      placeholder="e.g., The Rookie"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <input
-                    type="text"
-                    name="description"
-                    className="form-control"
-                    value={titleForm.description}
-                    onChange={handleTitleChange}
-                    placeholder="Brief description of this title"
-                  />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Display Type</label>
-                    <select name="displayType" className="form-control" value={titleForm.displayType} onChange={handleTitleChange}>
-                      <option value="prefix">Prefix (before name)</option>
-                      <option value="suffix">Suffix (after name)</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Rarity</label>
-                    <select name="rarity" className="form-control" value={titleForm.rarity} onChange={handleTitleChange}>
-                      <option value="Common">Common</option>
-                      <option value="Uncommon">Uncommon</option>
-                      <option value="Rare">Rare</option>
-                      <option value="Epic">Epic</option>
-                      <option value="Legendary">Legendary</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Unlock Type</label>
-                    <select name="unlockType" className="form-control" value={titleForm.unlockType} onChange={handleTitleChange}>
-                      <option value="total_guesses">Total Guesses</option>
-                      <option value="anime_guesses">Anime-specific Guesses</option>
-                      <option value="season_rank">Season Rank</option>
-                      <option value="win_streak">Win Streak</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Condition</label>
-                    {titleForm.unlockType === 'total_guesses' && (
-                      <input
-                        type="number"
-                        name="cond.totalGuesses"
-                        className="form-control"
-                        value={titleForm.unlockCondition.totalGuesses || ''}
-                        onChange={handleTitleChange}
-                        placeholder="e.g., 100"
-                        min="1"
-                      />
-                    )}
-                    {titleForm.unlockType === 'anime_guesses' && (
-                      <>
-                        <input
-                          type="text"
-                          name="cond.anime"
-                          className="form-control"
-                          value={titleForm.unlockCondition.anime || ''}
-                          onChange={handleTitleChange}
-                          placeholder="e.g., One Piece"
-                        />
-                        <input
-                          type="number"
-                          name="cond.count"
-                          className="form-control"
-                          value={titleForm.unlockCondition.count || ''}
-                          onChange={handleTitleChange}
-                          placeholder="e.g., 50"
-                          min="1"
-                          style={{ marginTop: 6 }}
-                        />
-                      </>
-                    )}
-                    {titleForm.unlockType === 'season_rank' && (
-                      <input
-                        type="number"
-                        name="cond.seasonRank"
-                        className="form-control"
-                        value={titleForm.unlockCondition.seasonRank || ''}
-                        onChange={handleTitleChange}
-                        placeholder="e.g., 1"
-                        min="1"
-                      />
-                    )}
-                    {titleForm.unlockType === 'win_streak' && (
-                      <input
-                        type="number"
-                        name="cond.streak"
-                        className="form-control"
-                        value={titleForm.unlockCondition.streak || ''}
-                        onChange={handleTitleChange}
-                        placeholder="e.g., 10"
-                        min="1"
-                      />
-                    )}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="isActive" checked={titleForm.isActive} onChange={handleTitleChange} /> Active
-                  </label>
-                </div>
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">{editingTitleId ? 'Update' : 'Add'} Title</button>
-                  {editingTitleId && <button type="button" className="btn btn-secondary" onClick={resetTitleForm}>Cancel</button>}
-                </div>
-              </form>
-            </div>
+                      {char.appearance?.hairColor && (
+                        <p className="char-desc" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+                          Hair: {char.appearance.hairColor} | Eyes: {char.appearance.eyeColor || 'Unknown'}
+                        </p>
+                      )}
 
-            <div className="admin-list-card">
-              <h2>All Titles ({titles.length})</h2>
-              {titles.length === 0 ? <p className="empty-message">No titles added.</p> : (
-                <div className="title-admin-grid">
-                  {titles.map(t => (
-                    <div key={t._id} className="title-admin-card">
-                      <div className="title-preview" style={{ color: t.rarity === 'Legendary' ? '#f5a623' : t.rarity === 'Epic' ? '#a89bff' : t.rarity === 'Rare' ? '#6cb1ff' : t.rarity === 'Uncommon' ? '#00d9c0' : '#b3b3b3' }}>
-                        {t.displayType === 'prefix' ? `[${t.displayName}] Username` : `Username [${t.displayName}]`}
-                      </div>
-                      <div className="title-meta">
-                        <span className={`rarity-${t.rarity?.toLowerCase()}`}>{t.rarity}</span>
-                        <span>{t.unlockType}</span>
-                      </div>
+                      <p className="char-desc">{char.description?.substring(0, 80)}...</p>
                       <div className="char-actions">
-                        <button className="btn btn-secondary btn-sm" onClick={() => editTitle(t)}>Edit</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => deleteTitle(t._id)}>Delete</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => editCharacter(char)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteCharacter(char._id)}>Delete</button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'photos' && (
-          <div className="admin-section">
-            <div className="admin-form-card">
-              <h2>{editingPhotoId ? 'Edit Profile Photo' : 'Add Profile Photo'}</h2>
-              <form onSubmit={submitPhoto} className="admin-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Photo Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      className="form-control"
-                      value={photoForm.name}
-                      onChange={handlePhotoChange}
-                      required
-                      placeholder="e.g., Shinobu Portrait"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Character Name *</label>
-                    <input
-                      type="text"
-                      name="characterName"
-                      className="form-control"
-                      value={photoForm.characterName}
-                      onChange={handlePhotoChange}
-                      required
-                      placeholder="e.g., Shinobu"
-                    />
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Image URL *</label>
-                    <input
-                      type="text"
-                      name="imageUrl"
-                      className="form-control"
-                      value={photoForm.imageUrl}
-                      onChange={handlePhotoChange}
-                      placeholder="https://example.com/image.jpg"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Anime *</label>
-                    <input
-                      type="text"
-                      name="anime"
-                      className="form-control"
-                      value={photoForm.anime}
-                      onChange={handlePhotoChange}
-                      required
-                      placeholder="e.g., One Piece"
-                    />
-                  </div>
-                </div>
+      {activeTab === 'banners' && (
+        <div className="admin-section">
+          <div className="admin-form-card">
+            <h2>{editingBannerId ? 'Edit Banner' : 'Add New Banner'}</h2>
+            <form onSubmit={submitBanner} className="admin-form">
+              <div className="form-row">
                 <div className="form-group">
-                  <label>Description</label>
+                  <label>Banner Name *</label>
                   <input
                     type="text"
-                    name="description"
+                    name="name"
                     className="form-control"
-                    value={photoForm.description}
-                    onChange={handlePhotoChange}
-                    placeholder="Brief description of the character"
+                    value={bannerForm.name}
+                    onChange={handleBannerChange}
+                    required
+                    placeholder="e.g., Legendary Pirate"
                   />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Character ID (optional)</label>
-                    <input
-                      type="text"
-                      name="characterId"
-                      className="form-control"
-                      value={photoForm.characterId}
-                      onChange={handlePhotoChange}
-                      placeholder="Character _id"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Rarity</label>
-                    <select name="rarity" className="form-control" value={photoForm.rarity} onChange={handlePhotoChange}>
-                      <option value="Common">Common</option>
-                      <option value="Uncommon">Uncommon</option>
-                      <option value="Rare">Rare</option>
-                      <option value="Epic">Epic</option>
-                      <option value="Legendary">Legendary</option>
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label>GIF URL *</label>
+                  <input
+                    type="text"
+                    name="gifUrl"
+                    className="form-control"
+                    value={bannerForm.gifUrl}
+                    onChange={handleBannerChange}
+                    placeholder="https://example.com/banner.gif"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <input
+                  type="text"
+                  name="description"
+                  className="form-control"
+                  value={bannerForm.description}
+                  onChange={handleBannerChange}
+                  placeholder="Brief description of this banner"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Unlock Type</label>
+                  <select name="unlockType" className="form-control" value={bannerForm.unlockType} onChange={handleBannerChange}>
+                    <option value="total_guesses">Total Guesses</option>
+                    <option value="anime_guesses">Anime-specific Guesses</option>
+                    <option value="season_rank">Season Rank</option>
+                  </select>
                 </div>
                 <div className="form-group">
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="isActive" checked={photoForm.isActive} onChange={handlePhotoChange} /> Active
-                  </label>
+                  <label>Rarity</label>
+                  <select name="rarity" className="form-control" value={bannerForm.rarity} onChange={handleBannerChange}>
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Legendary">Legendary</option>
+                  </select>
                 </div>
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">{editingPhotoId ? 'Update' : 'Add'} Photo</button>
-                  {editingPhotoId && <button type="button" className="btn btn-secondary" onClick={resetPhotoForm}>Cancel</button>}
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Category</label>
+                  <select name="category" className="form-control" value={bannerForm.category} onChange={handleBannerChange}>
+                    <option value="bronze">Bronze</option>
+                    <option value="silver">Silver</option>
+                    <option value="gold">Gold</option>
+                    <option value="platinum">Platinum</option>
+                    <option value="diamond">Diamond</option>
+                    <option value="anime">Anime</option>
+                    <option value="season">Season</option>
+                  </select>
                 </div>
-              </form>
-            </div>
-
-            <div className="admin-list-card">
-              <h2>All Profile Photos ({photos.length})</h2>
-              {photos.length === 0 ? <p className="empty-message">No profile photos added.</p> : (
-                <div className="photo-admin-grid">
-                  {photos.map(p => (
-                    <div key={p._id} className="photo-admin-card">
-                      <div className="photo-preview" style={{ backgroundImage: `url(${p.imageUrl})` }} />
-                      <div className="photo-info">
-                        <h4>{p.name}</h4>
-                        <p>{p.characterName} - {p.anime}</p>
-                        <span className={`rarity-${p.rarity?.toLowerCase()}`}>{p.rarity}</span>
-                        <div className="char-actions">
-                          <button className="btn btn-secondary btn-sm" onClick={() => editPhoto(p)}>Edit</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => deletePhoto(p._id)}>Delete</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'shop' && (
-          <div className="admin-section">
-            <div className="admin-form-card">
-              <h2>{editingShopId ? 'Edit Shop Item' : 'Add Item to Shop'}</h2>
-              <form onSubmit={submitShopItem} className="admin-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Item Type *</label>
-                    <select name="itemType" className="form-control" value={shopForm.itemType} onChange={handleShopChange} required>
-                      <option value="banner">Banner</option>
-                      <option value="profilePhoto">Profile Photo</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Price (in Shards) *</label>
+                <div className="form-group">
+                  <label>Condition</label>
+                  {bannerForm.unlockType === 'total_guesses' && (
                     <input
                       type="number"
-                      name="price"
+                      name="cond.totalGuesses"
                       className="form-control"
-                      value={shopForm.price}
-                      onChange={handleShopChange}
-                      placeholder="e.g., 500"
-                      min="10"
-                      required
+                      value={bannerForm.unlockCondition.totalGuesses || ''}
+                      onChange={handleBannerChange}
+                      placeholder="e.g., 100"
+                      min="1"
                     />
-                  </div>
-                </div>
-
-                {shopForm.itemType === 'banner' ? (
-                  <>
-                    <div className="form-group">
-                      <label>Select Existing Banner (OR add new below)</label>
-                      <select name="itemId" className="form-control" value={shopForm.itemId} onChange={handleShopChange}>
-                        <option value="">Select an existing banner...</option>
-                        {banners.map(b => (
-                          <option key={b._id} value={b._id}>{b.name}</option>
-                        ))}
-                      </select>
-                      <small className="form-hint">Select an existing banner OR create a new one using the fields below</small>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>New Banner Name</label>
-                        <input
-                          type="text"
-                          name="newBannerName"
-                          className="form-control"
-                          value={shopForm.newBannerName || ''}
-                          onChange={handleShopChange}
-                          placeholder="e.g., Gear 5 Luffy"
-                        />
-                        <small className="form-hint">Leave empty if selecting existing banner</small>
-                      </div>
-                      <div className="form-group">
-                        <label>Banner GIF URL *</label>
-                        <input
-                          type="text"
-                          name="newBannerGifUrl"
-                          className="form-control"
-                          value={shopForm.newBannerGifUrl || ''}
-                          onChange={handleShopChange}
-                          placeholder="https://example.com/banner.gif"
-                        />
-                        <small className="form-hint">Must end with .gif or .webp</small>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="form-group">
-                      <label>Select Existing Profile Photo (OR add new below)</label>
-                      <select name="itemId" className="form-control" value={shopForm.itemId} onChange={handleShopChange}>
-                        <option value="">Select an existing photo...</option>
-                        {photos.map(p => (
-                          <option key={p._id} value={p._id}>{p.name}</option>
-                        ))}
-                      </select>
-                      <small className="form-hint">Select an existing photo OR create a new one using the fields below</small>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>New Photo Name</label>
-                        <input
-                          type="text"
-                          name="newPhotoName"
-                          className="form-control"
-                          value={shopForm.newPhotoName || ''}
-                          onChange={handleShopChange}
-                          placeholder="e.g., Luffy Portrait"
-                        />
-                        <small className="form-hint">Leave empty if selecting existing photo</small>
-                      </div>
-                      <div className="form-group">
-                        <label>Photo Image URL *</label>
-                        <input
-                          type="text"
-                          name="newPhotoImageUrl"
-                          className="form-control"
-                          value={shopForm.newPhotoImageUrl || ''}
-                          onChange={handleShopChange}
-                          placeholder="https://example.com/image.jpg"
-                        />
-                        <small className="form-hint">Must be a valid image URL</small>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Status</label>
-                    <select name="isActive" className="form-control" value={shopForm.isActive} onChange={handleShopChange}>
-                      <option value={true}>Active</option>
-                      <option value={false}>Inactive</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="checkbox-label">
-                    <input type="checkbox" name="isLimited" checked={shopForm.isLimited} onChange={handleShopChange} /> Time-Limited Item
-                  </label>
-                </div>
-
-                {shopForm.isLimited && (
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Start Date</label>
+                  )}
+                  {bannerForm.unlockType === 'anime_guesses' && (
+                    <>
                       <input
-                        type="date"
-                        name="startDate"
+                        type="text"
+                        name="cond.anime"
                         className="form-control"
-                        value={shopForm.startDate}
-                        onChange={handleShopChange}
+                        value={bannerForm.unlockCondition.anime || ''}
+                        onChange={handleBannerChange}
+                        placeholder="e.g., One Piece"
                       />
-                    </div>
-                    <div className="form-group">
-                      <label>End Date</label>
                       <input
-                        type="date"
-                        name="endDate"
+                        type="number"
+                        name="cond.count"
                         className="form-control"
-                        value={shopForm.endDate}
-                        onChange={handleShopChange}
+                        value={bannerForm.unlockCondition.count || ''}
+                        onChange={handleBannerChange}
+                        placeholder="e.g., 30"
+                        min="1"
+                        style={{ marginTop: 6 }}
                       />
-                    </div>
-                  </div>
-                )}
-
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    {editingShopId ? 'Update' : 'Add'} to Shop
-                  </button>
-                  {editingShopId && (
-                    <button type="button" className="btn btn-secondary" onClick={resetShopForm}>
-                      Cancel
-                    </button>
+                    </>
+                  )}
+                  {bannerForm.unlockType === 'season_rank' && (
+                    <input
+                      type="number"
+                      name="cond.seasonRank"
+                      className="form-control"
+                      value={bannerForm.unlockCondition.seasonRank || ''}
+                      onChange={handleBannerChange}
+                      placeholder="e.g., 1"
+                      min="1"
+                    />
                   )}
                 </div>
-              </form>
-            </div>
+              </div>
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input type="checkbox" name="isActive" checked={bannerForm.isActive} onChange={handleBannerChange} /> Active
+                </label>
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">{editingBannerId ? 'Update' : 'Add'} Banner</button>
+                {editingBannerId && <button type="button" className="btn btn-secondary" onClick={resetBannerForm}>Cancel</button>}
+              </div>
+            </form>
+          </div>
 
-            <div className="admin-list-card">
-              <h2>Shop Items ({shopItems.length})</h2>
-              {shopItems.length === 0 ? (
-                <p className="empty-message">No items in shop.</p>
-              ) : (
-                <div className="shop-admin-grid">
-                  {shopItems.map(item => (
-                    <div key={item._id} className="shop-admin-card">
-                      <div className="shop-admin-preview">
-                        {item.itemType === 'banner' && item.itemId?.gifUrl && (
-                          <div className="shop-admin-banner" style={{ backgroundImage: `url(${item.itemId.gifUrl})` }} />
-                        )}
-                        {item.itemType === 'profilePhoto' && item.itemId?.imageUrl && (
-                          <img src={item.itemId.imageUrl} alt={item.itemId.name} className="shop-admin-photo" />
-                        )}
-                        <div className="shop-admin-badges">
-                          {item.isActive ? 'Active' : 'Inactive'}
-                          {item.isLimited && ' - Limited'}
-                        </div>
+          <div className="admin-list-card">
+            <h2>All Banners ({banners.length})</h2>
+            {banners.length === 0 ? <p className="empty-message">No banners added.</p> : (
+              <div className="banner-admin-grid">
+                {banners.map(b => (
+                  <div key={b._id} className="banner-admin-card">
+                    {b.gifUrl && <div className="banner-preview" style={{ backgroundImage: `url(${b.gifUrl})` }} />}
+                    <div className="banner-info">
+                      <h4>{b.name}</h4>
+                      <p>{b.description}</p>
+                      <div className="banner-meta">
+                        <span className={`rarity-${b.rarity?.toLowerCase()}`}>{b.rarity}</span>
+                        <span>{b.unlockType}</span>
                       </div>
-                      <div className="shop-admin-info">
-                        <h4>{item.itemId?.name || 'Unknown'}</h4>
-                        <p>{item.itemType}</p>
-                        <p className="shop-admin-price">{item.price} Shards</p>
-                        {item.isLimited && item.endDate && (
-                          <p className="shop-admin-date">Until: {new Date(item.endDate).toLocaleDateString()}</p>
-                        )}
-                        <div className="char-actions">
-                          <button className="btn btn-secondary btn-sm" onClick={() => editShopItem(item)}>Edit</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => deleteShopItem(item._id)}>Delete</button>
-                        </div>
+                      <div className="char-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => editBanner(b)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteBanner(b._id)}>Delete</button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'users' && (
-          <div className="admin-section">
-            <div className="admin-list-card">
-              <h2>Registered Users ({users.length})</h2>
-              {users.length === 0 ? <p className="empty-message">No users yet.</p> : (
-                <div className="user-table-wrapper">
-                  <table className="user-table">
-                    <thead>
-                      <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Games</th>
-                        <th>Wins</th>
-                        <th>Streak</th>
-                        <th>Gems</th>
-                        <th>Joined</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map(u => (
-                        <tr key={u._id}>
-                          <td><strong>{u.username}</strong></td>
-                          <td>{u.email}</td>
-                          <td><span className={`role-badge ${u.role}`}>{u.role}</span></td>
-                          <td>{u.stats?.gamesPlayed || 0}</td>
-                          <td>{u.stats?.gamesWon || 0}</td>
-                          <td>{u.stats?.winStreak || 0}</td>
-                          <td><span className="gems-badge">{u.gems || 0}</span></td>
-                          <td>{new Date(u.createdAt).toLocaleDateString()}</td>
-                        </tr>
+      {activeTab === 'titles' && (
+        <div className="admin-section">
+          <div className="admin-form-card">
+            <h2>{editingTitleId ? 'Edit Title' : 'Add New Title'}</h2>
+            <form onSubmit={submitTitle} className="admin-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Title ID (internal) *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={titleForm.name}
+                    onChange={handleTitleChange}
+                    required
+                    placeholder="e.g., the_rookie"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Display Name *</label>
+                  <input
+                    type="text"
+                    name="displayName"
+                    className="form-control"
+                    value={titleForm.displayName}
+                    onChange={handleTitleChange}
+                    placeholder="e.g., The Rookie"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <input
+                  type="text"
+                  name="description"
+                  className="form-control"
+                  value={titleForm.description}
+                  onChange={handleTitleChange}
+                  placeholder="Brief description of this title"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Display Type</label>
+                  <select name="displayType" className="form-control" value={titleForm.displayType} onChange={handleTitleChange}>
+                    <option value="prefix">Prefix (before name)</option>
+                    <option value="suffix">Suffix (after name)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Rarity</label>
+                  <select name="rarity" className="form-control" value={titleForm.rarity} onChange={handleTitleChange}>
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Legendary">Legendary</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Unlock Type</label>
+                  <select name="unlockType" className="form-control" value={titleForm.unlockType} onChange={handleTitleChange}>
+                    <option value="total_guesses">Total Guesses</option>
+                    <option value="anime_guesses">Anime-specific Guesses</option>
+                    <option value="season_rank">Season Rank</option>
+                    <option value="win_streak">Win Streak</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Condition</label>
+                  {titleForm.unlockType === 'total_guesses' && (
+                    <input
+                      type="number"
+                      name="cond.totalGuesses"
+                      className="form-control"
+                      value={titleForm.unlockCondition.totalGuesses || ''}
+                      onChange={handleTitleChange}
+                      placeholder="e.g., 100"
+                      min="1"
+                    />
+                  )}
+                  {titleForm.unlockType === 'anime_guesses' && (
+                    <>
+                      <input
+                        type="text"
+                        name="cond.anime"
+                        className="form-control"
+                        value={titleForm.unlockCondition.anime || ''}
+                        onChange={handleTitleChange}
+                        placeholder="e.g., One Piece"
+                      />
+                      <input
+                        type="number"
+                        name="cond.count"
+                        className="form-control"
+                        value={titleForm.unlockCondition.count || ''}
+                        onChange={handleTitleChange}
+                        placeholder="e.g., 50"
+                        min="1"
+                        style={{ marginTop: 6 }}
+                      />
+                    </>
+                  )}
+                  {titleForm.unlockType === 'season_rank' && (
+                    <input
+                      type="number"
+                      name="cond.seasonRank"
+                      className="form-control"
+                      value={titleForm.unlockCondition.seasonRank || ''}
+                      onChange={handleTitleChange}
+                      placeholder="e.g., 1"
+                      min="1"
+                    />
+                  )}
+                  {titleForm.unlockType === 'win_streak' && (
+                    <input
+                      type="number"
+                      name="cond.streak"
+                      className="form-control"
+                      value={titleForm.unlockCondition.streak || ''}
+                      onChange={handleTitleChange}
+                      placeholder="e.g., 10"
+                      min="1"
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input type="checkbox" name="isActive" checked={titleForm.isActive} onChange={handleTitleChange} /> Active
+                </label>
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">{editingTitleId ? 'Update' : 'Add'} Title</button>
+                {editingTitleId && <button type="button" className="btn btn-secondary" onClick={resetTitleForm}>Cancel</button>}
+              </div>
+            </form>
+          </div>
+
+          <div className="admin-list-card">
+            <h2>All Titles ({titles.length})</h2>
+            {titles.length === 0 ? <p className="empty-message">No titles added.</p> : (
+              <div className="title-admin-grid">
+                {titles.map(t => (
+                  <div key={t._id} className="title-admin-card">
+                    <div className="title-preview" style={{ color: t.rarity === 'Legendary' ? '#f5a623' : t.rarity === 'Epic' ? '#a89bff' : t.rarity === 'Rare' ? '#6cb1ff' : t.rarity === 'Uncommon' ? '#00d9c0' : '#b3b3b3' }}>
+                      {t.displayType === 'prefix' ? `[${t.displayName}] Username` : `Username [${t.displayName}]`}
+                    </div>
+                    <div className="title-meta">
+                      <span className={`rarity-${t.rarity?.toLowerCase()}`}>{t.rarity}</span>
+                      <span>{t.unlockType}</span>
+                    </div>
+                    <div className="char-actions">
+                      <button className="btn btn-secondary btn-sm" onClick={() => editTitle(t)}>Edit</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => deleteTitle(t._id)}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'photos' && (
+        <div className="admin-section">
+          <div className="admin-form-card">
+            <h2>{editingPhotoId ? 'Edit Profile Photo' : 'Add Profile Photo'}</h2>
+            <form onSubmit={submitPhoto} className="admin-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Photo Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={photoForm.name}
+                    onChange={handlePhotoChange}
+                    required
+                    placeholder="e.g., Shinobu Portrait"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Character Name *</label>
+                  <input
+                    type="text"
+                    name="characterName"
+                    className="form-control"
+                    value={photoForm.characterName}
+                    onChange={handlePhotoChange}
+                    required
+                    placeholder="e.g., Shinobu"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Image URL *</label>
+                  <input
+                    type="text"
+                    name="imageUrl"
+                    className="form-control"
+                    value={photoForm.imageUrl}
+                    onChange={handlePhotoChange}
+                    placeholder="https://example.com/image.jpg"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Anime *</label>
+                  <input
+                    type="text"
+                    name="anime"
+                    className="form-control"
+                    value={photoForm.anime}
+                    onChange={handlePhotoChange}
+                    required
+                    placeholder="e.g., One Piece"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <input
+                  type="text"
+                  name="description"
+                  className="form-control"
+                  value={photoForm.description}
+                  onChange={handlePhotoChange}
+                  placeholder="Brief description of the character"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Character ID (optional)</label>
+                  <input
+                    type="text"
+                    name="characterId"
+                    className="form-control"
+                    value={photoForm.characterId}
+                    onChange={handlePhotoChange}
+                    placeholder="Character _id"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Rarity</label>
+                  <select name="rarity" className="form-control" value={photoForm.rarity} onChange={handlePhotoChange}>
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Legendary">Legendary</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input type="checkbox" name="isActive" checked={photoForm.isActive} onChange={handlePhotoChange} /> Active
+                </label>
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">{editingPhotoId ? 'Update' : 'Add'} Photo</button>
+                {editingPhotoId && <button type="button" className="btn btn-secondary" onClick={resetPhotoForm}>Cancel</button>}
+              </div>
+            </form>
+          </div>
+
+          <div className="admin-list-card">
+            <h2>All Profile Photos ({photos.length})</h2>
+            {photos.length === 0 ? <p className="empty-message">No profile photos added.</p> : (
+              <div className="photo-admin-grid">
+                {photos.map(p => (
+                  <div key={p._id} className="photo-admin-card">
+                    <div className="photo-preview" style={{ backgroundImage: `url(${p.imageUrl})` }} />
+                    <div className="photo-info">
+                      <h4>{p.name}</h4>
+                      <p>{p.characterName} - {p.anime}</p>
+                      <span className={`rarity-${p.rarity?.toLowerCase()}`}>{p.rarity}</span>
+                      <div className="char-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => editPhoto(p)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deletePhoto(p._id)}>Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'shop' && (
+        <div className="admin-section">
+          <div className="admin-form-card">
+            <h2>{editingShopId ? 'Edit Shop Item' : 'Add Item to Shop'}</h2>
+            <form onSubmit={submitShopItem} className="admin-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Item Type *</label>
+                  <select name="itemType" className="form-control" value={shopForm.itemType} onChange={handleShopChange} required>
+                    <option value="banner">Banner</option>
+                    <option value="profilePhoto">Profile Photo</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Price (in Shards) *</label>
+                  <input
+                    type="number"
+                    name="price"
+                    className="form-control"
+                    value={shopForm.price}
+                    onChange={handleShopChange}
+                    placeholder="e.g., 500"
+                    min="10"
+                    required
+                  />
+                </div>
+              </div>
+
+              {shopForm.itemType === 'banner' ? (
+                <>
+                  <div className="form-group">
+                    <label>Select Existing Banner (OR add new below)</label>
+                    <select name="itemId" className="form-control" value={shopForm.itemId} onChange={handleShopChange}>
+                      <option value="">Select an existing banner...</option>
+                      {banners.map(b => (
+                        <option key={b._id} value={b._id}>{b.name}</option>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                    </select>
+                    <small className="form-hint">Select an existing banner OR create a new one using the fields below</small>
+                  </div>
 
-        {activeTab === 'stats' && stats && (
-          <div className="admin-section">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-number">{stats.totalGames}</div>
-                <div className="stat-label">Total Games</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{stats.wonGames}</div>
-                <div className="stat-label">Won Games</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{stats.winRate}%</div>
-                <div className="stat-label">Win Rate</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{stats.totalCharacters}</div>
-                <div className="stat-label">Characters</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{stats.totalUsers}</div>
-                <div className="stat-label">Users</div>
-              </div>
-            </div>
-
-            <div className="admin-list-card">
-              <h2>Top Players</h2>
-              {stats.topPlayers?.length === 0 ? <p className="empty-message">No players yet.</p> : (
-                <div className="top-players-list">
-                  {stats.topPlayers?.map((player, index) => (
-                    <div key={player._id} className="top-player-item">
-                      <span className="rank">{index + 1}</span>
-                      <span className="name">{player.username}</span>
-                      <span className="wins">{player.stats?.gamesWon || 0} wins</span>
-                      <span className="best">Streak: {player.stats?.winStreak || 0}</span>
-                      {player.gems > 0 && <span className="gems">{player.gems}</span>}
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>New Banner Name</label>
+                      <input
+                        type="text"
+                        name="newBannerName"
+                        className="form-control"
+                        value={shopForm.newBannerName || ''}
+                        onChange={handleShopChange}
+                        placeholder="e.g., Gear 5 Luffy"
+                      />
+                      <small className="form-hint">Leave empty if selecting existing banner</small>
                     </div>
-                  ))}
+                    <div className="form-group">
+                      <label>Banner GIF URL *</label>
+                      <input
+                        type="text"
+                        name="newBannerGifUrl"
+                        className="form-control"
+                        value={shopForm.newBannerGifUrl || ''}
+                        onChange={handleShopChange}
+                        placeholder="https://example.com/banner.gif"
+                      />
+                      <small className="form-hint">Must end with .gif or .webp</small>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label>Select Existing Profile Photo (OR add new below)</label>
+                    <select name="itemId" className="form-control" value={shopForm.itemId} onChange={handleShopChange}>
+                      <option value="">Select an existing photo...</option>
+                      {photos.map(p => (
+                        <option key={p._id} value={p._id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <small className="form-hint">Select an existing photo OR create a new one using the fields below</small>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>New Photo Name</label>
+                      <input
+                        type="text"
+                        name="newPhotoName"
+                        className="form-control"
+                        value={shopForm.newPhotoName || ''}
+                        onChange={handleShopChange}
+                        placeholder="e.g., Luffy Portrait"
+                      />
+                      <small className="form-hint">Leave empty if selecting existing photo</small>
+                    </div>
+                    <div className="form-group">
+                      <label>Photo Image URL *</label>
+                      <input
+                        type="text"
+                        name="newPhotoImageUrl"
+                        className="form-control"
+                        value={shopForm.newPhotoImageUrl || ''}
+                        onChange={handleShopChange}
+                        placeholder="https://example.com/image.jpg"
+                      />
+                      <small className="form-hint">Must be a valid image URL</small>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select name="isActive" className="form-control" value={shopForm.isActive} onChange={handleShopChange}>
+                    <option value={true}>Active</option>
+                    <option value={false}>Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input type="checkbox" name="isLimited" checked={shopForm.isLimited} onChange={handleShopChange} /> Time-Limited Item
+                </label>
+              </div>
+
+              {shopForm.isLimited && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Start Date</label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      className="form-control"
+                      value={shopForm.startDate}
+                      onChange={handleShopChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>End Date</label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      className="form-control"
+                      value={shopForm.endDate}
+                      onChange={handleShopChange}
+                    />
+                  </div>
                 </div>
               )}
+
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">
+                  {editingShopId ? 'Update' : 'Add'} to Shop
+                </button>
+                {editingShopId && (
+                  <button type="button" className="btn btn-secondary" onClick={resetShopForm}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+
+          <div className="admin-list-card">
+            <h2>Shop Items ({shopItems.length})</h2>
+            {shopItems.length === 0 ? (
+              <p className="empty-message">No items in shop.</p>
+            ) : (
+              <div className="shop-admin-grid">
+                {shopItems.map(item => (
+                  <div key={item._id} className="shop-admin-card">
+                    <div className="shop-admin-preview">
+                      {item.itemType === 'banner' && item.itemId?.gifUrl && (
+                        <div className="shop-admin-banner" style={{ backgroundImage: `url(${item.itemId.gifUrl})` }} />
+                      )}
+                      {item.itemType === 'profilePhoto' && item.itemId?.imageUrl && (
+                        <img src={item.itemId.imageUrl} alt={item.itemId.name} className="shop-admin-photo" />
+                      )}
+                      <div className="shop-admin-badges">
+                        {item.isActive ? 'Active' : 'Inactive'}
+                        {item.isLimited && ' - Limited'}
+                      </div>
+                    </div>
+                    <div className="shop-admin-info">
+                      <h4>{item.itemId?.name || 'Unknown'}</h4>
+                      <p>{item.itemType}</p>
+                      <p className="shop-admin-price">{item.price} Shards</p>
+                      {item.isLimited && item.endDate && (
+                        <p className="shop-admin-date">Until: {new Date(item.endDate).toLocaleDateString()}</p>
+                      )}
+                      <div className="char-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => editShopItem(item)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteShopItem(item._id)}>Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'users' && (
+        <div className="admin-section">
+          <div className="admin-list-card">
+            <h2>Registered Users ({users.length})</h2>
+            {users.length === 0 ? <p className="empty-message">No users yet.</p> : (
+              <div className="user-table-wrapper">
+                <table className="user-table">
+                  <thead>
+                    <tr>
+                      <th>Username</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Games</th>
+                      <th>Wins</th>
+                      <th>Streak</th>
+                      <th>Gems</th>
+                      <th>Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u._id}>
+                        <td><strong>{u.username}</strong></td>
+                        <td>{u.email}</td>
+                        <td><span className={`role-badge ${u.role}`}>{u.role}</span></td>
+                        <td>{u.stats?.gamesPlayed || 0}</td>
+                        <td>{u.stats?.gamesWon || 0}</td>
+                        <td>{u.stats?.winStreak || 0}</td>
+                        <td><span className="gems-badge">{u.gems || 0}</span></td>
+                        <td>{new Date(u.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'stats' && stats && (
+        <div className="admin-section">
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-number">{stats.totalGames}</div>
+              <div className="stat-label">Total Games</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{stats.wonGames}</div>
+              <div className="stat-label">Won Games</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{stats.winRate}%</div>
+              <div className="stat-label">Win Rate</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{stats.totalCharacters}</div>
+              <div className="stat-label">Characters</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{stats.totalUsers}</div>
+              <div className="stat-label">Users</div>
             </div>
           </div>
-        )}
-      </div>
-    );
-  };
+
+          <div className="admin-list-card">
+            <h2>Top Players</h2>
+            {stats.topPlayers?.length === 0 ? <p className="empty-message">No players yet.</p> : (
+              <div className="top-players-list">
+                {stats.topPlayers?.map((player, index) => (
+                  <div key={player._id} className="top-player-item">
+                    <span className="rank">{index + 1}</span>
+                    <span className="name">{player.username}</span>
+                    <span className="wins">{player.stats?.gamesWon || 0} wins</span>
+                    <span className="best">Streak: {player.stats?.winStreak || 0}</span>
+                    {player.gems > 0 && <span className="gems">{player.gems}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'gift' && renderGiftTab()}
+    </div>
+  );
+};
 
 export default AdminPanel;

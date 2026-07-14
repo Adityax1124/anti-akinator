@@ -306,8 +306,8 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                {/* ✅ Notification Bell */}
-                <div className="nav-notification-bell">
+                {/* ✅ Notification Bell - Now looks like a nav item */}
+                <div className="nav-notification-wrapper">
                   <NotificationBell />
                 </div>
 

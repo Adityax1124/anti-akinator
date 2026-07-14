@@ -31,6 +31,9 @@ const notificationSchema = new mongoose.Schema({
       'chest_available',    // New chest available
       'chest_opened',       // Chest was opened
       
+      // ✅ NEW: Gift related
+      'gift',               // Admin gift notification
+      
       // General
       'system',
       'announcement'
@@ -59,7 +62,7 @@ const notificationSchema = new mongoose.Schema({
   // ===== COLOR =====
   color: {
     type: String,
-    enum: ['blue', 'green', 'red', 'yellow', 'purple', 'gray'],
+    enum: ['blue', 'green', 'red', 'yellow', 'purple', 'gray', 'gold'],
     default: 'blue'
   },
 
@@ -105,6 +108,34 @@ const notificationSchema = new mongoose.Schema({
       type: String,
       default: null
     },
+    
+    // ✅ NEW: Gift Data
+    giftType: {
+      type: String,
+      enum: ['card', 'title', 'banner', 'profilePhoto', 'shards', 'gems', null],
+      default: null
+    },
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
+    itemName: {
+      type: String,
+      default: null
+    },
+    amount: {
+      type: Number,
+      default: null
+    },
+    isClaimed: {
+      type: Boolean,
+      default: false
+    },
+    claimedAt: {
+      type: Date,
+      default: null
+    },
+    
     // Extra flexible data
     extra: {
       type: mongoose.Schema.Types.Mixed,
@@ -204,7 +235,8 @@ notificationSchema.methods.getActionText = function() {
     'war_found': '⚔️ View War',
     'war_ending_soon': '⚔️ Go to War',
     'war_defeat': '📊 View Results',
-    'war_draw': '📊 View Results'
+    'war_draw': '📊 View Results',
+    'gift': '🎁 Claim Gift'  // ✅ NEW
   };
   return actions[this.type] || '📖 View';
 };
@@ -219,7 +251,8 @@ notificationSchema.methods.getActionLink = function() {
     'war_found': `/clan/war`,
     'war_ending_soon': `/clan/war`,
     'war_defeat': `/clan/war/history`,
-    'war_draw': `/clan/war/history`
+    'war_draw': `/clan/war/history`,
+    'gift': `/notifications`  // ✅ NEW
   };
   return links[this.type] || '#';
 };
@@ -257,7 +290,7 @@ notificationSchema.statics.getUnclaimedForUser = async function(userId) {
   return this.find({
     userId,
     isClaimed: false,
-    type: { $in: ['war_victory', 'chest_available'] }
+    type: { $in: ['war_victory', 'chest_available', 'gift'] }  // ✅ Added 'gift'
   }).sort({ createdAt: -1 });
 };
 
@@ -266,7 +299,7 @@ notificationSchema.statics.getUnclaimedCount = async function(userId) {
   return this.countDocuments({
     userId,
     isClaimed: false,
-    type: { $in: ['war_victory', 'chest_available'] }
+    type: { $in: ['war_victory', 'chest_available', 'gift'] }  // ✅ Added 'gift'
   });
 };
 
@@ -348,6 +381,7 @@ function getDefaultIcon(type) {
     'war_card_ready': '🃏',
     'chest_available': '🎁',
     'chest_opened': '📦',
+    'gift': '🎁',  // ✅ NEW
     'system': '🔔',
     'announcement': '📢'
   };
@@ -370,6 +404,7 @@ function getDefaultColor(type) {
     'war_card_ready': 'purple',
     'chest_available': 'gold',
     'chest_opened': 'purple',
+    'gift': 'gold',  // ✅ NEW
     'system': 'gray',
     'announcement': 'blue'
   };

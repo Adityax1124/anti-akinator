@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import TreasureChestModal from '../components/TreasureChestModal';
+import GiftModal from '../components/GiftModal';
 import './Notifications.css';
 
 const Notifications = () => {
@@ -15,6 +16,8 @@ const Notifications = () => {
   const [unclaimedCount, setUnclaimedCount] = useState(0);
   const [selectedChest, setSelectedChest] = useState(null);
   const [showChestModal, setShowChestModal] = useState(false);
+  const [selectedGift, setSelectedGift] = useState(null);
+  const [showGiftModal, setShowGiftModal] = useState(false);
   const [filter, setFilter] = useState('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -171,6 +174,25 @@ const Notifications = () => {
     setTimeout(() => setSuccess(''), 4000);
   };
 
+  // Open Gift
+  const handleOpenGift = (notification) => {
+    setSelectedGift(notification);
+    setShowGiftModal(true);
+  };
+
+  // Handle gift claimed
+  const handleGiftClaimed = (result) => {
+    setShowGiftModal(false);
+    setSelectedGift(null);
+    
+    // Refresh notifications
+    fetchNotifications();
+    fetchUnclaimedCount();
+    
+    setSuccess(`✅ ${result.message}`);
+    setTimeout(() => setSuccess(''), 4000);
+  };
+
   // Navigate to war
   const handleGoToWar = (notification) => {
     if (notification.data?.warId) {
@@ -194,6 +216,7 @@ const Notifications = () => {
       'war_card_ready': '🃏',
       'chest_available': '🎁',
       'chest_opened': '📦',
+      'gift': '🎁',
       'system': '🔔',
       'announcement': '📢'
     };
@@ -214,6 +237,7 @@ const Notifications = () => {
       'war_card_ready': 'purple',
       'chest_available': 'gold',
       'chest_opened': 'purple',
+      'gift': 'gold',
       'system': 'gray',
       'announcement': 'blue'
     };
@@ -237,7 +261,7 @@ const Notifications = () => {
     if (filter === 'all') return notifications;
     if (filter === 'unread') return notifications.filter(n => !n.isRead);
     if (filter === 'unclaimed') return notifications.filter(n => 
-      (n.type === 'chest_available' || n.type === 'war_victory') && !n.isClaimed
+      (n.type === 'chest_available' || n.type === 'war_victory' || n.type === 'gift') && !n.isClaimed
     );
     return notifications.filter(n => n.type === filter);
   };
@@ -250,7 +274,7 @@ const Notifications = () => {
       all: notifications.length,
       unread: notifications.filter(n => !n.isRead).length,
       unclaimed: notifications.filter(n => 
-        (n.type === 'chest_available' || n.type === 'war_victory') && !n.isClaimed
+        (n.type === 'chest_available' || n.type === 'war_victory' || n.type === 'gift') && !n.isClaimed
       ).length
     };
     return counts;
@@ -274,7 +298,7 @@ const Notifications = () => {
             <span className="notif-unread-badge">{unreadCount} unread</span>
           )}
           {unclaimedCount > 0 && (
-            <span className="notif-unclaimed-badge">🎁 {unclaimedCount} chests</span>
+            <span className="notif-unclaimed-badge">🎁 {unclaimedCount} rewards</span>
           )}
         </div>
         <div className="notif-header-right">
@@ -313,7 +337,7 @@ const Notifications = () => {
           className={`filter-btn ${filter === 'unclaimed' ? 'active' : ''}`}
           onClick={() => setFilter('unclaimed')}
         >
-          🎁 Chests ({filterCounts.unclaimed})
+          🎁 Rewards ({filterCounts.unclaimed})
         </button>
         <button
           className={`filter-btn ${filter === 'war_victory' ? 'active' : ''}`}
@@ -326,6 +350,12 @@ const Notifications = () => {
           onClick={() => setFilter('chest_available')}
         >
           🎁 Chests
+        </button>
+        <button
+          className={`filter-btn ${filter === 'gift' ? 'active' : ''}`}
+          onClick={() => setFilter('gift')}
+        >
+          🎁 Gifts
         </button>
       </div>
 
@@ -350,6 +380,7 @@ const Notifications = () => {
             const isChestAvailable = notification.type === 'chest_available' || 
                                      (notification.type === 'war_victory' && !notification.isClaimed);
             const canOpenChest = isChestAvailable && notification.data?.chestId;
+            const canOpenGift = notification.type === 'gift' && !notification.data?.isClaimed;
             const canGoToWar = notification.type === 'war_started' || 
                                notification.type === 'war_reminder' ||
                                notification.type === 'war_found' ||
@@ -386,6 +417,12 @@ const Notifications = () => {
                       vs {notification.data.opponentName}
                     </div>
                   )}
+                  {notification.type === 'gift' && notification.data?.itemName && (
+                    <div className="notif-item-gift">
+                      🎁 {notification.data.giftType}: {notification.data.itemName}
+                      {notification.data.amount && ` x${notification.data.amount}`}
+                    </div>
+                  )}
                 </div>
 
                 <div className="notif-item-actions">
@@ -398,6 +435,17 @@ const Notifications = () => {
                       }}
                     >
                       🎁 Open
+                    </button>
+                  )}
+                  {canOpenGift && (
+                    <button 
+                      className="notif-action-btn gift"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenGift(notification);
+                      }}
+                    >
+                      🎁 Claim
                     </button>
                   )}
                   {canGoToWar && (
@@ -436,6 +484,18 @@ const Notifications = () => {
             setSelectedChest(null);
           }}
           onOpened={handleChestOpened}
+        />
+      )}
+
+      {/* Gift Modal */}
+      {showGiftModal && selectedGift && (
+        <GiftModal
+          notification={selectedGift}
+          onClose={() => {
+            setShowGiftModal(false);
+            setSelectedGift(null);
+          }}
+          onClaimed={handleGiftClaimed}
         />
       )}
     </div>

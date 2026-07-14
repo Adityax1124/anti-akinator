@@ -313,6 +313,118 @@
   cursor: pointer;
 }
 
+/* ===== USER SEARCH DROPDOWN ===== */
+.user-search-container {
+  position: relative;
+  width: 100%;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  margin-top: 4px;
+  z-index: 1000;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.user-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+
+.user-dropdown::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.user-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(108, 99, 255, 0.3);
+  border-radius: 4px;
+}
+
+.user-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.user-dropdown-item:hover {
+  background: rgba(108, 99, 255, 0.08);
+}
+
+.user-dropdown-item .user-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+  min-width: 80px;
+}
+
+.user-dropdown-item .user-email {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  flex: 1;
+}
+
+.user-dropdown-item .user-id {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 10px;
+  font-family: monospace;
+}
+
+.user-dropdown-more {
+  padding: 8px 14px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.user-dropdown-empty {
+  padding: 16px 14px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  text-align: center;
+}
+
+.form-hint.success {
+  color: #4ecdc4;
+  font-weight: 500;
+}
+
+/* ===== GIFT INSTRUCTIONS ===== */
+.gift-instructions {
+  padding: 12px 0;
+}
+
+.gift-instructions ol {
+  color: rgba(255, 255, 255, 0.6);
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.gift-instructions ol li {
+  margin-bottom: 4px;
+}
+
+.gift-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+}
+
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
