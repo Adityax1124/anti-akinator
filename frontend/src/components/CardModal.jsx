@@ -9,53 +9,104 @@ const CardModal = ({ card, onClose, onUpgradeSuccess, userGems }) => {
   const [success, setSuccess] = useState('');
   const [showSellConfirm, setShowSellConfirm] = useState(false);
 
-  const getUpgradeInfo = (level) => {
-    const upgradeData = {
-      1: { cost: 10, powerIncrease: 1, nextLevel: 2 },
-      2: { cost: 15, powerIncrease: 1, nextLevel: 3 },
-      3: { cost: 20, powerIncrease: 2, nextLevel: 4 },
-      4: { cost: 30, powerIncrease: 2, nextLevel: 5 },
-      5: { cost: 40, powerIncrease: 2, nextLevel: 6 },
-      6: { cost: 55, powerIncrease: 3, nextLevel: 7 },
-      7: { cost: 70, powerIncrease: 3, nextLevel: 8 },
-      8: { cost: 90, powerIncrease: 4, nextLevel: 9 },
-      9: { cost: 120, powerIncrease: 4, nextLevel: 10 },
-      10: { cost: 0, powerIncrease: 0, nextLevel: null, isMax: true }
+  // ✅ NEW: Get upgrade cost based on rarity and level
+  const getUpgradeCost = (rarity, level) => {
+    const baseCosts = {
+      'Common': 10,
+      'Uncommon': 40,
+      'Rare': 85,
+      'Epic': 200,
+      'Legendary': 450
     };
-    return upgradeData[level] || upgradeData[1];
+    
+    const base = baseCosts[rarity] || 10;
+    const multiplier = 1.3; // 30% increase per level
+    
+    if (level >= 10) return 0;
+    return Math.round(base * Math.pow(multiplier, level - 1));
+  };
+
+  // ✅ NEW: Get power increase based on level (same for all rarities)
+  const getPowerIncrease = (level) => {
+    const increases = {
+      1: 1,
+      2: 1,
+      3: 2,
+      4: 2,
+      5: 2,
+      6: 3,
+      7: 3,
+      8: 4,
+      9: 4,
+      10: 5
+    };
+    return increases[level] || 5;
+  };
+
+  // ✅ UPDATED: Get upgrade info with rarity support
+  const getUpgradeInfo = (rarity, level) => {
+    if (level >= 10) {
+      return {
+        cost: 0,
+        powerIncrease: 0,
+        nextLevel: null,
+        isMax: true
+      };
+    }
+
+    const cost = getUpgradeCost(rarity, level);
+    const powerIncrease = getPowerIncrease(level);
+
+    return {
+      cost: cost,
+      powerIncrease: powerIncrease,
+      nextLevel: level + 1,
+      isMax: false
+    };
+  };
+
+  // ✅ Calculate total cost to max level
+  const getTotalCostToMax = (rarity, currentLevel) => {
+    let total = 0;
+    for (let i = currentLevel; i < 10; i++) {
+      total += getUpgradeCost(rarity, i);
+    }
+    return total;
   };
 
   // ✅ CORRECTED: Calculate sell price
-const getSellPrice = (card) => {
-  const basePrices = {
-    'Common': 5,
-    'Uncommon': 25,
-    'Rare': 60,
-    'Epic': 150,
-    'Legendary': 350
-  };
+  const getSellPrice = (card) => {
+    const basePrices = {
+      'Common': 5,
+      'Uncommon': 25,
+      'Rare': 60,
+      'Epic': 150,
+      'Legendary': 350
+    };
 
-  const levelBonus = {
-    'Common': { 1: 0, 2: 3, 3: 6, 4: 9, 5: 15, 6: 18, 7: 21, 8: 25, 9: 30, 10: 35 },
-    'Uncommon': { 1: 0, 2: 4, 3: 8, 4: 12, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40 },
-    'Rare': { 1: 0, 2: 5, 3: 10, 4: 15, 5: 25, 6: 30, 7: 35, 8: 40, 9: 50, 10: 60 },
-    'Epic': { 1: 0, 2: 10, 3: 20, 4: 30, 5: 50, 6: 65, 7: 80, 8: 95, 9: 110, 10: 130 },
-    'Legendary': { 1: 0, 2: 20, 3: 40, 4: 60, 5: 100, 6: 130, 7: 160, 8: 190, 9: 220, 10: 250 }
-  };
+    const levelBonus = {
+      'Common': { 1: 0, 2: 3, 3: 6, 4: 9, 5: 15, 6: 18, 7: 21, 8: 25, 9: 30, 10: 35 },
+      'Uncommon': { 1: 0, 2: 4, 3: 8, 4: 12, 5: 15, 6: 20, 7: 25, 8: 30, 9: 35, 10: 40 },
+      'Rare': { 1: 0, 2: 5, 3: 10, 4: 15, 5: 25, 6: 30, 7: 35, 8: 40, 9: 50, 10: 60 },
+      'Epic': { 1: 0, 2: 10, 3: 20, 4: 30, 5: 50, 6: 65, 7: 80, 8: 95, 9: 110, 10: 130 },
+      'Legendary': { 1: 0, 2: 20, 3: 40, 4: 60, 5: 100, 6: 130, 7: 160, 8: 190, 9: 220, 10: 250 }
+    };
 
-  const rarity = card.rarity || 'Common';
-  const level = card.level || 1;
-  const basePrice = basePrices[rarity] || 5;
-  const bonus = levelBonus[rarity]?.[level] || 0;
-  
-  return basePrice + bonus;
-};
+    const rarity = card.rarity || 'Common';
+    const level = card.level || 1;
+    const basePrice = basePrices[rarity] || 5;
+    const bonus = levelBonus[rarity]?.[level] || 0;
+    
+    return basePrice + bonus;
+  };
 
   const currentLevel = card.level || 1;
+  const rarity = card.rarity || 'Common';
   const isMaxLevel = currentLevel >= 10;
-  const upgradeInfo = getUpgradeInfo(currentLevel);
+  const upgradeInfo = getUpgradeInfo(rarity, currentLevel);
   const canUpgrade = !isMaxLevel && (userGems || 0) >= upgradeInfo.cost;
   const sellPrice = getSellPrice(card);
+  const totalCostToMax = getTotalCostToMax(rarity, currentLevel);
 
   const handleUpgrade = async () => {
     if (!canUpgrade) return;
@@ -231,6 +282,12 @@ const getSellPrice = (card) => {
                   {upgradeInfo.cost}
                 </span>
               </div>
+            </div>
+
+            {/* ✅ NEW: Show total cost to max level */}
+            <div className="upgrade-total-cost">
+              <span className="total-cost-label">Total cost to MAX level:</span>
+              <span className="total-cost-value">💎 {totalCostToMax}</span>
             </div>
 
             <button

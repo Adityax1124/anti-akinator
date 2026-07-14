@@ -138,6 +138,35 @@ const Collection = () => {
     return stars[rarity] || '⭐';
   };
 
+  // ✅ Helper: Get base upgrade cost for display
+  const getBaseUpgradeCost = (rarity) => {
+    const baseCosts = {
+      'Common': 10,
+      'Uncommon': 40,
+      'Rare': 85,
+      'Epic': 200,
+      'Legendary': 450
+    };
+    return baseCosts[rarity] || 10;
+  };
+
+  // ✅ Helper: Get upgrade cost for a specific level (for display)
+  const getUpgradeCost = (rarity, level) => {
+    const baseCosts = {
+      'Common': 10,
+      'Uncommon': 40,
+      'Rare': 85,
+      'Epic': 200,
+      'Legendary': 450
+    };
+    
+    const base = baseCosts[rarity] || 10;
+    const multiplier = 1.3;
+    
+    if (level >= 10) return 0;
+    return Math.round(base * Math.pow(multiplier, level - 1));
+  };
+
   if (loading) {
     return (
       <div className="collection-container">
@@ -238,46 +267,60 @@ const Collection = () => {
         </div>
       ) : (
         <div className="collection-grid">
-          {filteredCards.map((card, i) => (
-            <div
-              key={card.characterId}
-              className="collection-card"
-              onClick={() => handleCardClick(card)}
-              style={{
-                borderColor: getRarityColor(card.rarity),
-                boxShadow: `0 0 24px ${getRarityColor(card.rarity)}1a`,
-                animationDelay: `${Math.min(i * 0.04, 0.4)}s`
-              }}
-            >
-              <div className="card-image-container">
-                {card.image ? (
-                  <img src={card.image} alt={card.characterName} className="card-image" />
-                ) : (
-                  <div className="card-placeholder">
-                    {card.characterName?.charAt(0) || '?'}
+          {filteredCards.map((card, i) => {
+            const nextLevelCost = card.level < 10 ? getUpgradeCost(card.rarity, card.level) : 0;
+            
+            return (
+              <div
+                key={card.characterId}
+                className="collection-card"
+                onClick={() => handleCardClick(card)}
+                style={{
+                  borderColor: getRarityColor(card.rarity),
+                  boxShadow: `0 0 24px ${getRarityColor(card.rarity)}1a`,
+                  animationDelay: `${Math.min(i * 0.04, 0.4)}s`
+                }}
+              >
+                <div className="card-image-container">
+                  {card.image ? (
+                    <img src={card.image} alt={card.characterName} className="card-image" />
+                  ) : (
+                    <div className="card-placeholder">
+                      {card.characterName?.charAt(0) || '?'}
+                    </div>
+                  )}
+                  <div className="card-level-badge">Lv.{card.level || 1}</div>
+                  <div className="card-element-badge">{getElementEmoji(card.element)}</div>
+                </div>
+                <div className="card-details">
+                  <div className="card-name">{card.characterName || 'Unknown'}</div>
+                  <div className="card-rarity" style={{ color: getRarityColor(card.rarity) }}>
+                    {getRarityStars(card.rarity)} {card.rarity}
                   </div>
-                )}
-                <div className="card-level-badge">Lv.{card.level || 1}</div>
-                <div className="card-element-badge">{getElementEmoji(card.element)}</div>
+                  <div className="card-stats">
+                    <span className="card-power">⚡ {card.currentPower || card.powerLevel || 0}</span>
+                    <span className="card-level-text">Level {card.level || 1}/10</span>
+                  </div>
+                  <div className="card-progress-bar">
+                    <div
+                      className="card-progress-fill"
+                      style={{ width: `${((card.level || 1) / 10) * 100}%` }}
+                    />
+                  </div>
+                  {card.level < 10 && (
+                    <div className="card-upgrade-hint" style={{ color: getRarityColor(card.rarity) }}>
+                      💎 {nextLevelCost} to upgrade
+                    </div>
+                  )}
+                  {card.level >= 10 && (
+                    <div className="card-upgrade-hint max-level">
+                      ⭐ MAX LEVEL
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="card-details">
-                <div className="card-name">{card.characterName || 'Unknown'}</div>
-                <div className="card-rarity" style={{ color: getRarityColor(card.rarity) }}>
-                  {getRarityStars(card.rarity)} {card.rarity}
-                </div>
-                <div className="card-stats">
-                  <span className="card-power">⚡ {card.currentPower || card.powerLevel || 0}</span>
-                  <span className="card-level-text">Level {card.level || 1}/10</span>
-                </div>
-                <div className="card-progress-bar">
-                  <div
-                    className="card-progress-fill"
-                    style={{ width: `${((card.level || 1) / 10) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

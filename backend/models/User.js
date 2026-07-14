@@ -18,6 +18,44 @@ function sanitizeInput(str) {
 // ===== ✅ FIX: Use static default season =====
 const DEFAULT_SEASON = getCurrentSeason();
 
+// ============================================================
+// ✅ HELPER: Get Upgrade Cost based on Rarity and Level
+// ============================================================
+function getUpgradeCost(rarity, level) {
+  const baseCosts = {
+    'Common': 10,
+    'Uncommon': 40,
+    'Rare': 85,
+    'Epic': 200,
+    'Legendary': 450
+  };
+  
+  const base = baseCosts[rarity] || 10;
+  const multiplier = 1.3; // 30% increase per level
+  
+  if (level >= 10) return 0;
+  return Math.round(base * Math.pow(multiplier, level - 1));
+}
+
+// ============================================================
+// ✅ HELPER: Get Power Increase based on Level
+// ============================================================
+function getPowerIncrease(level) {
+  const increases = {
+    1: 1,
+    2: 1,
+    3: 2,
+    4: 2,
+    5: 2,
+    6: 3,
+    7: 3,
+    8: 4,
+    9: 4,
+    10: 5
+  };
+  return increases[level] || 5;
+}
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -454,7 +492,7 @@ userSchema.methods.resetFailedAttempts = async function() {
 };
 
 // ============================================================
-// ✅ CARD COLLECTION METHODS
+// ✅ CARD COLLECTION METHODS (UPDATED with Rarity)
 // ============================================================
 userSchema.methods.addCard = function(character) {
   // Check if card already exists
@@ -507,7 +545,7 @@ userSchema.methods.getTopCards = function(limit = 10) {
     .slice(0, limit);
 };
 
-// ✅ Upgrade Card
+// ✅ Upgrade Card (UPDATED with Rarity)
 userSchema.methods.upgradeCard = function(characterId) {
   const card = this.cards.find(c => 
     c.characterId.toString() === characterId.toString()
@@ -516,11 +554,17 @@ userSchema.methods.upgradeCard = function(characterId) {
   if (!card) return { success: false, message: 'Card not found' };
   if (card.level >= 10) return { success: false, message: 'Card already at max level' };
   
-  // Calculate upgrade cost based on level
-  const upgradeCost = getUpgradeCost(card.level);
+  // Calculate upgrade cost based on rarity and level
+  const rarity = card.rarity || 'Common';
+  const upgradeCost = getUpgradeCost(rarity, card.level);
   
   if (this.gems < upgradeCost) {
-    return { success: false, message: `Need ${upgradeCost} gems, have ${this.gems}` };
+    return { 
+      success: false, 
+      message: `Need ${upgradeCost} gems, have ${this.gems}`,
+      gemsNeeded: upgradeCost,
+      gemsAvailable: this.gems
+    };
   }
   
   // Deduct gems
@@ -538,26 +582,30 @@ userSchema.methods.upgradeCard = function(characterId) {
     message: `Card upgraded to level ${card.level}!`,
     newLevel: card.level,
     newPower: card.currentPower,
-    gemsRemaining: this.gems
+    powerIncrease: powerIncrease,
+    gemsSpent: upgradeCost,
+    gemsRemaining: this.gems,
+    rarity: rarity
   };
 };
 
 // ============================================================
-// ✅ GET UPGRADE COST (Helper Function)
+// ✅ GET UPGRADE COST (Helper Function - UPDATED with Rarity)
 // ============================================================
-function getUpgradeCost(level) {
-  const costs = {
-    1: 10,
-    2: 15,
-    3: 20,
-    4: 30,
-    5: 40,
-    6: 55,
-    7: 70,
-    8: 90,
-    9: 120
+function getUpgradeCost(rarity, level) {
+  const baseCosts = {
+    'Common': 10,
+    'Uncommon': 40,
+    'Rare': 85,
+    'Epic': 200,
+    'Legendary': 450
   };
-  return costs[level] || 120;
+  
+  const base = baseCosts[rarity] || 10;
+  const multiplier = 1.3; // 30% increase per level
+  
+  if (level >= 10) return 0;
+  return Math.round(base * Math.pow(multiplier, level - 1));
 }
 
 // ============================================================

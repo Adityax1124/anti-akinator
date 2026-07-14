@@ -5,51 +5,76 @@ const User = require('../models/User');
 const Character = require('../models/Character');
 
 // ============================================================
-// ✅ HELPER: Get Upgrade Info (DEFINED FIRST)
+// ✅ HELPER: Get Upgrade Cost based on Rarity and Level
 // ============================================================
-function getUpgradeInfo(level) {
-  const upgradeData = {
-    1: { cost: 10, powerIncrease: 1, nextLevel: 2 },
-    2: { cost: 15, powerIncrease: 1, nextLevel: 3 },
-    3: { cost: 20, powerIncrease: 2, nextLevel: 4 },
-    4: { cost: 30, powerIncrease: 2, nextLevel: 5 },
-    5: { cost: 40, powerIncrease: 2, nextLevel: 6 },
-    6: { cost: 55, powerIncrease: 3, nextLevel: 7 },
-    7: { cost: 70, powerIncrease: 3, nextLevel: 8 },
-    8: { cost: 90, powerIncrease: 4, nextLevel: 9 },
-    9: { cost: 120, powerIncrease: 4, nextLevel: 10 },
-    10: { cost: 0, powerIncrease: 0, nextLevel: null, isMax: true }
+function getUpgradeCost(rarity, level) {
+  const baseCosts = {
+    'Common': 10,
+    'Uncommon': 40,
+    'Rare': 85,
+    'Epic': 200,
+    'Legendary': 450
   };
+  
+  const base = baseCosts[rarity] || 10;
+  const multiplier = 1.3; // 30% increase per level
+  
+  if (level >= 10) return 0;
+  return Math.round(base * Math.pow(multiplier, level - 1));
+}
 
-  const info = upgradeData[level] || upgradeData[1];
+// ============================================================
+// ✅ HELPER: Get Power Increase based on Level
+// ============================================================
+function getPowerIncrease(level) {
+  const increases = {
+    1: 1,
+    2: 1,
+    3: 2,
+    4: 2,
+    5: 2,
+    6: 3,
+    7: 3,
+    8: 4,
+    9: 4,
+    10: 5
+  };
+  return increases[level] || 5;
+}
+
+// ============================================================
+// ✅ HELPER: Get Upgrade Info (UPDATED with Rarity)
+// ============================================================
+function getUpgradeInfo(rarity, level) {
+  if (level >= 10) {
+    return {
+      cost: 0,
+      powerIncrease: 0,
+      nextLevel: null,
+      isMax: true,
+      totalCostToMax: 0
+    };
+  }
+
+  const cost = getUpgradeCost(rarity, level);
+  const powerIncrease = getPowerIncrease(level);
+
   return {
-    cost: info.cost,
-    powerIncrease: info.powerIncrease,
-    nextLevel: info.nextLevel,
-    isMax: info.isMax || false,
-    totalCostToMax: calculateTotalCostToMax(level)
+    cost: cost,
+    powerIncrease: powerIncrease,
+    nextLevel: level + 1,
+    isMax: false,
+    totalCostToMax: calculateTotalCostToMax(rarity, level)
   };
 }
 
 // ============================================================
-// ✅ HELPER: Calculate Total Cost to Max
+// ✅ HELPER: Calculate Total Cost to Max (UPDATED with Rarity)
 // ============================================================
-function calculateTotalCostToMax(currentLevel) {
-  const costs = {
-    1: 10,
-    2: 15,
-    3: 20,
-    4: 30,
-    5: 40,
-    6: 55,
-    7: 70,
-    8: 90,
-    9: 120
-  };
-
+function calculateTotalCostToMax(rarity, currentLevel) {
   let total = 0;
   for (let i = currentLevel; i < 10; i++) {
-    total += costs[i] || 0;
+    total += getUpgradeCost(rarity, i);
   }
   return total;
 }
@@ -81,6 +106,7 @@ function getSellPrice(card) {
   
   return basePrice + bonus;
 }
+
 // ============================================================
 // ✅ GET USER'S CARD COLLECTION
 // ============================================================
@@ -123,7 +149,7 @@ router.get('/collection', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ GET SINGLE CARD DETAILS
+// ✅ GET SINGLE CARD DETAILS (UPDATED with Rarity)
 // ============================================================
 router.get('/card/:characterId', authMiddleware, async (req, res) => {
   try {
@@ -149,7 +175,8 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
     }
 
     const currentLevel = card.level || 1;
-    const upgradeInfo = getUpgradeInfo(currentLevel);
+    const rarity = card.rarity || 'Common';
+    const upgradeInfo = getUpgradeInfo(rarity, currentLevel);
     const canUpgrade = currentLevel < 10 && (user.gems || 0) >= upgradeInfo.cost;
     const sellPrice = getSellPrice(card);
 
@@ -178,7 +205,7 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ UPGRADE CARD
+// ✅ UPGRADE CARD (UPDATED with Rarity)
 // ============================================================
 router.post('/upgrade', authMiddleware, async (req, res) => {
   try {
@@ -215,6 +242,7 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
 
     const card = user.cards[cardIndex];
     const currentLevel = card.level || 1;
+    const rarity = card.rarity || 'Common';
 
     if (currentLevel >= 10) {
       return res.status(400).json({
@@ -224,7 +252,7 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
       });
     }
 
-    const upgradeInfo = getUpgradeInfo(currentLevel);
+    const upgradeInfo = getUpgradeInfo(rarity, currentLevel);
     const userGems = user.gems || 0;
     
     if (userGems < upgradeInfo.cost) {
@@ -245,7 +273,7 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
 
     await user.save();
 
-    console.log(`⬆️ ${user.username} upgraded ${card.characterName} from Level ${oldLevel} to Level ${card.level} (${oldPower} → ${card.currentPower})`);
+    console.log(`⬆️ ${user.username} upgraded ${card.characterName} (${rarity}) from Level ${oldLevel} to Level ${card.level} (${oldPower} → ${card.currentPower}) - Cost: ${upgradeInfo.cost} gems`);
 
     res.json({
       success: true,
@@ -258,9 +286,10 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
         newPower: card.currentPower,
         powerIncrease: upgradeInfo.powerIncrease,
         gemsSpent: upgradeInfo.cost,
-        gemsRemaining: user.gems
+        gemsRemaining: user.gems,
+        rarity: rarity
       },
-      nextUpgrade: (card.level || 1) < 10 ? getUpgradeInfo(card.level || 1) : null
+      nextUpgrade: (card.level || 1) < 10 ? getUpgradeInfo(rarity, card.level || 1) : null
     });
 
   } catch (error) {
@@ -273,7 +302,7 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ BULK UPGRADE
+// ✅ BULK UPGRADE (UPDATED with Rarity)
 // ============================================================
 router.post('/upgrade-bulk', authMiddleware, async (req, res) => {
   try {
@@ -308,10 +337,11 @@ router.post('/upgrade-bulk', authMiddleware, async (req, res) => {
 
       const card = user.cards[cardIndex];
       const currentLevel = card.level || 1;
+      const rarity = card.rarity || 'Common';
       
       if (currentLevel >= 10) continue;
 
-      const upgradeInfo = getUpgradeInfo(currentLevel);
+      const upgradeInfo = getUpgradeInfo(rarity, currentLevel);
       
       if ((user.gems || 0) < upgradeInfo.cost) continue;
 
@@ -326,6 +356,7 @@ router.post('/upgrade-bulk', authMiddleware, async (req, res) => {
       results.push({
         characterId: card.characterId,
         characterName: card.characterName,
+        rarity: rarity,
         newLevel: card.level,
         newPower: card.currentPower,
         powerIncrease: upgradeInfo.powerIncrease,
@@ -437,27 +468,45 @@ router.post('/sell', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ GET UPGRADE COST
+// ✅ GET UPGRADE COST (UPDATED with Rarity)
 // ============================================================
-router.get('/upgrade-cost/:level', authMiddleware, async (req, res) => {
+router.get('/upgrade-cost/:rarity/:level', authMiddleware, async (req, res) => {
   try {
-    const level = parseInt(req.params.level);
+    const { rarity, level } = req.params;
+    const parsedLevel = parseInt(level);
     
-    if (isNaN(level) || level < 1 || level > 10) {
+    if (isNaN(parsedLevel) || parsedLevel < 1 || parsedLevel > 10) {
       return res.status(400).json({
         success: false,
         message: 'Invalid level. Must be between 1 and 10'
       });
     }
 
-    const upgradeInfo = getUpgradeInfo(level);
+    const validRarities = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+    if (!validRarities.includes(rarity)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid rarity. Must be Common, Uncommon, Rare, Epic, or Legendary'
+      });
+    }
+
+    const upgradeInfo = getUpgradeInfo(rarity, parsedLevel);
+    
+    // Get all costs for this rarity
+    const allCosts = {};
+    for (let i = 1; i < 10; i++) {
+      allCosts[i] = getUpgradeCost(rarity, i);
+    }
     
     res.json({
       success: true,
-      level: level,
+      rarity: rarity,
+      level: parsedLevel,
       upgradeInfo: upgradeInfo,
       maxLevel: 10,
-      isMaxLevel: level >= 10
+      isMaxLevel: parsedLevel >= 10,
+      allCosts: allCosts,
+      totalCostToMax: calculateTotalCostToMax(rarity, parsedLevel)
     });
 
   } catch (error) {
