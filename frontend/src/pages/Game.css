@@ -1960,3 +1960,71 @@
     font-size: 12px;
   }
 }
+/* ===== TIMER STYLES ===== */
+.game-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.game-timer.warning {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
+  border-color: rgba(255, 107, 107, 0.2);
+  animation: timer-pulse 0.5s ease-in-out infinite alternate;
+}
+
+.timer-hurry {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff6b6b;
+  margin-left: 4px;
+  animation: timer-blink 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes timer-pulse {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes timer-blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Responsive timer */
+@media (max-width: 768px) {
+  .game-timer {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-timer {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+  .timer-hurry {
+    font-size: 9px;
+  }
+}

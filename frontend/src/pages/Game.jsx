@@ -237,6 +237,11 @@ const Game = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ✅ NEW: Timer states
+  const [timeLeft, setTimeLeft] = useState(120);
+  const [timerActive, setTimerActive] = useState(false);
+  const [timerWarning, setTimerWarning] = useState(false);
+
   // ✅ NEW: Anime selection state
   const [showAnimeSelection, setShowAnimeSelection] = useState(true);
   const [selectedAnime, setSelectedAnime] = useState(null);
@@ -248,6 +253,88 @@ const Game = () => {
   const isNavigating = useRef(false);
   const prevPathRef = useRef(location.pathname);
   const isPaymentModalOpen = useRef(false);
+
+  // ✅ NEW: Format time as MM:SS
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // ✅ NEW: Auto giveup when timer hits 0
+  const handleTimeUp = async () => {
+    setTimerActive(false);
+    setTimerWarning(false);
+    
+    if (gameState.status !== 'playing' || hasEnded.current) return;
+    
+    try {
+      const response = await api.post('/game/giveup', {
+        gameId: gameState.gameId
+      });
+
+      setGameState(prev => ({
+        ...prev,
+        status: 'lost',
+        character: response.data.character,
+        characterImage: response.data.image || null,
+        powerLevel: response.data.powerLevel || null,
+        questions: [...prev.questions, {
+          type: 'system',
+          text: `⏰ Time's up! The character was: ${response.data.character}`
+        }]
+      }));
+      
+      setError('⏰ Time is up! You gave up.');
+    } catch (error) {
+      console.error('Giveup error:', error);
+      setError('Failed to give up. Please try again.');
+    }
+  };
+
+  // ✅ NEW: Timer effect
+  useEffect(() => {
+    if (!timerActive || gameState.status !== 'playing') {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleTimeUp();
+          return 0;
+        }
+        
+        // Show warning when 10 seconds left
+        if (prev <= 11 && !timerWarning) {
+          setTimerWarning(true);
+        }
+        
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timerActive, gameState.status]);
+
+  // ✅ NEW: Reset timer when game starts
+  useEffect(() => {
+    if (gameState.status === 'playing') {
+      setTimeLeft(120);
+      setTimerActive(true);
+      setTimerWarning(false);
+    } else {
+      setTimerActive(false);
+    }
+  }, [gameState.status]);
+
+  // ✅ NEW: Stop timer when game ends
+  useEffect(() => {
+    if (gameState.status === 'won' || gameState.status === 'lost') {
+      setTimerActive(false);
+    }
+  }, [gameState.status]);
 
   useEffect(() => {
     fetchUserShards();
@@ -284,6 +371,7 @@ const Game = () => {
     if (gameState.status !== 'playing') return;
 
     hasEnded.current = true;
+    setTimerActive(false);
 
     try {
       console.log('🏳️ Abandoning game with gameId:', gameState.gameId);
@@ -512,7 +600,6 @@ const Game = () => {
       console.error('Failed to start game:', error);
       setError(error.response?.data?.message || 'Failed to start game. Please try again.');
       setGameState(prev => ({ ...prev, loading: false }));
-      // Show anime selection again on error
       setShowAnimeSelection(true);
     }
   };
@@ -786,7 +873,6 @@ const Game = () => {
     hasWarned.current = false;
     isNavigating.current = false;
     isPaymentModalOpen.current = false;
-    // ✅ Show anime selection again
     setShowAnimeSelection(true);
     setSelectedAnime(null);
   };
@@ -937,6 +1023,13 @@ const Game = () => {
           <span className="game-shards">🎴 {shards}</span>
           {selectedAnime && (
             <span className="game-anime">🎬 {selectedAnime}</span>
+          )}
+          {/* ✅ NEW: Timer Display */}
+          {gameState.status === 'playing' && (
+            <span className={`game-timer ${timerWarning ? 'warning' : ''}`}>
+              ⏱️ {formatTime(timeLeft)}
+              {timerWarning && <span className="timer-hurry">⚠️ Hurry!</span>}
+            </span>
           )}
         </div>
         <div className="game-header-buttons">
@@ -1108,9 +1201,9 @@ const Game = () => {
                     className={`hint-btn ${hintUsed ? 'used' : ''}`}
                     onClick={useHint}
                     disabled={hintUsed || gameState.loading}
-                    title={hintUsed ? 'Hint already used' : 'Use 50 🎴 Shards for a hint'}
+                    title={hintUsed ? 'Hint already used' : 'Use 100 🎴 Shards for a hint'}
                   >
-                    {hintUsed ? '💡 Used' : '💡 Hint (50 🎴)'}
+                    {hintUsed ? '💡 Used' : '💡 Hint (100 🎴)'}
                   </button>
                 </div>
               </form>
