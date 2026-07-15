@@ -9,7 +9,7 @@ const ProfilePhoto = require('../models/ProfilePhoto');
 const Notification = require('../models/Notification');
 
 // ============================================================
-// ✅ GET ACTIVE SEASON PASS
+// ✅ GET ACTIVE SEASON PASS (FIXED - Auto-assigns seasonId)
 // ============================================================
 exports.getActiveSeason = async (req, res) => {
   try {
@@ -27,7 +27,15 @@ exports.getActiveSeason = async (req, res) => {
     const user = await User.findById(req.user._id);
     const userProgress = user.seasonPass || {};
 
-    // ✅ FIX: Only get tiers up to totalTiers (NOT beyond)
+    // ✅ FIX: If user has seasonPass.active = true but no seasonId, auto-assign
+    if (userProgress.active === true && !userProgress.seasonId) {
+      userProgress.seasonId = season._id;
+      user.seasonPass.seasonId = season._id;
+      await user.save();
+      console.log(`✅ Auto-assigned seasonId to user ${user.username}`);
+    }
+
+    // ✅ Only get tiers up to totalTiers
     const tiers = await SeasonPassTier.find({ 
       seasonId: season._id,
       tier: { $lte: season.totalTiers }
@@ -186,7 +194,7 @@ exports.getUserProgress = async (req, res) => {
 };
 
 // ============================================================
-// ✅ CLAIM TIER REWARD (FULLY FIXED)
+// ✅ CLAIM TIER REWARD (FIXED - Uses active flag instead of seasonId)
 // ============================================================
 exports.claimTierReward = async (req, res) => {
   try {
@@ -220,37 +228,39 @@ exports.claimTierReward = async (req, res) => {
 
     console.log('User seasonPass:', user.seasonPass ? 'Exists' : 'Missing');
 
-    // Check if user has season pass
-    if (!user.seasonPass) {
-      console.log('❌ No seasonPass object');
+    // ✅ FIX: Check if user has season pass and it's active
+    if (!user.seasonPass || !user.seasonPass.active) {
+      console.log('❌ Season pass not active or missing');
       return res.status(400).json({
         success: false,
         message: 'You have not purchased the season pass. Please buy it first.'
       });
     }
 
-    // Check if user has seasonId
-    if (!user.seasonPass.seasonId) {
-      console.log('❌ No seasonId in seasonPass');
-      return res.status(400).json({
-        success: false,
-        message: 'You have not joined this season pass. Please purchase it first.'
-      });
+    // ✅ If seasonId is missing, try to find the active season
+    let seasonId = user.seasonPass.seasonId;
+    if (!seasonId) {
+      console.log('🔍 No seasonId found, looking for active season...');
+      const activeSeason = await SeasonPass.getActiveSeason();
+      if (activeSeason) {
+        seasonId = activeSeason._id;
+        // Save it back to user for future use
+        user.seasonPass.seasonId = seasonId;
+        await user.save();
+        console.log(`✅ Auto-assigned seasonId: ${seasonId}`);
+      } else {
+        console.log('❌ No active season found');
+        return res.status(400).json({
+          success: false,
+          message: 'No active season available. Please try again later.'
+        });
+      }
     }
 
-    // Check if season pass is active
-    if (!user.seasonPass.active) {
-      console.log('❌ Season pass is not active');
-      return res.status(400).json({
-        success: false,
-        message: 'Your season pass is not active. Please purchase it first.'
-      });
-    }
-
-    // Get season
-    const season = await SeasonPass.findById(user.seasonPass.seasonId);
+    // Get the season
+    const season = await SeasonPass.findById(seasonId);
     if (!season) {
-      console.log('❌ Season not found');
+      console.log('❌ Season not found for id:', seasonId);
       return res.status(404).json({
         success: false,
         message: 'Season not found'
