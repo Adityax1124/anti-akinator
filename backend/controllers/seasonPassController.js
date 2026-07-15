@@ -58,7 +58,6 @@ exports.getActiveSeason = async (req, res) => {
       };
     });
 
-    // ✅ FIX: Added 'active' field to progress response
     res.json({
       success: true,
       hasActiveSeason: true,
@@ -81,7 +80,7 @@ exports.getActiveSeason = async (req, res) => {
         isCompleted: userProgress.isCompleted || false,
         completedAt: userProgress.completedAt || null,
         joinedAt: userProgress.joinedAt || null,
-        active: userProgress.active || false  // ✅ ADDED THIS LINE
+        active: userProgress.active || false
       },
       tiers: tierProgress,
       unlockedTierCount: unlockedTiers.length,
@@ -126,13 +125,11 @@ exports.getUserProgress = async (req, res) => {
     const unlockedTiers = seasonPass.unlockedTiers || [];
     const claimedRewards = seasonPass.claimedRewards || [];
 
-    // ✅ FIX: Only get tiers up to totalTiers (NOT beyond)
     const tiers = await SeasonPassTier.find({ 
       seasonId: season._id,
       tier: { $lte: season.totalTiers }
     }).sort({ tier: 1 });
 
-    // Build tier progress
     const tierProgress = tiers.map(tier => {
       const isUnlocked = unlockedTiers.some(t => t.tier === tier.tier);
       const rewards = tier.rewards.map((reward, index) => {
@@ -153,7 +150,6 @@ exports.getUserProgress = async (req, res) => {
       };
     });
 
-    // ✅ FIX: Added 'active' field to progress response
     res.json({
       success: true,
       hasProgress: true,
@@ -173,7 +169,7 @@ exports.getUserProgress = async (req, res) => {
         isCompleted: seasonPass.isCompleted || false,
         completedAt: seasonPass.completedAt || null,
         joinedAt: seasonPass.joinedAt || null,
-        active: seasonPass.active || false  // ✅ ADDED THIS LINE
+        active: seasonPass.active || false
       },
       tiers: tierProgress,
       unlockedTierCount: unlockedTiers.length,
@@ -190,7 +186,7 @@ exports.getUserProgress = async (req, res) => {
 };
 
 // ============================================================
-// ✅ CLAIM TIER REWARD
+// ✅ CLAIM TIER REWARD (FULLY FIXED)
 // ============================================================
 exports.claimTierReward = async (req, res) => {
   try {
@@ -198,66 +194,109 @@ exports.claimTierReward = async (req, res) => {
     const { rewardIndex } = req.body;
     const userId = req.user._id;
 
-    if (rewardIndex === undefined) {
+    console.log('=== CLAIM REWARD REQUEST ===');
+    console.log('Tier:', tier);
+    console.log('RewardIndex:', rewardIndex);
+    console.log('UserId:', userId);
+
+    // Validate rewardIndex
+    if (rewardIndex === undefined || rewardIndex === null) {
+      console.log('❌ rewardIndex is missing');
       return res.status(400).json({
         success: false,
         message: 'rewardIndex is required'
       });
     }
 
+    // Get user
     const user = await User.findById(userId);
     if (!user) {
+      console.log('❌ User not found');
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
 
-    // Check if user has season pass progress
-    if (!user.seasonPass || !user.seasonPass.seasonId) {
+    console.log('User seasonPass:', user.seasonPass ? 'Exists' : 'Missing');
+
+    // Check if user has season pass
+    if (!user.seasonPass) {
+      console.log('❌ No seasonPass object');
       return res.status(400).json({
         success: false,
-        message: 'You have not joined this season pass'
+        message: 'You have not purchased the season pass. Please buy it first.'
       });
     }
 
+    // Check if user has seasonId
+    if (!user.seasonPass.seasonId) {
+      console.log('❌ No seasonId in seasonPass');
+      return res.status(400).json({
+        success: false,
+        message: 'You have not joined this season pass. Please purchase it first.'
+      });
+    }
+
+    // Check if season pass is active
+    if (!user.seasonPass.active) {
+      console.log('❌ Season pass is not active');
+      return res.status(400).json({
+        success: false,
+        message: 'Your season pass is not active. Please purchase it first.'
+      });
+    }
+
+    // Get season
     const season = await SeasonPass.findById(user.seasonPass.seasonId);
     if (!season) {
+      console.log('❌ Season not found');
       return res.status(404).json({
         success: false,
         message: 'Season not found'
       });
     }
 
-    // Check if tier is within valid range
-    if (parseInt(tier) > season.totalTiers) {
-      return res.status(400).json({
-        success: false,
-        message: `Tier ${tier} does not exist. Max tier is ${season.totalTiers}`
-      });
-    }
+    console.log('Season found:', season.seasonName, 'Tiers:', season.totalTiers);
 
     // Check if season is active
     if (!season.isActiveSeason()) {
+      console.log('❌ Season is not active');
       return res.status(400).json({
         success: false,
         message: 'Season is not active'
       });
     }
 
+    // Check if tier is within valid range
+    const tierNum = parseInt(tier);
+    if (tierNum > season.totalTiers) {
+      console.log(`❌ Tier ${tierNum} exceeds max ${season.totalTiers}`);
+      return res.status(400).json({
+        success: false,
+        message: `Tier ${tierNum} does not exist. Max tier is ${season.totalTiers}`
+      });
+    }
+
     // Check if tier is unlocked
-    const isUnlocked = user.seasonPass.unlockedTiers.some(t => t.tier === parseInt(tier));
+    const unlockedTiers = user.seasonPass.unlockedTiers || [];
+    const isUnlocked = unlockedTiers.some(t => t.tier === tierNum);
+    console.log(`🔓 Tier ${tierNum} unlocked: ${isUnlocked}`);
+
     if (!isUnlocked) {
       return res.status(400).json({
         success: false,
-        message: 'Tier is not unlocked yet'
+        message: `Tier ${tierNum} is not unlocked yet. You need to earn ${season.correctGuessesPerTier * tierNum} correct guesses to unlock this tier.`
       });
     }
 
     // Check if already claimed
-    const alreadyClaimed = user.seasonPass.claimedRewards.some(
-      r => r.tier === parseInt(tier) && r.rewardIndex === rewardIndex
+    const claimedRewards = user.seasonPass.claimedRewards || [];
+    const alreadyClaimed = claimedRewards.some(
+      r => r.tier === tierNum && r.rewardIndex === rewardIndex
     );
+    console.log(`✅ Already claimed: ${alreadyClaimed}`);
+
     if (alreadyClaimed) {
       return res.status(400).json({
         success: false,
@@ -268,17 +307,22 @@ exports.claimTierReward = async (req, res) => {
     // Get tier data
     const tierData = await SeasonPassTier.findOne({
       seasonId: season._id,
-      tier: parseInt(tier)
+      tier: tierNum
     });
 
     if (!tierData) {
+      console.log(`❌ Tier ${tierNum} data not found`);
       return res.status(404).json({
         success: false,
         message: 'Tier not found'
       });
     }
 
+    console.log(`📦 Tier ${tierNum} has ${tierData.rewards.length} rewards`);
+
+    // Check if reward index is valid
     if (rewardIndex >= tierData.rewards.length) {
+      console.log(`❌ rewardIndex ${rewardIndex} exceeds rewards length ${tierData.rewards.length}`);
       return res.status(400).json({
         success: false,
         message: 'Invalid reward index'
@@ -286,13 +330,14 @@ exports.claimTierReward = async (req, res) => {
     }
 
     const reward = tierData.rewards[rewardIndex];
+    console.log('🎁 Reward:', reward.type, reward.itemName || '');
 
-    // Claim reward based on type
+    // Claim reward
     let rewardResult = null;
-
     try {
       rewardResult = await claimReward(user, reward);
     } catch (error) {
+      console.error('Error claiming reward:', error);
       return res.status(400).json({
         success: false,
         message: error.message
@@ -300,8 +345,11 @@ exports.claimTierReward = async (req, res) => {
     }
 
     // Mark as claimed
+    if (!user.seasonPass.claimedRewards) {
+      user.seasonPass.claimedRewards = [];
+    }
     user.seasonPass.claimedRewards.push({
-      tier: parseInt(tier),
+      tier: tierNum,
       rewardIndex: rewardIndex,
       claimedAt: new Date()
     });
@@ -309,15 +357,21 @@ exports.claimTierReward = async (req, res) => {
     await user.save();
 
     // Create notification
-    await Notification.createNotification({
-      userId: user._id,
-      type: 'system',
-      title: '🎁 Season Pass Reward Claimed!',
-      message: `You claimed ${reward.itemName || reward.type} from Tier ${tier}!`,
-      icon: '🎁',
-      color: 'gold',
-      priority: 'high'
-    });
+    try {
+      await Notification.createNotification({
+        userId: user._id,
+        type: 'system',
+        title: '🎁 Season Pass Reward Claimed!',
+        message: `You claimed ${reward.itemName || reward.type} from Tier ${tier}!`,
+        icon: '🎁',
+        color: 'gold',
+        priority: 'high'
+      });
+    } catch (notifError) {
+      console.error('Notification error:', notifError);
+    }
+
+    console.log(`✅ Reward claimed successfully for tier ${tier}`);
 
     res.json({
       success: true,

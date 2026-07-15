@@ -19,13 +19,12 @@ const SeasonPass = () => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  // ✅ API_URL is already handled by axios baseURL
-  // No changes needed here as axios uses the baseURL from its config
-
   const fetchSeasonPass = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const response = await api.get('/season-pass/active');
+      
       if (response.data.success) {
         if (response.data.hasActiveSeason) {
           setSeasonData(response.data.season);
@@ -49,25 +48,39 @@ const SeasonPass = () => {
     fetchSeasonPass();
   }, [fetchSeasonPass]);
 
+  // ✅ FIXED: Better error handling for claim reward
   const handleClaimReward = async (tier, rewardIndex) => {
     if (claiming) return;
+    
     setClaiming(true);
     setError('');
     setSuccess('');
 
     try {
+      console.log('🎯 Claiming reward:', { tier, rewardIndex });
+      
       const response = await api.post(`/season-pass/claim/${tier}`, {
         rewardIndex: rewardIndex
       });
 
+      console.log('📦 Response:', response.data);
+
       if (response.data.success) {
-        setSuccess(response.data.message);
+        setSuccess(response.data.message || '✅ Reward claimed successfully!');
+        // Refresh data after claiming
         await fetchSeasonPass();
         setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(response.data.message || 'Failed to claim reward');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to claim reward');
-      setTimeout(() => setError(''), 3000);
+      console.error('❌ Claim error:', err);
+      console.error('Response data:', err.response?.data);
+      
+      // Get the error message from the response
+      const errorMessage = err.response?.data?.message || 'Failed to claim reward. Please try again.';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
     } finally {
       setClaiming(false);
     }
@@ -131,6 +144,20 @@ const SeasonPass = () => {
 
   // ✅ FIX: Check both progress.active AND user's seasonPass.active
   const isSeasonPassActive = progress?.active === true || user?.seasonPass?.active === true;
+
+  // ✅ Check if user has claimed this specific reward
+  const isRewardClaimed = (tierNumber, rewardIndex) => {
+    if (!progress?.claimedRewards) return false;
+    return progress.claimedRewards.some(
+      r => r.tier === tierNumber && r.rewardIndex === rewardIndex
+    );
+  };
+
+  // ✅ Check if tier is unlocked
+  const isTierUnlocked = (tierNumber) => {
+    if (!progress?.unlockedTiers) return false;
+    return progress.unlockedTiers.some(t => t.tier === tierNumber);
+  };
 
   if (loading) {
     return (
