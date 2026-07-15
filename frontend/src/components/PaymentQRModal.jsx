@@ -66,6 +66,7 @@ const PaymentQRModal = ({
   const [isUtrChecking, setIsUtrChecking] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // ✅ FIX: API_URL without /api at the end
   const API_URL = import.meta.env.VITE_API_URL || '';
 
   // ✅ FIX: Lock body scroll when modal opens
@@ -110,7 +111,7 @@ const PaymentQRModal = ({
         return false;
       }
 
-      // ✅ FIX: Use API_URL from env
+      // ✅ FIX: Use API_URL without /api at the end, then add /api/
       const response = await fetch(`${API_URL}/api/transactions/check-utr`, {
         method: 'POST',
         headers: {
@@ -194,7 +195,7 @@ const PaymentQRModal = ({
         return;
       }
 
-      // ✅ FIX: Use API_URL from env
+      // ✅ FIX: Use API_URL without /api at the end, then add /api/
       const response = await fetch(`${API_URL}/api/transactions/create`, {
         method: 'POST',
         headers: {
@@ -262,7 +263,7 @@ const PaymentQRModal = ({
   };
 
   const copyUpiId = () => {
-    const upiId = 'adisinghx11@okaxis';
+    const upiId = 'your-upi@paytm';
     navigator.clipboard.writeText(upiId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -276,14 +277,14 @@ const PaymentQRModal = ({
 
   // ✅ Generate QR Code URL dynamically
   const generateQRCode = () => {
-    const upiId = 'adisinghx11@okaxis';
+    const upiId = 'your-upi@paytm';
     const upiLink = `upi://pay?pa=${upiId}&pn=Anti-Akinator&am=${amount}&cu=INR`;
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
   };
 
   // ✅ Fallback QR code (text-based) if QR server fails
   const getFallbackQR = () => {
-    const upiId = 'adisinghx11@okaxis';
+    const upiId = 'your-upi@paytm';
     return `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%231a1a2e"/%3E%3Ctext x="40" y="85" font-family="Arial" font-size="14" fill="%2394a3b8"%3EUPI ID:%3C/text%3E%3Ctext x="40" y="110" font-family="Arial" font-size="16" fill="%23ffffff"%3E${upiId}%3C/text%3E%3Ctext x="40" y="135" font-family="Arial" font-size="12" fill="%2364748b"%3EScan from UPI app%3C/text%3E%3Ctext x="40" y="160" font-family="Arial" font-size="11" fill="%2364748b"%3EAmount: ₹${amount}%3C/text%3E%3C/svg%3E`;
   };
 
@@ -333,7 +334,7 @@ const PaymentQRModal = ({
               <div className="upi-details">
                 <p className="upi-label">UPI ID:</p>
                 <div className="upi-id-container">
-                  <span className="upi-id">adisinghx11@okaxis</span>
+                  <span className="upi-id">your-upi@paytm</span>
                   <button onClick={copyUpiId} className="copy-btn">
                     {copied ? <CheckIcon /> : <CopyIcon />}
                     {copied ? 'Copied!' : 'Copy'}

@@ -148,6 +148,7 @@ const Transactions = () => {
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
   
+  // ✅ FIX: API_URL without /api at the end
   const API_URL = import.meta.env.VITE_API_URL || '';
   
   // Filters
@@ -205,7 +206,7 @@ const Transactions = () => {
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
       
-      // ✅ FIX: Use API_URL from env
+      // ✅ FIX: Use API_URL without /api at the end, then add /api/
       const response = await fetch(`${API_URL}/api/admin/transactions?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -246,7 +247,7 @@ const Transactions = () => {
         return;
       }
       
-      // ✅ FIX: Use API_URL from env
+      // ✅ FIX: Use API_URL without /api at the end, then add /api/
       const response = await fetch(`${API_URL}/api/admin/transactions/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`

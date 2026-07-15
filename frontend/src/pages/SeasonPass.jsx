@@ -19,7 +19,8 @@ const SeasonPass = () => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
+  // ✅ API_URL is already handled by axios baseURL
+  // No changes needed here as axios uses the baseURL from its config
 
   const fetchSeasonPass = useCallback(async () => {
     setLoading(true);
