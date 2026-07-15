@@ -207,7 +207,7 @@ const Transactions = () => {
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
       
       // ✅ FIX: Use API_URL without /api at the end, then add /api/
-      const response = await fetch(`${API_URL}/api/admin/transactions?${queryParams}`, {
+      const response = await fetch(`${API_URL}/admin/transactions?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -248,7 +248,7 @@ const Transactions = () => {
       }
       
       // ✅ FIX: Use API_URL without /api at the end, then add /api/
-      const response = await fetch(`${API_URL}/api/admin/transactions/stats`, {
+      const response = await fetch(`${API_URL}/admin/transactions/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -317,13 +317,13 @@ const Transactions = () => {
       
       switch (action) {
         case 'verify':
-          endpoint = `${API_URL}/api/admin/transactions/${transactionId}/verify`;
+          endpoint = `${API_URL}/admin/transactions/${transactionId}/verify`;
           break;
         case 'deliver':
-          endpoint = `${API_URL}/api/admin/transactions/${transactionId}/deliver`;
+          endpoint = `${API_URL}/admin/transactions/${transactionId}/deliver`;
           break;
         case 'reject':
-          endpoint = `${API_URL}/api/admin/transactions/${transactionId}/reject`;
+          endpoint = `${API_URL}/admin/transactions/${transactionId}/reject`;
           body = { reason: reason || 'Transaction rejected by admin' };
           break;
         default:
