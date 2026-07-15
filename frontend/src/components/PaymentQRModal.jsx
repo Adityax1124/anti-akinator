@@ -117,7 +117,6 @@ const PaymentQRModal = ({
         body: JSON.stringify({ utrNumber: utr })
       });
 
-      // ✅ Check if response is OK before parsing JSON
       if (!response.ok) {
         const text = await response.text();
         console.error('Server responded with:', text);
@@ -212,7 +211,6 @@ const PaymentQRModal = ({
         })
       });
 
-      // ✅ Check response before parsing
       if (!response.ok) {
         const text = await response.text();
         console.error('Server error:', text);
@@ -260,7 +258,7 @@ const PaymentQRModal = ({
   };
 
   const copyUpiId = () => {
-    const upiId = 'your-upi@paytm';
+    const upiId = 'adisinghx11@okaxis'; // ✅ Change this to your actual UPI ID
     navigator.clipboard.writeText(upiId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -270,6 +268,19 @@ const PaymentQRModal = ({
     if (!loading) {
       onClose();
     }
+  };
+
+  // ✅ Generate QR Code URL dynamically
+  const generateQRCode = () => {
+    const upiId = 'adisinghx11@okaxis'; // ✅ Change this to your actual UPI ID
+    const upiLink = `upi://pay?pa=${upiId}&pn=Anti-Akinator&am=${amount}&cu=INR`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
+  };
+
+  // ✅ Fallback QR code (text-based) if QR server fails
+  const getFallbackQR = () => {
+    const upiId = 'adisinghx11@okaxis'; // ✅ Change this to your actual UPI ID
+    return `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%231a1a2e"/%3E%3Ctext x="40" y="85" font-family="Arial" font-size="14" fill="%2394a3b8"%3EUPI ID:%3C/text%3E%3Ctext x="40" y="110" font-family="Arial" font-size="16" fill="%23ffffff"%3E${upiId}%3C/text%3E%3Ctext x="40" y="135" font-family="Arial" font-size="12" fill="%2364748b"%3EScan from UPI app%3C/text%3E%3Ctext x="40" y="160" font-family="Arial" font-size="11" fill="%2364748b"%3EAmount: ₹${amount}%3C/text%3E%3C/svg%3E`;
   };
 
   if (!isOpen) return null;
@@ -302,14 +313,14 @@ const PaymentQRModal = ({
                 <p className="item-amount">₹{amount}</p>
               </div>
 
-              {/* QR Code */}
+              {/* QR Code - DYNAMIC GENERATION */}
               <div className="qr-container">
                 <img 
-                  src="/payment-qr.png" 
+                  src={generateQRCode()}
                   alt="Payment QR Code"
                   className="qr-image"
                   onError={(e) => {
-                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23f0f0f0"/%3E%3Ctext x="50" y="105" font-family="Arial" font-size="16" fill="%23666"%3EQR Code%3C/text%3E%3Ctext x="50" y="125" font-family="Arial" font-size="12" fill="%23999"%3ENot Available%3C/text%3E%3C/svg%3E';
+                    e.target.src = getFallbackQR();
                   }}
                 />
               </div>
@@ -325,6 +336,9 @@ const PaymentQRModal = ({
                   </button>
                 </div>
                 <p className="upi-hint">Scan QR code or copy UPI ID to pay</p>
+                <p className="upi-hint" style={{ color: '#6b7280', marginTop: '4px' }}>
+                  Amount: ₹{amount}
+                </p>
               </div>
 
               {/* Action Buttons */}
