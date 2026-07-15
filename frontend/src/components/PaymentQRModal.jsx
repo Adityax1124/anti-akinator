@@ -112,7 +112,7 @@ const PaymentQRModal = ({
       }
 
       // ✅ FIX: Use API_URL without /api at the end, then add /api/
-      const response = await fetch(`${API_URL}/api/transactions/check-utr`, {
+      const response = await fetch(`${API_URL}/transactions/check-utr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ const PaymentQRModal = ({
       }
 
       // ✅ FIX: Use API_URL without /api at the end, then add /api/
-      const response = await fetch(`${API_URL}/api/transactions/create`, {
+      const response = await fetch(`${API_URL}/transactions/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
