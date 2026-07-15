@@ -1,6 +1,7 @@
 // /backend/controllers/transactionController.js
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
+const SeasonPass = require('../models/SeasonPass'); // ✅ ADDED THIS IMPORT
 
 // @desc    Create a new transaction
 exports.createTransaction = async (req, res) => {
@@ -322,7 +323,7 @@ exports.verifyTransaction = async (req, res) => {
   }
 };
 
-// @desc    Deliver item (Admin)
+// @desc    Deliver item (Admin) - ✅ FIXED with seasonId
 exports.deliverTransaction = async (req, res) => {
   try {
     const { id } = req.params;
@@ -367,8 +368,27 @@ exports.deliverTransaction = async (req, res) => {
 
       case 'seasonpass':
         const durationDays = transaction.itemDetails.durationDays || 30;
-        if (!user.seasonPass) user.seasonPass = {};
+        
+        // ✅ Get the active season if no seasonId provided
+        let seasonId = transaction.itemDetails.seasonId || null;
+        if (!seasonId) {
+          const activeSeason = await SeasonPass.getActiveSeason();
+          if (activeSeason) {
+            seasonId = activeSeason._id;
+            console.log(`✅ Using active season: ${activeSeason.seasonName} (${seasonId})`);
+          } else {
+            console.warn('⚠️ No active season found!');
+          }
+        }
+        
+        // ✅ Initialize seasonPass if not exists
+        if (!user.seasonPass) {
+          user.seasonPass = {};
+        }
+        
+        // ✅ Set ALL fields INCLUDING seasonId
         user.seasonPass.active = true;
+        user.seasonPass.seasonId = seasonId;  // ← CRITICAL FIX!
         user.seasonPass.purchasedAt = new Date();
         user.seasonPass.expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
         user.seasonPass.currentTier = 1;
@@ -378,7 +398,9 @@ exports.deliverTransaction = async (req, res) => {
         user.seasonPass.claimedRewards = [];
         user.seasonPass.isCompleted = false;
         user.seasonPass.joinedAt = new Date();
+        
         deliveryMessage = `Season Pass activated for ${durationDays} days`;
+        console.log(`🎫 Season pass delivered to ${user.username} with seasonId: ${seasonId}`);
         break;
 
       case 'bundle':
@@ -387,7 +409,18 @@ exports.deliverTransaction = async (req, res) => {
         }
         if (transaction.itemDetails.seasonPass) {
           if (!user.seasonPass) user.seasonPass = {};
+          
+          // ✅ Get active season for bundle as well
+          let bundleSeasonId = transaction.itemDetails.seasonId || null;
+          if (!bundleSeasonId) {
+            const activeSeason = await SeasonPass.getActiveSeason();
+            if (activeSeason) {
+              bundleSeasonId = activeSeason._id;
+            }
+          }
+          
           user.seasonPass.active = true;
+          user.seasonPass.seasonId = bundleSeasonId;  // ← CRITICAL FIX!
           user.seasonPass.purchasedAt = new Date();
           user.seasonPass.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
           user.seasonPass.currentTier = 1;
