@@ -19,6 +19,8 @@ const SeasonPass = () => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
+  const API_URL = import.meta.env.VITE_API_URL || '';
+
   const fetchSeasonPass = useCallback(async () => {
     setLoading(true);
     try {
@@ -226,7 +228,7 @@ const SeasonPass = () => {
                   <span className="price-label">One-time purchase</span>
                 </div>
                 
-                {/* Only QR Code payment option */}
+                {/* ✅ Only QR Code payment option */}
                 <div className="payment-methods-compact">
                   <button
                     className="payment-btn qr"

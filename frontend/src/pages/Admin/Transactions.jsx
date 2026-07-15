@@ -148,6 +148,8 @@ const Transactions = () => {
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
   
+  const API_URL = import.meta.env.VITE_API_URL || '';
+  
   // Filters
   const [filters, setFilters] = useState({
     status: 'all',
@@ -182,6 +184,13 @@ const Transactions = () => {
     
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('Please login to view transactions');
+        setLoading(false);
+        return;
+      }
+      
       const queryParams = new URLSearchParams({
         page: pagination.page,
         limit: pagination.limit,
@@ -196,8 +205,8 @@ const Transactions = () => {
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
       
-      // ✅ Use the admin route for transactions
-      const response = await fetch(`/api/admin/transactions?${queryParams}`, {
+      // ✅ FIX: Use API_URL from env
+      const response = await fetch(`${API_URL}/api/admin/transactions?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -226,14 +235,19 @@ const Transactions = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, sortConfig, filters]);
+  }, [pagination.page, pagination.limit, sortConfig, filters, API_URL]);
 
   // Fetch stats only
   const fetchStats = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      // ✅ Use the admin route for stats
-      const response = await fetch('/api/admin/transactions/stats', {
+      
+      if (!token) {
+        return;
+      }
+      
+      // ✅ FIX: Use API_URL from env
+      const response = await fetch(`${API_URL}/api/admin/transactions/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -250,7 +264,7 @@ const Transactions = () => {
     } catch (err) {
       console.error('Error fetching stats:', err);
     }
-  }, []);
+  }, [API_URL]);
 
   // Initial load
   useEffect(() => {
@@ -302,13 +316,13 @@ const Transactions = () => {
       
       switch (action) {
         case 'verify':
-          endpoint = `/api/admin/transactions/${transactionId}/verify`;
+          endpoint = `${API_URL}/api/admin/transactions/${transactionId}/verify`;
           break;
         case 'deliver':
-          endpoint = `/api/admin/transactions/${transactionId}/deliver`;
+          endpoint = `${API_URL}/api/admin/transactions/${transactionId}/deliver`;
           break;
         case 'reject':
-          endpoint = `/api/admin/transactions/${transactionId}/reject`;
+          endpoint = `${API_URL}/api/admin/transactions/${transactionId}/reject`;
           body = { reason: reason || 'Transaction rejected by admin' };
           break;
         default:

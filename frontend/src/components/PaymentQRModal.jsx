@@ -66,6 +66,8 @@ const PaymentQRModal = ({
   const [isUtrChecking, setIsUtrChecking] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const API_URL = import.meta.env.VITE_API_URL || '';
+
   // ✅ FIX: Lock body scroll when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -108,7 +110,8 @@ const PaymentQRModal = ({
         return false;
       }
 
-      const response = await fetch('/api/transactions/check-utr', {
+      // ✅ FIX: Use API_URL from env
+      const response = await fetch(`${API_URL}/api/transactions/check-utr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +194,8 @@ const PaymentQRModal = ({
         return;
       }
 
-      const response = await fetch('/api/transactions/create', {
+      // ✅ FIX: Use API_URL from env
+      const response = await fetch(`${API_URL}/api/transactions/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,7 +262,7 @@ const PaymentQRModal = ({
   };
 
   const copyUpiId = () => {
-    const upiId = 'adisinghx11@okaxis'; // ✅ Change this to your actual UPI ID
+    const upiId = 'adisinghx11@okaxis';
     navigator.clipboard.writeText(upiId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -272,14 +276,14 @@ const PaymentQRModal = ({
 
   // ✅ Generate QR Code URL dynamically
   const generateQRCode = () => {
-    const upiId = 'adisinghx11@okaxis'; // ✅ Change this to your actual UPI ID
+    const upiId = 'adisinghx11@okaxis';
     const upiLink = `upi://pay?pa=${upiId}&pn=Anti-Akinator&am=${amount}&cu=INR`;
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
   };
 
   // ✅ Fallback QR code (text-based) if QR server fails
   const getFallbackQR = () => {
-    const upiId = 'adisinghx11@okaxis'; // ✅ Change this to your actual UPI ID
+    const upiId = 'adisinghx11@okaxis';
     return `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%231a1a2e"/%3E%3Ctext x="40" y="85" font-family="Arial" font-size="14" fill="%2394a3b8"%3EUPI ID:%3C/text%3E%3Ctext x="40" y="110" font-family="Arial" font-size="16" fill="%23ffffff"%3E${upiId}%3C/text%3E%3Ctext x="40" y="135" font-family="Arial" font-size="12" fill="%2364748b"%3EScan from UPI app%3C/text%3E%3Ctext x="40" y="160" font-family="Arial" font-size="11" fill="%2364748b"%3EAmount: ₹${amount}%3C/text%3E%3C/svg%3E`;
   };
 
