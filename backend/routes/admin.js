@@ -1,3 +1,4 @@
+// /backend/routes/admin.js
 const express = require('express');
 const router = express.Router();
 const { adminMiddleware } = require('../middleware/auth');
@@ -7,7 +8,11 @@ const GameSession = require('../models/GameSession');
 const Banner = require('../models/Banner');
 const Title = require('../models/Title');
 const ProfilePhoto = require('../models/ProfilePhoto');
+const ProfileBackground = require('../models/ProfileBackground');
 const ShopItem = require('../models/ShopItem');
+const SeasonPass = require('../models/SeasonPass');
+const SeasonPassTier = require('../models/SeasonPassTier');
+const Transaction = require('../models/Transaction');
 
 // ✅ NEW: Import admin controller functions
 const {
@@ -81,16 +86,13 @@ router.get('/characters', adminMiddleware, async (req, res) => {
 
 router.post('/characters', adminMiddleware, async (req, res) => {
   try {
-    // ✅ COMPLETE CHARACTER DATA
     const characterData = {
-      // Basic Info
       name: sanitizeInput(req.body.name),
       anime: sanitizeInput(req.body.anime),
       image: req.body.image || '',
       description: sanitizeInput(req.body.description) || '',
       crucialHint: sanitizeInput(req.body.crucialHint) || '',
       
-      // Appearance
       appearance: {
         hairColor: req.body.appearance?.hairColor || 'Unknown',
         eyeColor: req.body.appearance?.eyeColor || 'Unknown',
@@ -102,7 +104,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         accessories: req.body.appearance?.accessories || 'Unknown'
       },
       
-      // Identity
       identity: {
         gender: req.body.identity?.gender || 'Unknown',
         age: req.body.identity?.age || 'Unknown',
@@ -112,7 +113,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         occupation: req.body.identity?.occupation || 'Unknown'
       },
       
-      // Status
       status: {
         isAlive: req.body.status?.isAlive !== undefined ? req.body.status.isAlive : true,
         isDeceased: req.body.status?.isDeceased || false,
@@ -120,7 +120,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         currentStatus: req.body.status?.currentStatus || 'Alive'
       },
       
-      // Personality
       personality: {
         traits: req.body.personality?.traits || [],
         likes: req.body.personality?.likes || [],
@@ -129,7 +128,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         fears: req.body.personality?.fears || 'Unknown'
       },
       
-      // Abilities
       abilities: {
         powers: req.body.abilities?.powers || [],
         techniques: req.body.abilities?.techniques || [],
@@ -138,7 +136,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         specialAbilities: req.body.abilities?.specialAbilities || 'Unknown'
       },
       
-      // Relationships
       relationships: {
         family: req.body.relationships?.family || 'Unknown',
         friends: req.body.relationships?.friends || [],
@@ -149,7 +146,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         affiliatedGroups: req.body.relationships?.affiliatedGroups || []
       },
       
-      // Background
       background: {
         origin: req.body.background?.origin || 'Unknown',
         backstory: req.body.background?.backstory || 'Unknown',
@@ -158,7 +154,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         notableFights: req.body.background?.notableFights || []
       },
       
-      // Attributes
       attributes: {
         isMainCharacter: req.body.attributes?.isMainCharacter || false,
         isVillain: req.body.attributes?.isVillain || false,
@@ -172,13 +167,11 @@ router.post('/characters', adminMiddleware, async (req, res) => {
         isFromAnime: req.body.attributes?.isFromAnime !== undefined ? req.body.attributes.isFromAnime : true
       },
       
-      // Battle Data
       powerLevel: parseFloat(req.body.powerLevel) || 25,
       basePower: parseFloat(req.body.basePower) || parseFloat(req.body.powerLevel) || 25,
       element: req.body.element || 'Fire',
       rarity: req.body.rarity || 'Common',
       
-      // Legacy Traits
       traits: {
         gender: req.body.traits?.gender || req.body.identity?.gender || 'Unknown',
         species: req.body.traits?.species || req.body.identity?.species || 'Human',
@@ -197,7 +190,7 @@ router.post('/characters', adminMiddleware, async (req, res) => {
     const character = new Character(characterData);
     await character.save();
 
-    console.log(`📝 Admin ${req.user.username} created character: ${character.name} (Power: ${character.powerLevel}, Element: ${character.element}, Rarity: ${character.rarity})`);
+    console.log(`📝 Admin ${req.user.username} created character: ${character.name}`);
 
     res.status(201).json({ 
       success: true, 
@@ -217,13 +210,11 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
   try {
     const updateData = { ...req.body };
     
-    // Sanitize
     if (updateData.name) updateData.name = sanitizeInput(updateData.name);
     if (updateData.anime) updateData.anime = sanitizeInput(updateData.anime);
     if (updateData.description) updateData.description = sanitizeInput(updateData.description);
     if (updateData.crucialHint) updateData.crucialHint = sanitizeInput(updateData.crucialHint);
     
-    // Update nested fields
     if (updateData.appearance) {
       updateData.appearance = {
         hairColor: updateData.appearance.hairColor || 'Unknown',
@@ -314,7 +305,6 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
       };
     }
     
-    // Battle Data
     if (updateData.powerLevel) updateData.powerLevel = Number(updateData.powerLevel);
     if (updateData.basePower) updateData.basePower = Number(updateData.basePower);
     if (updateData.element) updateData.element = updateData.element;
@@ -390,14 +380,11 @@ router.get('/banners', adminMiddleware, async (req, res) => {
 
 router.post('/banners', adminMiddleware, async (req, res) => {
   try {
-    console.log('📥 Creating banner with data:', JSON.stringify(req.body, null, 2));
-
     const existingBanner = await Banner.findOne({ 
       name: { $regex: new RegExp(`^${req.body.name}$`, 'i') } 
     });
     
     if (existingBanner) {
-      console.log('❌ Banner already exists:', req.body.name);
       return res.status(400).json({
         success: false,
         message: `Banner "${req.body.name}" already exists`
@@ -423,8 +410,6 @@ router.post('/banners', adminMiddleware, async (req, res) => {
       isActive: req.body.isActive !== undefined ? req.body.isActive : true
     };
 
-    console.log('📤 Banner data to save:', JSON.stringify(bannerData, null, 2));
-
     const banner = new Banner(bannerData);
     await banner.save();
 
@@ -436,8 +421,7 @@ router.post('/banners', adminMiddleware, async (req, res) => {
       message: 'Banner created successfully'
     });
   } catch (error) {
-    console.error('❌ Admin create banner error:', error.message);
-    console.error('❌ Full error:', error);
+    console.error('Admin create banner error:', error.message);
     
     if (error.name === 'ValidationError') {
       const errors = {};
@@ -460,8 +444,7 @@ router.post('/banners', adminMiddleware, async (req, res) => {
     
     res.status(500).json({ 
       success: false, 
-      message: 'Error creating banner: ' + error.message,
-      error: error.message
+      message: 'Error creating banner: ' + error.message
     });
   }
 });
@@ -706,6 +689,250 @@ router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
+// ✅ NEW: PROFILE BACKGROUND CRUD (ADMIN ONLY)
+// ============================================================
+
+// Get all profile backgrounds
+router.get('/profile-backgrounds', adminMiddleware, async (req, res) => {
+  try {
+    const backgrounds = await ProfileBackground.find()
+      .sort({ createdAt: -1 });
+    
+    res.json({ 
+      success: true, 
+      backgrounds,
+      count: backgrounds.length
+    });
+  } catch (error) {
+    console.error('Admin get profile backgrounds error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching profile backgrounds' 
+    });
+  }
+});
+
+// Create profile background
+router.post('/profile-backgrounds', adminMiddleware, async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      imageUrl,
+      thumbnailUrl,
+      category,
+      rarity,
+      unlockType,
+      unlockData,
+      isActive,
+      isDefault
+    } = req.body;
+
+    if (!name || !imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name and imageUrl are required'
+      });
+    }
+
+    // Check if name exists
+    const existing = await ProfileBackground.findOne({ 
+      name: { $regex: new RegExp(`^${name}$`, 'i') } 
+    });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: `Background "${name}" already exists`
+      });
+    }
+
+    const background = new ProfileBackground({
+      name: sanitizeInput(name),
+      description: description || '',
+      imageUrl: imageUrl.trim(),
+      thumbnailUrl: thumbnailUrl ? thumbnailUrl.trim() : null,
+      category: category || 'anime',
+      rarity: rarity || 'Common',
+      unlockType: unlockType || 'admin_gift',
+      unlockData: unlockData || null,
+      isActive: isActive !== undefined ? isActive : true,
+      isDefault: isDefault || false,
+      createdBy: req.user._id
+    });
+
+    await background.save();
+
+    console.log(`📝 Admin ${req.user.username} created profile background: ${background.name}`);
+
+    res.status(201).json({ 
+      success: true, 
+      background,
+      message: 'Profile background created successfully'
+    });
+  } catch (error) {
+    console.error('Admin create profile background error:', error.message);
+    
+    if (error.name === 'ValidationError') {
+      const errors = {};
+      Object.keys(error.errors).forEach(key => {
+        errors[key] = error.errors[key].message;
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error creating profile background: ' + error.message
+    });
+  }
+});
+
+// Update profile background
+router.put('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    
+    if (updateData.name) updateData.name = sanitizeInput(updateData.name);
+    if (updateData.imageUrl) updateData.imageUrl = updateData.imageUrl.trim();
+    if (updateData.thumbnailUrl) updateData.thumbnailUrl = updateData.thumbnailUrl.trim();
+    
+    const background = await ProfileBackground.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!background) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Profile background not found' 
+      });
+    }
+
+    console.log(`📝 Admin ${req.user.username} updated profile background: ${background.name}`);
+
+    res.json({ 
+      success: true, 
+      background,
+      message: 'Profile background updated successfully'
+    });
+  } catch (error) {
+    console.error('Admin update profile background error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating profile background: ' + error.message
+    });
+  }
+});
+
+// Delete profile background
+router.delete('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
+  try {
+    const background = await ProfileBackground.findById(req.params.id);
+    
+    if (!background) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Profile background not found' 
+      });
+    }
+
+    // Don't allow deleting default background
+    if (background.isDefault) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete the default background'
+      });
+    }
+
+    await background.remove();
+
+    console.log(`🗑️ Admin ${req.user.username} deleted profile background: ${background.name}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Profile background deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Admin delete profile background error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error deleting profile background: ' + error.message
+    });
+  }
+});
+
+// Assign background to user (Admin gift)
+router.post('/assign-background', adminMiddleware, async (req, res) => {
+  try {
+    const { userId, backgroundId } = req.body;
+
+    if (!userId || !backgroundId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId and backgroundId are required'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const background = await ProfileBackground.findById(backgroundId);
+    if (!background) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile background not found'
+      });
+    }
+
+    // Check if user already has this background
+    if (user.hasProfileBackground(backgroundId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already owns this background'
+      });
+    }
+
+    // Add background to user
+    const result = user.addProfileBackground(backgroundId);
+    await user.save();
+
+    // Increment total users
+    await background.incrementTotalUsers();
+
+    console.log(`🎁 Admin ${req.user.username} assigned background "${background.name}" to ${user.username}`);
+
+    res.json({
+      success: true,
+      message: 'Background assigned successfully!',
+      user: {
+        _id: user._id,
+        username: user.username
+      },
+      background: {
+        _id: background._id,
+        name: background.name
+      }
+    });
+  } catch (error) {
+    console.error('Assign background error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning background: ' + error.message
+    });
+  }
+});
+
+// ============================================================
 // SHOP ITEMS CRUD (ADMIN ONLY)
 // ============================================================
 router.get('/shop-items', adminMiddleware, async (req, res) => {
@@ -840,7 +1067,7 @@ router.delete('/shop-items/:id', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// USERS & STATS
+// USERS
 // ============================================================
 router.get('/users', adminMiddleware, async (req, res) => {
   try {
@@ -858,7 +1085,9 @@ router.get('/users', adminMiddleware, async (req, res) => {
       gems: user.gems || 0,
       createdAt: user.createdAt,
       equipped: user.equipped,
-      clanId: user.clanId || null
+      clanId: user.clanId || null,
+      seasonPass: user.seasonPass || null,
+      transactionHistory: user.transactionHistory || []
     }));
 
     res.json({ 
@@ -875,16 +1104,30 @@ router.get('/users', adminMiddleware, async (req, res) => {
   }
 });
 
+// ============================================================
+// ✅ ADMIN STATS
+// ============================================================
 router.get('/stats', adminMiddleware, async (req, res) => {
   try {
-    const [totalGames, wonGames, totalCharacters, totalUsers] = await Promise.all([
+    const [totalGames, wonGames, totalCharacters, totalUsers, totalTransactions] = await Promise.all([
       GameSession.countDocuments(),
       GameSession.countDocuments({ status: 'won' }),
       Character.countDocuments(),
-      User.countDocuments()
+      User.countDocuments(),
+      Transaction.countDocuments()
     ]);
 
     const winRate = totalGames > 0 ? ((wonGames / totalGames) * 100).toFixed(1) : 0;
+
+    // Get pending transactions count
+    const pendingTransactions = await Transaction.countDocuments({ status: 'pending' });
+
+    // Get total revenue from delivered transactions
+    const revenueResult = await Transaction.aggregate([
+      { $match: { status: 'delivered' } },
+      { $group: { _id: null, total: { $sum: '$paidAmount' } } }
+    ]);
+    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total : 0;
 
     const topPlayers = await User.find()
       .select('username stats equipped.profilePhoto gems')
@@ -906,7 +1149,10 @@ router.get('/stats', adminMiddleware, async (req, res) => {
         wonGames,
         winRate: parseFloat(winRate),
         totalCharacters,
-        totalUsers
+        totalUsers,
+        totalTransactions,
+        pendingTransactions,
+        totalRevenue
       },
       topPlayers: sanitizedTopPlayers
     });
@@ -920,8 +1166,696 @@ router.get('/stats', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
+// SEASON PASS ADMIN ROUTES
+// ============================================================
+
+// Get all seasons
+router.get('/seasons', adminMiddleware, async (req, res) => {
+  try {
+    const seasons = await SeasonPass.find()
+      .sort({ seasonNumber: -1 });
+    
+    res.json({
+      success: true,
+      seasons
+    });
+  } catch (error) {
+    console.error('Admin get seasons error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching seasons'
+    });
+  }
+});
+
+// Get single season with tiers
+router.get('/seasons/:seasonId', adminMiddleware, async (req, res) => {
+  try {
+    const season = await SeasonPass.findById(req.params.seasonId);
+    
+    if (!season) {
+      return res.status(404).json({
+        success: false,
+        message: 'Season not found'
+      });
+    }
+
+    const tiers = await SeasonPassTier.find({ seasonId: season._id })
+      .sort({ tier: 1 });
+
+    res.json({
+      success: true,
+      season,
+      tiers
+    });
+  } catch (error) {
+    console.error('Admin get season error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching season'
+    });
+  }
+});
+
+// Create new season
+router.post('/seasons', adminMiddleware, async (req, res) => {
+  try {
+    const {
+      seasonNumber,
+      seasonName,
+      startDate,
+      endDate,
+      totalTiers,
+      correctGuessesPerTier,
+      description
+    } = req.body;
+
+    if (!seasonNumber || !seasonName || !startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'seasonNumber, seasonName, startDate, and endDate are required'
+      });
+    }
+
+    const existing = await SeasonPass.findOne({ seasonNumber });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: `Season ${seasonNumber} already exists`
+      });
+    }
+
+    const season = new SeasonPass({
+      seasonNumber,
+      seasonName,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      totalTiers: totalTiers || 100,
+      correctGuessesPerTier: correctGuessesPerTier || 2,
+      description: description || '',
+      isActive: false,
+      isPublished: false
+    });
+
+    await season.save();
+
+    // Create tier entries
+    const tierPromises = [];
+    for (let i = 1; i <= season.totalTiers; i++) {
+      tierPromises.push(
+        SeasonPassTier.create({
+          seasonId: season._id,
+          tier: i,
+          rewards: [],
+          isUnlocked: false
+        })
+      );
+    }
+    await Promise.all(tierPromises);
+
+    console.log(`📝 Admin ${req.user.username} created season ${seasonNumber}`);
+
+    res.status(201).json({
+      success: true,
+      message: `Season ${seasonNumber} created successfully!`,
+      season
+    });
+  } catch (error) {
+    console.error('Admin create season error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating season: ' + error.message
+    });
+  }
+});
+
+// Update season
+router.put('/seasons/:seasonId', adminMiddleware, async (req, res) => {
+  try {
+    const {
+      seasonName,
+      startDate,
+      endDate,
+      totalTiers,
+      correctGuessesPerTier,
+      description,
+      isActive,
+      isPublished
+    } = req.body;
+
+    const season = await SeasonPass.findById(req.params.seasonId);
+    if (!season) {
+      return res.status(404).json({
+        success: false,
+        message: 'Season not found'
+      });
+    }
+
+    if (seasonName) season.seasonName = seasonName;
+    if (startDate) season.startDate = new Date(startDate);
+    if (endDate) season.endDate = new Date(endDate);
+    if (totalTiers) season.totalTiers = totalTiers;
+    if (correctGuessesPerTier) season.correctGuessesPerTier = correctGuessesPerTier;
+    if (description !== undefined) season.description = description;
+    if (isActive !== undefined) season.isActive = isActive;
+    if (isPublished !== undefined) season.isPublished = isPublished;
+
+    await season.save();
+
+    console.log(`📝 Admin ${req.user.username} updated season ${season.seasonNumber}`);
+
+    res.json({
+      success: true,
+      message: 'Season updated successfully!',
+      season
+    });
+  } catch (error) {
+    console.error('Admin update season error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating season: ' + error.message
+    });
+  }
+});
+
+// Activate season (deactivates all others)
+router.post('/seasons/:seasonId/activate', adminMiddleware, async (req, res) => {
+  try {
+    const season = await SeasonPass.findById(req.params.seasonId);
+    if (!season) {
+      return res.status(404).json({
+        success: false,
+        message: 'Season not found'
+      });
+    }
+
+    await SeasonPass.activateSeason(season.seasonNumber);
+
+    console.log(`✅ Admin ${req.user.username} activated season ${season.seasonNumber}`);
+
+    res.json({
+      success: true,
+      message: `Season ${season.seasonNumber} activated successfully!`,
+      season
+    });
+  } catch (error) {
+    console.error('Admin activate season error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error activating season: ' + error.message
+    });
+  }
+});
+
+// Deactivate season
+router.post('/seasons/:seasonId/deactivate', adminMiddleware, async (req, res) => {
+  try {
+    const season = await SeasonPass.findById(req.params.seasonId);
+    if (!season) {
+      return res.status(404).json({
+        success: false,
+        message: 'Season not found'
+      });
+    }
+
+    await SeasonPass.deactivateSeason(season.seasonNumber);
+
+    console.log(`🔴 Admin ${req.user.username} deactivated season ${season.seasonNumber}`);
+
+    res.json({
+      success: true,
+      message: `Season ${season.seasonNumber} deactivated successfully!`,
+      season
+    });
+  } catch (error) {
+    console.error('Admin deactivate season error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error deactivating season: ' + error.message
+    });
+  }
+});
+
+// Update tier rewards
+router.put('/seasons/:seasonId/tiers/:tier', adminMiddleware, async (req, res) => {
+  try {
+    const { seasonId, tier } = req.params;
+    const { rewards } = req.body;
+
+    const tierDoc = await SeasonPassTier.findOne({ seasonId, tier });
+    if (!tierDoc) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tier not found'
+      });
+    }
+
+    tierDoc.rewards = rewards || [];
+    await tierDoc.save();
+
+    const season = await SeasonPass.findById(seasonId);
+    if (season) {
+      const existingTier = season.tierRewards.find(t => t.tier === parseInt(tier));
+      if (existingTier) {
+        existingTier.rewards = rewards || [];
+      } else {
+        season.tierRewards.push({
+          tier: parseInt(tier),
+          rewards: rewards || []
+        });
+      }
+      await season.save();
+    }
+
+    console.log(`📝 Admin ${req.user.username} updated tier ${tier} rewards`);
+
+    res.json({
+      success: true,
+      message: `Tier ${tier} rewards updated successfully!`,
+      tier: tierDoc
+    });
+  } catch (error) {
+    console.error('Admin update tier error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating tier: ' + error.message
+    });
+  }
+});
+
+// Get season leaderboard
+router.get('/seasons/:seasonId/leaderboard', adminMiddleware, async (req, res) => {
+  try {
+    const { seasonId } = req.params;
+    const limit = parseInt(req.query.limit) || 50;
+
+    const leaderboard = await User.getSeasonPassLeaderboard(seasonId, limit);
+
+    res.json({
+      success: true,
+      leaderboard
+    });
+  } catch (error) {
+    console.error('Admin get season leaderboard error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching leaderboard: ' + error.message
+    });
+  }
+});
+
+// ============================================================
 // ✅ SEND GIFT TO USER (ADMIN ONLY)
 // ============================================================
 router.post('/gift', adminMiddleware, sendGift);
+
+// ============================================================
+// ✅ TRANSACTION MANAGEMENT (ADMIN ONLY)
+// ============================================================
+
+// Get all transactions with filters
+router.get('/transactions', adminMiddleware, async (req, res) => {
+  try {
+    const { 
+      status, 
+      itemType, 
+      search, 
+      startDate, 
+      endDate,
+      limit = 50, 
+      page = 1,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build query
+    const query = {};
+    
+    if (status && status !== 'all') query.status = status;
+    if (itemType && itemType !== 'all') query.itemType = itemType;
+    
+    // Search by UTR or username/email
+    if (search) {
+      const userMatches = await User.find({
+        $or: [
+          { username: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      
+      const userIds = userMatches.map(u => u._id);
+      
+      query.$or = [
+        { utrNumber: { $regex: search, $options: 'i' } },
+        { userId: { $in: userIds } }
+      ];
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+
+    const skip = (page - 1) * limit;
+    const sort = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    // Get transactions with populated user data
+    const transactions = await Transaction.find(query)
+      .populate('userId', 'username email phoneNumber profilePhoto')
+      .populate('verifiedBy', 'username email')
+      .sort(sort)
+      .skip(parseInt(skip))
+      .limit(parseInt(limit));
+
+    // Get total count for pagination
+    const total = await Transaction.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: {
+        transactions,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Admin get transactions error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transactions: ' + error.message
+    });
+  }
+});
+
+// Get transaction statistics
+router.get('/transactions/stats', adminMiddleware, async (req, res) => {
+  try {
+    const stats = await Transaction.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$paidAmount' }
+        }
+      }
+    ]);
+
+    // Get daily stats for last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const dailyStats = await Transaction.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sevenDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            status: '$status'
+          },
+          count: { $sum: 1 },
+          amount: { $sum: '$paidAmount' }
+        }
+      },
+      {
+        $sort: { '_id.date': 1 }
+      }
+    ]);
+
+    // Get total counts by type
+    const typeStats = await Transaction.aggregate([
+      {
+        $group: {
+          _id: '$itemType',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$paidAmount' }
+        }
+      }
+    ]);
+
+    // Get total revenue
+    const revenueResult = await Transaction.aggregate([
+      { $match: { status: 'delivered' } },
+      { $group: { _id: null, total: { $sum: '$paidAmount' } } }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        statusBreakdown: stats,
+        dailyStats,
+        typeBreakdown: typeStats,
+        totalTransactions: await Transaction.countDocuments(),
+        pendingTransactions: await Transaction.countDocuments({ status: 'pending' }),
+        verifiedTransactions: await Transaction.countDocuments({ status: 'verified' }),
+        deliveredTransactions: await Transaction.countDocuments({ status: 'delivered' }),
+        rejectedTransactions: await Transaction.countDocuments({ status: 'rejected' }),
+        totalRevenue: revenueResult.length > 0 ? revenueResult[0].total : 0
+      }
+    });
+  } catch (error) {
+    console.error('Admin get transaction stats error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transaction stats: ' + error.message
+    });
+  }
+});
+
+// Get single transaction details
+router.get('/transactions/:id', adminMiddleware, async (req, res) => {
+  try {
+    const transaction = await Transaction.findById(req.params.id)
+      .populate('userId', 'username email phoneNumber profilePhoto')
+      .populate('verifiedBy', 'username email');
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: transaction
+    });
+  } catch (error) {
+    console.error('Admin get transaction error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching transaction: ' + error.message
+    });
+  }
+});
+
+// Verify transaction
+router.put('/transactions/:id/verify', adminMiddleware, async (req, res) => {
+  try {
+    const transaction = await Transaction.findById(req.params.id);
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    // Check if already verified/delivered
+    if (transaction.status === 'verified' || transaction.status === 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: `Transaction is already ${transaction.status}`
+      });
+    }
+
+    // Mark as verified
+    await transaction.markAsVerified(req.user._id);
+
+    console.log(`✅ Admin ${req.user.username} verified transaction ${transaction.utrNumber}`);
+
+    res.json({
+      success: true,
+      message: 'Transaction verified successfully',
+      data: {
+        transactionId: transaction._id,
+        status: transaction.status,
+        verifiedAt: transaction.verifiedAt
+      }
+    });
+  } catch (error) {
+    console.error('Admin verify transaction error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error verifying transaction: ' + error.message
+    });
+  }
+});
+
+// Deliver item to user
+router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
+  try {
+    const transaction = await Transaction.findById(req.params.id);
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    // Check if already delivered
+    if (transaction.status === 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: 'Item has already been delivered'
+      });
+    }
+
+    // If transaction is not verified, verify it first
+    if (transaction.status === 'pending') {
+      await transaction.markAsVerified(req.user._id);
+    }
+
+    // Get user
+    const user = await User.findById(transaction.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Deliver based on item type
+    let deliveryMessage = '';
+    switch (transaction.itemType) {
+      case 'shards':
+        const shardCount = transaction.itemDetails.shardCount || parseInt(transaction.itemName) || 0;
+        const result = user.addShards(shardCount);
+        if (!result.success) {
+          return res.status(400).json({
+            success: false,
+            message: result.message
+          });
+        }
+        deliveryMessage = `${shardCount} shards added to user's account`;
+        break;
+        
+      case 'seasonpass':
+        const seasonId = transaction.itemDetails.seasonId || null;
+        const durationDays = transaction.itemDetails.durationDays || 30;
+        
+        user.activateSeasonPass(seasonId, durationDays);
+        deliveryMessage = `Season Pass activated for ${durationDays} days`;
+        break;
+        
+      case 'bundle':
+        // Handle custom bundles
+        if (transaction.itemDetails.shards) {
+          user.addShards(transaction.itemDetails.shards);
+        }
+        if (transaction.itemDetails.seasonPass) {
+          user.activateSeasonPass(
+            transaction.itemDetails.seasonId || null,
+            transaction.itemDetails.durationDays || 30
+          );
+        }
+        deliveryMessage = 'Bundle items delivered';
+        break;
+        
+      default:
+        return res.status(400).json({
+          success: false,
+          message: 'Unknown item type'
+        });
+    }
+
+    // Save user changes
+    await user.save();
+
+    // Add transaction to user's history
+    user.addTransaction(transaction._id);
+    await user.save();
+
+    // Mark transaction as delivered
+    await transaction.markAsDelivered();
+
+    // Add delivery notes
+    transaction.notes = `${deliveryMessage} | Delivered by ${req.user.username}`;
+    transaction.verifiedBy = req.user._id;
+    transaction.verifiedAt = transaction.verifiedAt || new Date();
+    await transaction.save();
+
+    console.log(`📦 Admin ${req.user.username} delivered ${transaction.itemType} to ${user.username}`);
+
+    res.json({
+      success: true,
+      message: 'Item delivered successfully',
+      data: {
+        transactionId: transaction._id,
+        status: transaction.status,
+        deliveredAt: transaction.deliveredAt,
+        deliveryMessage
+      }
+    });
+  } catch (error) {
+    console.error('Admin deliver transaction error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error delivering item: ' + error.message
+    });
+  }
+});
+
+// Reject transaction
+router.put('/transactions/:id/reject', adminMiddleware, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const transaction = await Transaction.findById(req.params.id);
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
+    // Check if already verified/delivered
+    if (transaction.status === 'verified' || transaction.status === 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot reject a ${transaction.status} transaction`
+      });
+    }
+
+    // Reject the transaction
+    await transaction.reject(req.user._id, reason || 'Transaction rejected by admin');
+
+    console.log(`❌ Admin ${req.user.username} rejected transaction ${transaction.utrNumber}`);
+
+    res.json({
+      success: true,
+      message: 'Transaction rejected successfully',
+      data: {
+        transactionId: transaction._id,
+        status: transaction.status,
+        reason: transaction.notes
+      }
+    });
+  } catch (error) {
+    console.error('Admin reject transaction error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error rejecting transaction: ' + error.message
+    });
+  }
+});
 
 module.exports = router;

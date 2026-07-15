@@ -1,3 +1,4 @@
+// /backend/middleware/auth.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -46,7 +47,7 @@ const authMiddleware = async (req, res, next) => {
     }
 
     // Get user from database
-    const user = await User.findById(decoded.userId)
+    const user = await User.findById(decoded.userId || decoded.id)
       .select('-password')
       .populate('equipped.banner', 'gifUrl')
       .populate('equipped.title', 'displayName displayType')
@@ -59,13 +60,13 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // Check if user is active/banned (if you have such fields)
-    // if (user.isBanned) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: 'Your account has been suspended. Please contact support.'
-    //   });
-    // }
+    // Check if user is active
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact support.'
+      });
+    }
 
     // Attach user to request
     req.user = user;
@@ -83,11 +84,16 @@ const authMiddleware = async (req, res, next) => {
 };
 
 // ===== ADMIN MIDDLEWARE =====
-const adminMiddleware = async (req, res, next) => {
+const adminMiddleware = (req, res, next) => {
   try {
-    // First ensure user is authenticated
-    await authMiddleware(req, res, () => {});
-    
+    // Check if user exists on request (authMiddleware should have run first)
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated. Please login.'
+      });
+    }
+
     // Check if user is admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({
@@ -136,6 +142,7 @@ const checkUserRateLimit = (userId, endpoint, maxRequests, timeWindow) => {
   return true;
 };
 
+// ===== EXPORT =====
 module.exports = { 
   authMiddleware, 
   adminMiddleware,

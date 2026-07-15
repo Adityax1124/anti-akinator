@@ -1,3 +1,4 @@
+// /backend/server.js
 require('dotenv').config();
 
 const express = require('express');
@@ -22,6 +23,12 @@ const clanRoutes = require('./routes/clan');
 const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 const cardRoutes = require('./routes/card');
+
+// ✅ NEW: Transaction Routes
+const transactionRoutes = require('./routes/transactions');
+
+// ✅ NEW: Season Pass Routes
+const seasonPassRoutes = require('./routes/seasonPass');
 
 // ✅ Get setIO from clanRoutes
 const clanSetIO = clanRoutes.setIO;
@@ -336,6 +343,26 @@ const adminLimiter = rateLimit({
   }
 });
 
+// Transaction Limiter (30 req/min per IP)
+const transactionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: isDevelopment ? 100 : 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many transaction requests. Please slow down.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return false;
+  },
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
+});
+
 // Apply rate limiters
 app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
@@ -346,6 +373,7 @@ app.use('/api/season', profileLimiter);
 app.use('/api/admin', adminLimiter);
 app.use('/api/shop', profileLimiter);
 app.use('/api/referral', profileLimiter);
+app.use('/api/transactions', transactionLimiter);
 
 // ============================================================
 // 🚀 HTTPS REDIRECT
@@ -650,6 +678,14 @@ app.use('/api/clan', authMiddleware, clanRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/cards', authMiddleware, cardRoutes);
 
+// ✅ NEW: Transaction Routes
+app.use('/api/transactions', authMiddleware, transactionRoutes);
+console.log('💳 Transaction routes loaded!');
+
+// ✅ NEW: Season Pass Routes
+app.use('/api/season-pass', authMiddleware, seasonPassRoutes);
+console.log('🎫 Season Pass routes loaded!');
+
 // ✅ NEW: Clan War Routes
 app.use('/api/clan-war', authMiddleware, clanWarRoutes);
 app.use('/api/chests', authMiddleware, chestRoutes);
@@ -755,6 +791,10 @@ app.get('/api/health', (req, res) => {
       enabled: true,
       timerInterval: '60 seconds',
       cleanupInterval: '24 hours'
+    },
+    transactions: {
+      enabled: true,
+      limiter: '30 req/min'
     }
   });
 });
@@ -855,8 +895,11 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`⚔️ Clan War routes loaded!`);
   console.log(`🎁 Chest routes loaded!`);
   console.log(`🔔 Notification routes loaded!`);
+  console.log(`💳 Transaction routes loaded!`);
+  console.log(`🎫 Season Pass routes loaded!`);
   console.log(`⏰ Server timeout: 180 seconds`);
   console.log(`📊 maxPoolSize: 100, maxListeners: 200, rate limits: 500/min`);
   console.log(`📊 Login: 100/15min, Register: 20/24hrs`);
+  console.log(`📊 Transactions: 30 req/min`);
   console.log(`⚔️ Clan War Timer System: Running every 60 seconds`);
 });

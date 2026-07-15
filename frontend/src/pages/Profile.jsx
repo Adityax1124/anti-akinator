@@ -10,20 +10,25 @@ const Profile = () => {
   const [showBannerModal, setShowBannerModal] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [banners, setBanners] = useState([]);
   const [titles, setTitles] = useState([]);
   const [profilePhotos, setProfilePhotos] = useState([]);
+  const [profileBackgrounds, setProfileBackgrounds] = useState([]);
   const [equipped, setEquipped] = useState({
     banner: null,
     title: null,
-    profilePhoto: null
+    profilePhoto: null,
+    profileBackground: null
   });
   const [photoSearchTerm, setPhotoSearchTerm] = useState('');
+  const [backgroundSearchTerm, setBackgroundSearchTerm] = useState('');
   const [error, setError] = useState('');
   const [profileUser, setProfileUser] = useState(null);
   const [bannersLoaded, setBannersLoaded] = useState(false);
   const [titlesLoaded, setTitlesLoaded] = useState(false);
   const [photosLoaded, setPhotosLoaded] = useState(false);
+  const [backgroundsLoaded, setBackgroundsLoaded] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showcasePhotos, setShowcasePhotos] = useState(Array(10).fill(null));
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
@@ -75,12 +80,14 @@ const Profile = () => {
       setEquipped({
         banner: userData.equipped?.banner || null,
         title: userData.equipped?.title || null,
-        profilePhoto: userData.equipped?.profilePhoto || null
+        profilePhoto: userData.equipped?.profilePhoto || null,
+        profileBackground: userData.equipped?.profileBackground || null
       });
 
       setHistory(historyRes.data.games || []);
 
       await loadPhotos();
+      await loadBackgrounds();
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setError('Failed to load profile data');
@@ -148,6 +155,18 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error loading photos:', error);
+    }
+  };
+
+  // ✅ NEW: Load profile backgrounds
+  const loadBackgrounds = async (forceRefresh = false) => {
+    if (backgroundsLoaded && !forceRefresh) return;
+    try {
+      const res = await api.get('/profile/backgrounds', { params: { _t: Date.now() } });
+      setProfileBackgrounds(res.data.backgrounds || []);
+      setBackgroundsLoaded(true);
+    } catch (error) {
+      console.error('Error loading backgrounds:', error);
     }
   };
 
@@ -267,6 +286,54 @@ const Profile = () => {
     }
   };
 
+  // ✅ NEW: Equip profile background
+  const equipBackground = async (backgroundId) => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await api.post('/profile/equip-background', { backgroundId });
+
+      if (response.data.success) {
+        setShowBackgroundModal(false);
+        setSuccessMessage('Profile background equipped successfully');
+        await fetchProfileData();
+        await refreshUser();
+        await loadBackgrounds(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    } catch (error) {
+      setError('Failed to equip background');
+      console.error('Equip background error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ NEW: Unequip profile background
+  const unequipBackground = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await api.post('/profile/unequip-background');
+
+      if (response.data.success) {
+        setSuccessMessage('Profile background unequipped successfully');
+        await fetchProfileData();
+        await refreshUser();
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    } catch (error) {
+      setError('Failed to unequip background');
+      console.error('Unequip background error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openBannerModal = () => {
     loadBanners();
     setShowBannerModal(true);
@@ -280,6 +347,12 @@ const Profile = () => {
   const openPhotoModal = () => {
     loadPhotos();
     setShowPhotoModal(true);
+  };
+
+  // ✅ NEW: Open background modal
+  const openBackgroundModal = () => {
+    loadBackgrounds();
+    setShowBackgroundModal(true);
   };
 
   const getStatusEmoji = (status) => {
@@ -329,13 +402,20 @@ const Profile = () => {
   const equippedBanner = equipped.banner || null;
   const equippedTitle = equipped.title || null;
   const equippedPhoto = equipped.profilePhoto || null;
+  const equippedBackground = equipped.profileBackground || null;
 
   const unlockedBanners = banners.filter(b => b.isUnlocked);
   const unlockedTitles = titles.filter(t => t.isUnlocked);
   const unlockedPhotos = profilePhotos.filter(p => p.isUnlocked);
+  const unlockedBackgrounds = profileBackgrounds.filter(b => b.isUnlocked);
 
   const filteredPhotos = profilePhotos.filter(p =>
     p.isUnlocked && p.name?.toLowerCase().includes(photoSearchTerm.toLowerCase())
+  );
+
+  // ✅ NEW: Filter backgrounds
+  const filteredBackgrounds = profileBackgrounds.filter(b =>
+    b.isUnlocked && b.name?.toLowerCase().includes(backgroundSearchTerm.toLowerCase())
   );
 
   return (
@@ -428,6 +508,53 @@ const Profile = () => {
         </div>
       </div>
 
+      {/* Profile Background */}
+      <div className="profile-background-section">
+        <div className="background-section-header">
+          <h2>🖼️ Profile Background</h2>
+          <button className="background-edit-btn" onClick={openBackgroundModal}>
+            {equippedBackground ? 'Change Background' : 'Select Background'}
+          </button>
+        </div>
+        <div 
+          className="profile-background-preview"
+          style={equippedBackground?.imageUrl ? {
+            backgroundImage: `url(${equippedBackground.imageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            minHeight: '120px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255,255,255,0.06)'
+          } : {
+            background: 'rgba(255,255,255,0.02)',
+            minHeight: '120px',
+            borderRadius: '12px',
+            border: '1px dashed rgba(255,255,255,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'rgba(255,255,255,0.2)'
+          }}
+        >
+          {!equippedBackground && (
+            <span>No background equipped</span>
+          )}
+          {equippedBackground && (
+            <div className="background-equipped-info">
+              <span className="bg-name">{equippedBackground.name}</span>
+              {equippedBackground.rarity && (
+                <span className="bg-rarity" style={{ color: getRarityColor(equippedBackground.rarity) }}>
+                  {getRarityEmoji(equippedBackground.rarity)} {equippedBackground.rarity}
+                </span>
+              )}
+              <button className="bg-unequip-btn" onClick={unequipBackground}>
+                Remove
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="profile-stats-grid">
         <div className="stat-card">
           <div className="stat-number">{unlockedBanners.length}</div>
@@ -440,6 +567,10 @@ const Profile = () => {
         <div className="stat-card">
           <div className="stat-number">{unlockedPhotos.length}</div>
           <div className="stat-label">📸 Photos</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{unlockedBackgrounds.length}</div>
+          <div className="stat-label">🖼️ Backgrounds</div>
         </div>
         <div className="stat-card">
           <div className="stat-number">{userShards}</div>
@@ -529,6 +660,7 @@ const Profile = () => {
         )}
       </div>
 
+      {/* Banner Modal */}
       {showBannerModal && (
         <div className="modal-overlay" onClick={() => setShowBannerModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -582,6 +714,7 @@ const Profile = () => {
         </div>
       )}
 
+      {/* Title Modal */}
       {showTitleModal && (
         <div className="modal-overlay" onClick={() => setShowTitleModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -619,6 +752,7 @@ const Profile = () => {
         </div>
       )}
 
+      {/* Photo Modal */}
       {showPhotoModal && (
         <div className="modal-overlay" onClick={() => {
           setShowPhotoModal(false);
@@ -696,6 +830,86 @@ const Profile = () => {
 
             {photoSearchTerm && filteredPhotos.length === 0 && (
               <div className="photo-search-empty">No photos found matching "{photoSearchTerm}"</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NEW: Profile Background Modal */}
+      {showBackgroundModal && (
+        <div className="modal-overlay" onClick={() => setShowBackgroundModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🖼️ Select Profile Background</h2>
+              <button className="modal-close" onClick={() => setShowBackgroundModal(false)}>✕</button>
+            </div>
+
+            <div className="background-search-container">
+              <input
+                type="text"
+                className="background-search-input"
+                placeholder="🔍 Search backgrounds..."
+                value={backgroundSearchTerm}
+                onChange={(e) => setBackgroundSearchTerm(e.target.value)}
+              />
+              {backgroundSearchTerm && (
+                <button
+                  className="background-search-clear"
+                  onClick={() => setBackgroundSearchTerm('')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="background-grid">
+              {(backgroundSearchTerm ? filteredBackgrounds : profileBackgrounds.filter(b => b.isUnlocked)).map((bg) => {
+                const isEquipped = equippedBackground?._id === bg._id || equipped.profileBackground === bg._id;
+                return (
+                  <div
+                    key={bg._id}
+                    className={`background-item ${isEquipped ? 'equipped' : ''}`}
+                    onClick={() => equipBackground(bg._id)}
+                  >
+                    <div 
+                      className="background-preview"
+                      style={{
+                        backgroundImage: `url(${bg.imageUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        minHeight: '100px',
+                        borderRadius: '8px'
+                      }}
+                    >
+                      {isEquipped && (
+                        <div className="background-equipped-badge">✅ Equipped</div>
+                      )}
+                      {bg.rarity && (
+                        <div className="background-rarity-badge" style={{ color: getRarityColor(bg.rarity) }}>
+                          {getRarityEmoji(bg.rarity)} {bg.rarity}
+                        </div>
+                      )}
+                    </div>
+                    <div className="background-info">
+                      <h4>{bg.name}</h4>
+                      {bg.category && <span className="bg-category">{bg.category}</span>}
+                      {bg.description && <p>{bg.description}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {backgroundSearchTerm && filteredBackgrounds.length === 0 && (
+              <div className="background-search-empty">No backgrounds found matching "{backgroundSearchTerm}"</div>
+            )}
+
+            {equippedBackground && (
+              <div className="background-unequip-section">
+                <button className="background-unequip-btn" onClick={unequipBackground}>
+                  Remove Current Background
+                </button>
+              </div>
             )}
           </div>
         </div>

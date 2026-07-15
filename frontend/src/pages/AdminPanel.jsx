@@ -1,6 +1,8 @@
+// /frontend/src/pages/AdminPanel.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import Transactions from './Admin/Transactions';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
@@ -144,6 +146,22 @@ const AdminPanel = () => {
   });
   const [editingPhotoId, setEditingPhotoId] = useState(null);
 
+  // ===== PROFILE BACKGROUNDS =====
+  const [profileBackgrounds, setProfileBackgrounds] = useState([]);
+  const [bgForm, setBgForm] = useState({
+    name: '',
+    description: '',
+    imageUrl: '',
+    thumbnailUrl: '',
+    category: 'anime',
+    rarity: 'Common',
+    unlockType: 'admin_gift',
+    unlockData: null,
+    isActive: true,
+    isDefault: false
+  });
+  const [editingBgId, setEditingBgId] = useState(null);
+
   const [shopItems, setShopItems] = useState([]);
   const [shopForm, setShopForm] = useState({
     itemType: 'banner',
@@ -160,7 +178,7 @@ const AdminPanel = () => {
   });
   const [editingShopId, setEditingShopId] = useState(null);
 
-  // ✅ NEW: Gift System States
+  // Gift System States
   const [giftForm, setGiftForm] = useState({
     userId: '',
     giftType: 'card',
@@ -175,6 +193,29 @@ const AdminPanel = () => {
   const [giftItems, setGiftItems] = useState([]);
   const [loadingGiftItems, setLoadingGiftItems] = useState(false);
   const [sendingGift, setSendingGift] = useState(false);
+
+  // Season Pass States
+  const [seasons, setSeasons] = useState([]);
+  const [seasonForm, setSeasonForm] = useState({
+    seasonNumber: '',
+    seasonName: '',
+    startDate: '',
+    endDate: '',
+    totalTiers: 100,
+    correctGuessesPerTier: 2,
+    description: ''
+  });
+  const [editingSeasonId, setEditingSeasonId] = useState(null);
+  const [selectedSeason, setSelectedSeason] = useState(null);
+  const [seasonTiers, setSeasonTiers] = useState([]);
+  const [tierRewardForm, setTierRewardForm] = useState({
+    tier: '',
+    type: 'shards',
+    itemId: '',
+    itemName: '',
+    amount: '',
+    message: ''
+  });
 
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -192,24 +233,28 @@ const AdminPanel = () => {
     setLoading(true);
     try {
       const [
-        charsRes, bannersRes, titlesRes, photosRes, shopRes, statsRes, usersRes
+        charsRes, bannersRes, titlesRes, photosRes, bgRes, shopRes, statsRes, usersRes, seasonsRes
       ] = await Promise.all([
         api.get('/admin/characters'),
         api.get('/admin/banners'),
         api.get('/admin/titles'),
         api.get('/admin/profile-photos'),
+        api.get('/admin/profile-backgrounds'),
         api.get('/admin/shop-items'),
         api.get('/admin/stats'),
-        api.get('/admin/users')
+        api.get('/admin/users'),
+        api.get('/admin/seasons')
       ]);
       setCharacters(charsRes.data.characters);
       setBanners(bannersRes.data.banners);
       setTitles(titlesRes.data.titles);
       setPhotos(photosRes.data.photos);
+      setProfileBackgrounds(bgRes.data.backgrounds || []);
       setShopItems(shopRes.data.items || []);
       setStats(statsRes.data.stats);
       setUsers(usersRes.data.users);
       setFilteredUsers(usersRes.data.users);
+      setSeasons(seasonsRes.data.seasons || []);
       setError('');
     } catch (err) {
       setError('Failed to load admin data');
@@ -218,7 +263,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ NEW: Fetch gift items based on type
+  // ===== GIFT FUNCTIONS =====
   const fetchGiftItems = async (type) => {
     setLoadingGiftItems(true);
     try {
@@ -227,6 +272,7 @@ const AdminPanel = () => {
       else if (type === 'banner') endpoint = '/admin/banners';
       else if (type === 'title') endpoint = '/admin/titles';
       else if (type === 'profilePhoto') endpoint = '/admin/profile-photos';
+      else if (type === 'profileBackground') endpoint = '/admin/profile-backgrounds';
       else {
         setGiftItems([]);
         setLoadingGiftItems(false);
@@ -234,7 +280,7 @@ const AdminPanel = () => {
       }
       
       const response = await api.get(endpoint);
-      const items = response.data.characters || response.data.banners || response.data.titles || response.data.photos || [];
+      const items = response.data.characters || response.data.banners || response.data.titles || response.data.photos || response.data.backgrounds || [];
       setGiftItems(items);
     } catch (err) {
       console.error('Failed to fetch gift items:', err);
@@ -244,7 +290,6 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ NEW: Handle gift form change
   const handleGiftChange = (e) => {
     const { name, value } = e.target;
     setGiftForm(prev => ({ ...prev, [name]: value }));
@@ -255,7 +300,6 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ NEW: Handle user search
   const handleUserSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
@@ -274,14 +318,12 @@ const AdminPanel = () => {
     }
   };
 
-  // ✅ NEW: Select user
   const selectUser = (user) => {
     setGiftForm(prev => ({ ...prev, userId: user._id }));
     setSearchTerm(user.username);
     setShowUserDropdown(false);
   };
 
-  // ✅ NEW: Select gift item
   const selectGiftItem = (item) => {
     setGiftForm(prev => ({
       ...prev,
@@ -290,7 +332,6 @@ const AdminPanel = () => {
     }));
   };
 
-  // ✅ NEW: Send Gift
   const sendGift = async (e) => {
     e.preventDefault();
     if (!giftForm.userId) {
@@ -335,6 +376,184 @@ const AdminPanel = () => {
       setError(err.response?.data?.message || 'Failed to send gift');
     } finally {
       setSendingGift(false);
+    }
+  };
+
+  // ===== SEASON PASS FUNCTIONS =====
+  const fetchSeasonDetails = async (seasonId) => {
+    try {
+      const response = await api.get(`/admin/seasons/${seasonId}`);
+      if (response.data.success) {
+        setSelectedSeason(response.data.season);
+        setSeasonTiers(response.data.tiers || []);
+      }
+    } catch (err) {
+      setError('Failed to load season details');
+    }
+  };
+
+  const handleSeasonChange = (e) => {
+    const { name, value } = e.target;
+    setSeasonForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTierRewardChange = (e) => {
+    const { name, value } = e.target;
+    setTierRewardForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const submitSeason = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      if (editingSeasonId) {
+        await api.put(`/admin/seasons/${editingSeasonId}`, seasonForm);
+        setSuccess('Season updated successfully!');
+      } else {
+        await api.post('/admin/seasons', seasonForm);
+        setSuccess('Season created successfully!');
+      }
+      resetSeasonForm();
+      fetchAllData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save season');
+    }
+  };
+
+  const resetSeasonForm = () => {
+    setSeasonForm({
+      seasonNumber: '',
+      seasonName: '',
+      startDate: '',
+      endDate: '',
+      totalTiers: 100,
+      correctGuessesPerTier: 2,
+      description: ''
+    });
+    setEditingSeasonId(null);
+    setSelectedSeason(null);
+    setSeasonTiers([]);
+  };
+
+  const editSeason = (season) => {
+    setSeasonForm({
+      seasonNumber: season.seasonNumber,
+      seasonName: season.seasonName,
+      startDate: season.startDate ? new Date(season.startDate).toISOString().split('T')[0] : '',
+      endDate: season.endDate ? new Date(season.endDate).toISOString().split('T')[0] : '',
+      totalTiers: season.totalTiers || 100,
+      correctGuessesPerTier: season.correctGuessesPerTier || 2,
+      description: season.description || ''
+    });
+    setEditingSeasonId(season._id);
+    setActiveTab('seasons');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    fetchSeasonDetails(season._id);
+  };
+
+  const deleteSeason = async (id) => {
+    if (!window.confirm('Delete this season? This will also delete all tiers!')) return;
+    try {
+      await api.delete(`/admin/seasons/${id}`);
+      setSuccess('Season deleted');
+      fetchAllData();
+    } catch (err) {
+      setError('Failed to delete season');
+    }
+  };
+
+  const activateSeason = async (id) => {
+    try {
+      const response = await api.post(`/admin/seasons/${id}/activate`);
+      if (response.data.success) {
+        setSuccess(response.data.message);
+        fetchAllData();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to activate season');
+    }
+  };
+
+  const deactivateSeason = async (id) => {
+    try {
+      const response = await api.post(`/admin/seasons/${id}/deactivate`);
+      if (response.data.success) {
+        setSuccess(response.data.message);
+        fetchAllData();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to deactivate season');
+    }
+  };
+
+  const submitTierReward = async (e) => {
+    e.preventDefault();
+    if (!selectedSeason) {
+      setError('Please select a season first');
+      return;
+    }
+    if (!tierRewardForm.tier) {
+      setError('Please enter a tier number');
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const tier = parseInt(tierRewardForm.tier);
+      
+      const existingTier = seasonTiers.find(t => t.tier === tier);
+      let existingRewards = existingTier ? existingTier.rewards : [];
+      
+      const newReward = {
+        type: tierRewardForm.type,
+        itemId: tierRewardForm.itemId || null,
+        itemName: tierRewardForm.itemName || null,
+        amount: tierRewardForm.amount ? parseInt(tierRewardForm.amount) : null,
+        message: tierRewardForm.message || null
+      };
+      
+      existingRewards.push(newReward);
+
+      await api.put(`/admin/seasons/${selectedSeason._id}/tiers/${tier}`, {
+        rewards: existingRewards
+      });
+
+      setSuccess(`Reward added to Tier ${tier} successfully!`);
+      setTierRewardForm({
+        tier: '',
+        type: 'shards',
+        itemId: '',
+        itemName: '',
+        amount: '',
+        message: ''
+      });
+      fetchSeasonDetails(selectedSeason._id);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to add reward');
+    }
+  };
+
+  const deleteTierReward = async (tier, rewardIndex) => {
+    if (!window.confirm('Remove this reward?')) return;
+    
+    try {
+      const existingTier = seasonTiers.find(t => t.tier === tier);
+      if (!existingTier) return;
+      
+      const updatedRewards = existingTier.rewards.filter((_, i) => i !== rewardIndex);
+      
+      await api.put(`/admin/seasons/${selectedSeason._id}/tiers/${tier}`, {
+        rewards: updatedRewards
+      });
+
+      setSuccess('Reward removed successfully!');
+      fetchSeasonDetails(selectedSeason._id);
+    } catch (err) {
+      setError('Failed to remove reward');
     }
   };
 
@@ -891,6 +1110,108 @@ const AdminPanel = () => {
     }
   };
 
+  // ===== PROFILE BACKGROUND HANDLERS =====
+  const handleBgChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      setBgForm(prev => ({ ...prev, [name]: checked }));
+    } else if (name === 'unlockType') {
+      let data = null;
+      if (value === 'total_guesses') data = { totalGuesses: '' };
+      else if (value === 'anime_guesses') data = { anime: '', count: '' };
+      else if (value === 'season_rank') data = { seasonRank: '' };
+      setBgForm(prev => ({ ...prev, unlockType: value, unlockData: data }));
+    } else if (name.startsWith('unlockData.')) {
+      const key = name.split('.')[1];
+      setBgForm(prev => ({
+        ...prev,
+        unlockData: { ...prev.unlockData, [key]: value }
+      }));
+    } else {
+      setBgForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const submitBg = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      const form = { ...bgForm };
+      
+      // Process unlockData
+      if (form.unlockData) {
+        if (form.unlockData.totalGuesses) {
+          form.unlockData.totalGuesses = Number(form.unlockData.totalGuesses);
+        }
+        if (form.unlockData.count) {
+          form.unlockData.count = Number(form.unlockData.count);
+        }
+        if (form.unlockData.seasonRank) {
+          form.unlockData.seasonRank = Number(form.unlockData.seasonRank);
+        }
+      }
+
+      if (editingBgId) {
+        await api.put(`/admin/profile-backgrounds/${editingBgId}`, form);
+        setSuccess('Profile background updated successfully!');
+      } else {
+        await api.post('/admin/profile-backgrounds', form);
+        setSuccess('Profile background added successfully!');
+      }
+      resetBgForm();
+      fetchAllData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save profile background');
+    }
+  };
+
+  const resetBgForm = () => {
+    setBgForm({
+      name: '',
+      description: '',
+      imageUrl: '',
+      thumbnailUrl: '',
+      category: 'anime',
+      rarity: 'Common',
+      unlockType: 'admin_gift',
+      unlockData: null,
+      isActive: true,
+      isDefault: false
+    });
+    setEditingBgId(null);
+  };
+
+  const editBg = (bg) => {
+    setBgForm({
+      name: bg.name,
+      description: bg.description || '',
+      imageUrl: bg.imageUrl,
+      thumbnailUrl: bg.thumbnailUrl || '',
+      category: bg.category || 'anime',
+      rarity: bg.rarity || 'Common',
+      unlockType: bg.unlockType || 'admin_gift',
+      unlockData: bg.unlockData || null,
+      isActive: bg.isActive !== undefined ? bg.isActive : true,
+      isDefault: bg.isDefault || false
+    });
+    setEditingBgId(bg._id);
+    setActiveTab('backgrounds');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const deleteBg = async (id) => {
+    if (!window.confirm('Delete this profile background?')) return;
+    try {
+      await api.delete(`/admin/profile-backgrounds/${id}`);
+      setSuccess('Profile background deleted');
+      fetchAllData();
+    } catch (err) {
+      setError('Failed to delete');
+    }
+  };
+
   // ===== SHOP HANDLERS =====
   const handleShopChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1020,7 +1341,6 @@ const AdminPanel = () => {
       <div className="admin-form-card">
         <h2>🎁 Send Gift to Player</h2>
         <form onSubmit={sendGift} className="admin-form">
-          {/* User Selection */}
           <div className="form-group">
             <label>Search Player *</label>
             <div className="user-search-container">
@@ -1056,7 +1376,6 @@ const AdminPanel = () => {
             )}
           </div>
 
-          {/* Gift Type */}
           <div className="form-row">
             <div className="form-group">
               <label>Gift Type *</label>
@@ -1065,6 +1384,7 @@ const AdminPanel = () => {
                 <option value="title">🏆 Title</option>
                 <option value="banner">🎨 Banner</option>
                 <option value="profilePhoto">📸 Profile Photo</option>
+                <option value="profileBackground">🖼️ Profile Background</option>
                 <option value="shards">🎴 Shards</option>
                 <option value="gems">💎 Gems</option>
               </select>
@@ -1101,9 +1421,9 @@ const AdminPanel = () => {
             )}
           </div>
 
-          {/* Item Selection for Cards/Titles/Banners/Photos */}
           {(giftForm.giftType === 'card' || giftForm.giftType === 'title' || 
-            giftForm.giftType === 'banner' || giftForm.giftType === 'profilePhoto') && (
+            giftForm.giftType === 'banner' || giftForm.giftType === 'profilePhoto' ||
+            giftForm.giftType === 'profileBackground') && (
             <div className="form-group">
               <label>Select Item (Optional - Auto-fill Name)</label>
               <select 
@@ -1129,7 +1449,6 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Message */}
           <div className="form-group">
             <label>Custom Message (Optional)</label>
             <input
@@ -1157,7 +1476,7 @@ const AdminPanel = () => {
           <p><strong>How to send a gift:</strong></p>
           <ol>
             <li>Search and select a player by username or email</li>
-            <li>Choose the gift type (Card, Title, Banner, Profile Photo, Shards, Gems)</li>
+            <li>Choose the gift type (Card, Title, Banner, Profile Photo, Profile Background, Shards, Gems)</li>
             <li>Enter the item name or select from existing items</li>
             <li>For shards/gems, enter the amount</li>
             <li>Add a custom message (optional)</li>
@@ -1166,6 +1485,288 @@ const AdminPanel = () => {
           <p className="gift-note">💡 The player will receive a notification with the gift and can claim it from their notifications page.</p>
         </div>
       </div>
+    </div>
+  );
+
+  // ===== RENDER SEASON PASS TAB =====
+  const renderSeasonPassTab = () => (
+    <div className="admin-section">
+      <div className="admin-form-card">
+        <h2>{editingSeasonId ? 'Edit Season' : 'Create New Season'}</h2>
+        <form onSubmit={submitSeason} className="admin-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label>Season Number *</label>
+              <input
+                type="number"
+                name="seasonNumber"
+                className="form-control"
+                value={seasonForm.seasonNumber}
+                onChange={handleSeasonChange}
+                placeholder="e.g., 1"
+                min="1"
+                required
+                disabled={!!editingSeasonId}
+              />
+            </div>
+            <div className="form-group">
+              <label>Season Name *</label>
+              <input
+                type="text"
+                name="seasonName"
+                className="form-control"
+                value={seasonForm.seasonName}
+                onChange={handleSeasonChange}
+                placeholder="e.g., Summer 2026"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Start Date *</label>
+              <input
+                type="date"
+                name="startDate"
+                className="form-control"
+                value={seasonForm.startDate}
+                onChange={handleSeasonChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>End Date *</label>
+              <input
+                type="date"
+                name="endDate"
+                className="form-control"
+                value={seasonForm.endDate}
+                onChange={handleSeasonChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Total Tiers</label>
+              <input
+                type="number"
+                name="totalTiers"
+                className="form-control"
+                value={seasonForm.totalTiers}
+                onChange={handleSeasonChange}
+                min="1"
+                max="100"
+              />
+              <small className="form-hint">Default: 100</small>
+            </div>
+            <div className="form-group">
+              <label>Correct Guesses Per Tier</label>
+              <input
+                type="number"
+                name="correctGuessesPerTier"
+                className="form-control"
+                value={seasonForm.correctGuessesPerTier}
+                onChange={handleSeasonChange}
+                min="1"
+              />
+              <small className="form-hint">Default: 2</small>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              name="description"
+              className="form-control"
+              rows="2"
+              value={seasonForm.description}
+              onChange={handleSeasonChange}
+              placeholder="Season description..."
+            />
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              {editingSeasonId ? 'Update Season' : 'Create Season'}
+            </button>
+            {editingSeasonId && (
+              <button type="button" className="btn btn-secondary" onClick={resetSeasonForm}>
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* Season List */}
+      <div className="admin-list-card">
+        <h2>All Seasons</h2>
+        {seasons.length === 0 ? (
+          <p className="empty-message">No seasons created yet.</p>
+        ) : (
+          <div className="season-list">
+            {seasons.map(season => (
+              <div key={season._id} className={`season-item ${season.isActive ? 'active' : ''}`}>
+                <div className="season-info">
+                  <span className="season-number">Season {season.seasonNumber}</span>
+                  <span className="season-name">{season.seasonName}</span>
+                  <span className={`season-status ${season.isActive ? 'active' : 'inactive'}`}>
+                    {season.isActive ? '🟢 Active' : '🔴 Inactive'}
+                  </span>
+                  <span className="season-dates">
+                    {new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="season-actions">
+                  {!season.isActive && (
+                    <button className="btn btn-success btn-sm" onClick={() => activateSeason(season._id)}>
+                      Activate
+                    </button>
+                  )}
+                  {season.isActive && (
+                    <button className="btn btn-warning btn-sm" onClick={() => deactivateSeason(season._id)}>
+                      Deactivate
+                    </button>
+                  )}
+                  <button className="btn btn-secondary btn-sm" onClick={() => editSeason(season)}>
+                    Edit
+                  </button>
+                  <button className="btn btn-danger btn-sm" onClick={() => deleteSeason(season._id)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Tier Management */}
+      {selectedSeason && (
+        <div className="admin-list-card">
+          <h2>Season {selectedSeason.seasonNumber} - Tier Rewards</h2>
+          
+          <div className="tier-reward-form">
+            <h3>Add Reward to Tier</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Tier Number *</label>
+                <input
+                  type="number"
+                  name="tier"
+                  className="form-control"
+                  value={tierRewardForm.tier}
+                  onChange={handleTierRewardChange}
+                  placeholder="e.g., 1"
+                  min="1"
+                  max={selectedSeason.totalTiers || 100}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Reward Type *</label>
+                <select name="type" className="form-control" value={tierRewardForm.type} onChange={handleTierRewardChange}>
+                  <option value="shards">🎴 Shards</option>
+                  <option value="gems">💎 Gems</option>
+                  <option value="card">🃏 Card</option>
+                  <option value="title">🏆 Title</option>
+                  <option value="banner">🎨 Banner</option>
+                  <option value="profilePhoto">📸 Profile Photo</option>
+                  <option value="profileBackground">🖼️ Profile Background</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Item Name</label>
+                <input
+                  type="text"
+                  name="itemName"
+                  className="form-control"
+                  value={tierRewardForm.itemName}
+                  onChange={handleTierRewardChange}
+                  placeholder="e.g., Red Hair Shanks"
+                />
+                <small className="form-hint">For cards/titles/banners/photos</small>
+              </div>
+              <div className="form-group">
+                <label>Amount</label>
+                <input
+                  type="number"
+                  name="amount"
+                  className="form-control"
+                  value={tierRewardForm.amount}
+                  onChange={handleTierRewardChange}
+                  placeholder="e.g., 100"
+                  min="1"
+                />
+                <small className="form-hint">For shards/gems</small>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Item ID (for cards/titles/banners/photos/backgrounds)</label>
+              <input
+                type="text"
+                name="itemId"
+                className="form-control"
+                value={tierRewardForm.itemId}
+                onChange={handleTierRewardChange}
+                placeholder="MongoDB ObjectId"
+              />
+              <small className="form-hint">Required for cards, titles, banners, profile photos, profile backgrounds</small>
+            </div>
+
+            <div className="form-group">
+              <label>Custom Message</label>
+              <input
+                type="text"
+                name="message"
+                className="form-control"
+                value={tierRewardForm.message}
+                onChange={handleTierRewardChange}
+                placeholder="e.g., Legendary card unlocked!"
+              />
+            </div>
+
+            <button type="button" className="btn btn-primary" onClick={submitTierReward}>
+              Add Reward
+            </button>
+          </div>
+
+          {/* Tier List */}
+          <div className="tier-list">
+            {seasonTiers.map(tier => (
+              <div key={tier.tier} className="tier-item">
+                <h4>Tier {tier.tier}</h4>
+                {tier.rewards.length === 0 ? (
+                  <p className="no-rewards-text">No rewards</p>
+                ) : (
+                  <div className="tier-rewards-list">
+                    {tier.rewards.map((reward, index) => (
+                      <div key={index} className="tier-reward-item">
+                        <span className="reward-type">{reward.type}</span>
+                        <span className="reward-name">{reward.itemName || reward.type}</span>
+                        {reward.amount && <span className="reward-amount">x{reward.amount}</span>}
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => deleteTierReward(tier.tier, index)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1196,58 +1797,38 @@ const AdminPanel = () => {
       <div className="admin-header">
         <h1 className="admin-title">Admin Panel</h1>
         <div className="admin-tabs">
-          <button
-            className={`tab-btn ${activeTab === 'characters' ? 'active' : ''}`}
-            onClick={() => setActiveTab('characters')}
-          >
-            Characters
-            <span className="tab-badge">{characters.length}</span>
+          <button className={`tab-btn ${activeTab === 'characters' ? 'active' : ''}`} onClick={() => setActiveTab('characters')}>
+            Characters <span className="tab-badge">{characters.length}</span>
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'banners' ? 'active' : ''}`}
-            onClick={() => setActiveTab('banners')}
-          >
-            Banners
-            <span className="tab-badge">{banners.length}</span>
+          <button className={`tab-btn ${activeTab === 'banners' ? 'active' : ''}`} onClick={() => setActiveTab('banners')}>
+            Banners <span className="tab-badge">{banners.length}</span>
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'titles' ? 'active' : ''}`}
-            onClick={() => setActiveTab('titles')}
-          >
-            Titles
-            <span className="tab-badge">{titles.length}</span>
+          <button className={`tab-btn ${activeTab === 'titles' ? 'active' : ''}`} onClick={() => setActiveTab('titles')}>
+            Titles <span className="tab-badge">{titles.length}</span>
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'photos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('photos')}
-          >
-            Photos
-            <span className="tab-badge">{photos.length}</span>
+          <button className={`tab-btn ${activeTab === 'photos' ? 'active' : ''}`} onClick={() => setActiveTab('photos')}>
+            Photos <span className="tab-badge">{photos.length}</span>
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
-            onClick={() => setActiveTab('shop')}
-          >
-            Shop
-            <span className="tab-badge">{shopItems.length}</span>
+          <button className={`tab-btn ${activeTab === 'backgrounds' ? 'active' : ''}`} onClick={() => setActiveTab('backgrounds')}>
+            Backgrounds <span className="tab-badge">{profileBackgrounds.length}</span>
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
-          >
+          <button className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`} onClick={() => setActiveTab('shop')}>
+            Shop <span className="tab-badge">{shopItems.length}</span>
+          </button>
+          <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
             Users
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stats')}
-          >
+          <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setActiveTab('stats')}>
             Stats
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'gift' ? 'active' : ''}`}
-            onClick={() => setActiveTab('gift')}
-          >
+          <button className={`tab-btn ${activeTab === 'gift' ? 'active' : ''}`} onClick={() => setActiveTab('gift')}>
             🎁 Gift
+          </button>
+          <button className={`tab-btn ${activeTab === 'seasons' ? 'active' : ''}`} onClick={() => setActiveTab('seasons')}>
+            🎫 Seasons
+          </button>
+          <button className={`tab-btn ${activeTab === 'transactions' ? 'active' : ''}`} onClick={() => setActiveTab('transactions')}>
+            💳 Transactions
           </button>
         </div>
       </div>
@@ -1256,12 +1837,7 @@ const AdminPanel = () => {
       {success && <div className="admin-alert success">{success}</div>}
 
       <div className="season-reset-wrapper">
-        <button
-          onClick={handleResetSeason}
-          disabled={resetting}
-          className="season-reset-btn"
-          title="Reset Season (Admin Only)"
-        >
+        <button onClick={handleResetSeason} disabled={resetting} className="season-reset-btn">
           {resetting ? 'Resetting...' : 'Reset Season'}
         </button>
         {resetMessage && (
@@ -1909,7 +2485,7 @@ const AdminPanel = () => {
                 />
               </div>
 
-              {/* Legacy Traits (Backward Compatibility) */}
+              {/* Legacy Traits */}
               <h3 style={{ color: '#a89bff', marginTop: 20 }}>Legacy Traits</h3>
               <div className="form-row">
                 <div className="form-group">
@@ -2026,22 +2602,10 @@ const AdminPanel = () => {
                       <h3>{char.name}</h3>
                       <p className="char-anime">{char.anime}</p>
                       <p className="char-power">Power: {char.powerLevel || 25}</p>
-
                       <div className="char-badges">
-                        <span className={`element-badge ${char.element?.toLowerCase()}`}>
-                          {char.element || 'Fire'}
-                        </span>
-                        <span className={`rarity-badge ${char.rarity?.toLowerCase()}`}>
-                          {char.rarity || 'Common'}
-                        </span>
+                        <span className={`element-badge ${char.element?.toLowerCase()}`}>{char.element || 'Fire'}</span>
+                        <span className={`rarity-badge ${char.rarity?.toLowerCase()}`}>{char.rarity || 'Common'}</span>
                       </div>
-
-                      {char.appearance?.hairColor && (
-                        <p className="char-desc" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-                          Hair: {char.appearance.hairColor} | Eyes: {char.appearance.eyeColor || 'Unknown'}
-                        </p>
-                      )}
-
                       <p className="char-desc">{char.description?.substring(0, 80)}...</p>
                       <div className="char-actions">
                         <button className="btn btn-secondary btn-sm" onClick={() => editCharacter(char)}>Edit</button>
@@ -2064,39 +2628,16 @@ const AdminPanel = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Banner Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    className="form-control"
-                    value={bannerForm.name}
-                    onChange={handleBannerChange}
-                    required
-                    placeholder="e.g., Legendary Pirate"
-                  />
+                  <input type="text" name="name" className="form-control" value={bannerForm.name} onChange={handleBannerChange} required placeholder="e.g., Legendary Pirate" />
                 </div>
                 <div className="form-group">
                   <label>GIF URL *</label>
-                  <input
-                    type="text"
-                    name="gifUrl"
-                    className="form-control"
-                    value={bannerForm.gifUrl}
-                    onChange={handleBannerChange}
-                    placeholder="https://example.com/banner.gif"
-                    required
-                  />
+                  <input type="text" name="gifUrl" className="form-control" value={bannerForm.gifUrl} onChange={handleBannerChange} placeholder="https://example.com/banner.gif" required />
                 </div>
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <input
-                  type="text"
-                  name="description"
-                  className="form-control"
-                  value={bannerForm.description}
-                  onChange={handleBannerChange}
-                  placeholder="Brief description of this banner"
-                />
+                <input type="text" name="description" className="form-control" value={bannerForm.description} onChange={handleBannerChange} placeholder="Brief description of this banner" />
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -2134,48 +2675,16 @@ const AdminPanel = () => {
                 <div className="form-group">
                   <label>Condition</label>
                   {bannerForm.unlockType === 'total_guesses' && (
-                    <input
-                      type="number"
-                      name="cond.totalGuesses"
-                      className="form-control"
-                      value={bannerForm.unlockCondition.totalGuesses || ''}
-                      onChange={handleBannerChange}
-                      placeholder="e.g., 100"
-                      min="1"
-                    />
+                    <input type="number" name="cond.totalGuesses" className="form-control" value={bannerForm.unlockCondition.totalGuesses || ''} onChange={handleBannerChange} placeholder="e.g., 100" min="1" />
                   )}
                   {bannerForm.unlockType === 'anime_guesses' && (
                     <>
-                      <input
-                        type="text"
-                        name="cond.anime"
-                        className="form-control"
-                        value={bannerForm.unlockCondition.anime || ''}
-                        onChange={handleBannerChange}
-                        placeholder="e.g., One Piece"
-                      />
-                      <input
-                        type="number"
-                        name="cond.count"
-                        className="form-control"
-                        value={bannerForm.unlockCondition.count || ''}
-                        onChange={handleBannerChange}
-                        placeholder="e.g., 30"
-                        min="1"
-                        style={{ marginTop: 6 }}
-                      />
+                      <input type="text" name="cond.anime" className="form-control" value={bannerForm.unlockCondition.anime || ''} onChange={handleBannerChange} placeholder="e.g., One Piece" />
+                      <input type="number" name="cond.count" className="form-control" value={bannerForm.unlockCondition.count || ''} onChange={handleBannerChange} placeholder="e.g., 30" min="1" style={{ marginTop: 6 }} />
                     </>
                   )}
                   {bannerForm.unlockType === 'season_rank' && (
-                    <input
-                      type="number"
-                      name="cond.seasonRank"
-                      className="form-control"
-                      value={bannerForm.unlockCondition.seasonRank || ''}
-                      onChange={handleBannerChange}
-                      placeholder="e.g., 1"
-                      min="1"
-                    />
+                    <input type="number" name="cond.seasonRank" className="form-control" value={bannerForm.unlockCondition.seasonRank || ''} onChange={handleBannerChange} placeholder="e.g., 1" min="1" />
                   )}
                 </div>
               </div>
@@ -2226,39 +2735,16 @@ const AdminPanel = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Title ID (internal) *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    className="form-control"
-                    value={titleForm.name}
-                    onChange={handleTitleChange}
-                    required
-                    placeholder="e.g., the_rookie"
-                  />
+                  <input type="text" name="name" className="form-control" value={titleForm.name} onChange={handleTitleChange} required placeholder="e.g., the_rookie" />
                 </div>
                 <div className="form-group">
                   <label>Display Name *</label>
-                  <input
-                    type="text"
-                    name="displayName"
-                    className="form-control"
-                    value={titleForm.displayName}
-                    onChange={handleTitleChange}
-                    placeholder="e.g., The Rookie"
-                    required
-                  />
+                  <input type="text" name="displayName" className="form-control" value={titleForm.displayName} onChange={handleTitleChange} placeholder="e.g., The Rookie" required />
                 </div>
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <input
-                  type="text"
-                  name="description"
-                  className="form-control"
-                  value={titleForm.description}
-                  onChange={handleTitleChange}
-                  placeholder="Brief description of this title"
-                />
+                <input type="text" name="description" className="form-control" value={titleForm.description} onChange={handleTitleChange} placeholder="Brief description of this title" />
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -2292,59 +2778,19 @@ const AdminPanel = () => {
                 <div className="form-group">
                   <label>Condition</label>
                   {titleForm.unlockType === 'total_guesses' && (
-                    <input
-                      type="number"
-                      name="cond.totalGuesses"
-                      className="form-control"
-                      value={titleForm.unlockCondition.totalGuesses || ''}
-                      onChange={handleTitleChange}
-                      placeholder="e.g., 100"
-                      min="1"
-                    />
+                    <input type="number" name="cond.totalGuesses" className="form-control" value={titleForm.unlockCondition.totalGuesses || ''} onChange={handleTitleChange} placeholder="e.g., 100" min="1" />
                   )}
                   {titleForm.unlockType === 'anime_guesses' && (
                     <>
-                      <input
-                        type="text"
-                        name="cond.anime"
-                        className="form-control"
-                        value={titleForm.unlockCondition.anime || ''}
-                        onChange={handleTitleChange}
-                        placeholder="e.g., One Piece"
-                      />
-                      <input
-                        type="number"
-                        name="cond.count"
-                        className="form-control"
-                        value={titleForm.unlockCondition.count || ''}
-                        onChange={handleTitleChange}
-                        placeholder="e.g., 50"
-                        min="1"
-                        style={{ marginTop: 6 }}
-                      />
+                      <input type="text" name="cond.anime" className="form-control" value={titleForm.unlockCondition.anime || ''} onChange={handleTitleChange} placeholder="e.g., One Piece" />
+                      <input type="number" name="cond.count" className="form-control" value={titleForm.unlockCondition.count || ''} onChange={handleTitleChange} placeholder="e.g., 50" min="1" style={{ marginTop: 6 }} />
                     </>
                   )}
                   {titleForm.unlockType === 'season_rank' && (
-                    <input
-                      type="number"
-                      name="cond.seasonRank"
-                      className="form-control"
-                      value={titleForm.unlockCondition.seasonRank || ''}
-                      onChange={handleTitleChange}
-                      placeholder="e.g., 1"
-                      min="1"
-                    />
+                    <input type="number" name="cond.seasonRank" className="form-control" value={titleForm.unlockCondition.seasonRank || ''} onChange={handleTitleChange} placeholder="e.g., 1" min="1" />
                   )}
                   {titleForm.unlockType === 'win_streak' && (
-                    <input
-                      type="number"
-                      name="cond.streak"
-                      className="form-control"
-                      value={titleForm.unlockCondition.streak || ''}
-                      onChange={handleTitleChange}
-                      placeholder="e.g., 10"
-                      min="1"
-                    />
+                    <input type="number" name="cond.streak" className="form-control" value={titleForm.unlockCondition.streak || ''} onChange={handleTitleChange} placeholder="e.g., 10" min="1" />
                   )}
                 </div>
               </div>
@@ -2393,77 +2839,31 @@ const AdminPanel = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Photo Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    className="form-control"
-                    value={photoForm.name}
-                    onChange={handlePhotoChange}
-                    required
-                    placeholder="e.g., Shinobu Portrait"
-                  />
+                  <input type="text" name="name" className="form-control" value={photoForm.name} onChange={handlePhotoChange} required placeholder="e.g., Shinobu Portrait" />
                 </div>
                 <div className="form-group">
                   <label>Character Name *</label>
-                  <input
-                    type="text"
-                    name="characterName"
-                    className="form-control"
-                    value={photoForm.characterName}
-                    onChange={handlePhotoChange}
-                    required
-                    placeholder="e.g., Shinobu"
-                  />
+                  <input type="text" name="characterName" className="form-control" value={photoForm.characterName} onChange={handlePhotoChange} required placeholder="e.g., Shinobu" />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Image URL *</label>
-                  <input
-                    type="text"
-                    name="imageUrl"
-                    className="form-control"
-                    value={photoForm.imageUrl}
-                    onChange={handlePhotoChange}
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
+                  <input type="text" name="imageUrl" className="form-control" value={photoForm.imageUrl} onChange={handlePhotoChange} placeholder="https://example.com/image.jpg" required />
                 </div>
                 <div className="form-group">
                   <label>Anime *</label>
-                  <input
-                    type="text"
-                    name="anime"
-                    className="form-control"
-                    value={photoForm.anime}
-                    onChange={handlePhotoChange}
-                    required
-                    placeholder="e.g., One Piece"
-                  />
+                  <input type="text" name="anime" className="form-control" value={photoForm.anime} onChange={handlePhotoChange} required placeholder="e.g., One Piece" />
                 </div>
               </div>
               <div className="form-group">
                 <label>Description</label>
-                <input
-                  type="text"
-                  name="description"
-                  className="form-control"
-                  value={photoForm.description}
-                  onChange={handlePhotoChange}
-                  placeholder="Brief description of the character"
-                />
+                <input type="text" name="description" className="form-control" value={photoForm.description} onChange={handlePhotoChange} placeholder="Brief description of the character" />
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Character ID (optional)</label>
-                  <input
-                    type="text"
-                    name="characterId"
-                    className="form-control"
-                    value={photoForm.characterId}
-                    onChange={handlePhotoChange}
-                    placeholder="Character _id"
-                  />
+                  <input type="text" name="characterId" className="form-control" value={photoForm.characterId} onChange={handlePhotoChange} placeholder="Character _id" />
                 </div>
                 <div className="form-group">
                   <label>Rarity</label>
@@ -2512,6 +2912,135 @@ const AdminPanel = () => {
         </div>
       )}
 
+      {activeTab === 'backgrounds' && (
+        <div className="admin-section">
+          <div className="admin-form-card">
+            <h2>{editingBgId ? 'Edit Profile Background' : 'Add New Profile Background'}</h2>
+            <form onSubmit={submitBg} className="admin-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Background Name *</label>
+                  <input type="text" name="name" className="form-control" value={bgForm.name} onChange={handleBgChange} required placeholder="e.g., Cherry Blossom" />
+                </div>
+                <div className="form-group">
+                  <label>Image URL *</label>
+                  <input type="text" name="imageUrl" className="form-control" value={bgForm.imageUrl} onChange={handleBgChange} placeholder="https://example.com/background.jpg" required />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Thumbnail URL</label>
+                <input type="text" name="thumbnailUrl" className="form-control" value={bgForm.thumbnailUrl} onChange={handleBgChange} placeholder="https://example.com/thumbnail.jpg" />
+                <small className="form-hint">Optional - smaller preview image</small>
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <input type="text" name="description" className="form-control" value={bgForm.description} onChange={handleBgChange} placeholder="Brief description of this background" />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Category</label>
+                  <select name="category" className="form-control" value={bgForm.category} onChange={handleBgChange}>
+                    <option value="anime">Anime</option>
+                    <option value="nature">Nature</option>
+                    <option value="abstract">Abstract</option>
+                    <option value="seasonal">Seasonal</option>
+                    <option value="premium">Premium</option>
+                    <option value="event">Event</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Rarity</label>
+                  <select name="rarity" className="form-control" value={bgForm.rarity} onChange={handleBgChange}>
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Legendary">Legendary</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Unlock Type</label>
+                  <select name="unlockType" className="form-control" value={bgForm.unlockType} onChange={handleBgChange}>
+                    <option value="admin_gift">Admin Gift</option>
+                    <option value="total_guesses">Total Guesses</option>
+                    <option value="anime_guesses">Anime-specific Guesses</option>
+                    <option value="season_rank">Season Rank</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Condition</label>
+                  {bgForm.unlockType === 'total_guesses' && (
+                    <input type="number" name="unlockData.totalGuesses" className="form-control" value={bgForm.unlockData?.totalGuesses || ''} onChange={handleBgChange} placeholder="e.g., 100" min="1" />
+                  )}
+                  {bgForm.unlockType === 'anime_guesses' && (
+                    <>
+                      <input type="text" name="unlockData.anime" className="form-control" value={bgForm.unlockData?.anime || ''} onChange={handleBgChange} placeholder="e.g., One Piece" />
+                      <input type="number" name="unlockData.count" className="form-control" value={bgForm.unlockData?.count || ''} onChange={handleBgChange} placeholder="e.g., 30" min="1" style={{ marginTop: 6 }} />
+                    </>
+                  )}
+                  {bgForm.unlockType === 'season_rank' && (
+                    <input type="number" name="unlockData.seasonRank" className="form-control" value={bgForm.unlockData?.seasonRank || ''} onChange={handleBgChange} placeholder="e.g., 1" min="1" />
+                  )}
+                  {bgForm.unlockType === 'admin_gift' && (
+                    <span className="form-hint">Admin gift - no condition required</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input type="checkbox" name="isActive" checked={bgForm.isActive} onChange={handleBgChange} /> Active
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input type="checkbox" name="isDefault" checked={bgForm.isDefault} onChange={handleBgChange} /> Set as Default
+                  </label>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">{editingBgId ? 'Update' : 'Add'} Background</button>
+                {editingBgId && <button type="button" className="btn btn-secondary" onClick={resetBgForm}>Cancel</button>}
+              </div>
+            </form>
+          </div>
+
+          <div className="admin-list-card">
+            <h2>All Profile Backgrounds ({profileBackgrounds.length})</h2>
+            {profileBackgrounds.length === 0 ? <p className="empty-message">No profile backgrounds added.</p> : (
+              <div className="bg-admin-grid">
+                {profileBackgrounds.map(bg => (
+                  <div key={bg._id} className="bg-admin-card">
+                    <div className="bg-preview" style={{ backgroundImage: `url(${bg.imageUrl})` }} />
+                    <div className="bg-info">
+                      <h4>{bg.name}</h4>
+                      <p>{bg.description}</p>
+                      <div className="bg-meta">
+                        <span className={`rarity-${bg.rarity?.toLowerCase()}`}>{bg.rarity}</span>
+                        <span>{bg.category}</span>
+                        {bg.isDefault && <span className="default-badge">★ Default</span>}
+                      </div>
+                      <div className="char-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => editBg(bg)}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteBg(bg._id)}>Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {activeTab === 'shop' && (
         <div className="admin-section">
           <div className="admin-form-card">
@@ -2527,16 +3056,7 @@ const AdminPanel = () => {
                 </div>
                 <div className="form-group">
                   <label>Price (in Shards) *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    className="form-control"
-                    value={shopForm.price}
-                    onChange={handleShopChange}
-                    placeholder="e.g., 500"
-                    min="10"
-                    required
-                  />
+                  <input type="number" name="price" className="form-control" value={shopForm.price} onChange={handleShopChange} placeholder="e.g., 500" min="10" required />
                 </div>
               </div>
 
@@ -2556,26 +3076,12 @@ const AdminPanel = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>New Banner Name</label>
-                      <input
-                        type="text"
-                        name="newBannerName"
-                        className="form-control"
-                        value={shopForm.newBannerName || ''}
-                        onChange={handleShopChange}
-                        placeholder="e.g., Gear 5 Luffy"
-                      />
+                      <input type="text" name="newBannerName" className="form-control" value={shopForm.newBannerName || ''} onChange={handleShopChange} placeholder="e.g., Gear 5 Luffy" />
                       <small className="form-hint">Leave empty if selecting existing banner</small>
                     </div>
                     <div className="form-group">
                       <label>Banner GIF URL *</label>
-                      <input
-                        type="text"
-                        name="newBannerGifUrl"
-                        className="form-control"
-                        value={shopForm.newBannerGifUrl || ''}
-                        onChange={handleShopChange}
-                        placeholder="https://example.com/banner.gif"
-                      />
+                      <input type="text" name="newBannerGifUrl" className="form-control" value={shopForm.newBannerGifUrl || ''} onChange={handleShopChange} placeholder="https://example.com/banner.gif" />
                       <small className="form-hint">Must end with .gif or .webp</small>
                     </div>
                   </div>
@@ -2596,26 +3102,12 @@ const AdminPanel = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>New Photo Name</label>
-                      <input
-                        type="text"
-                        name="newPhotoName"
-                        className="form-control"
-                        value={shopForm.newPhotoName || ''}
-                        onChange={handleShopChange}
-                        placeholder="e.g., Luffy Portrait"
-                      />
+                      <input type="text" name="newPhotoName" className="form-control" value={shopForm.newPhotoName || ''} onChange={handleShopChange} placeholder="e.g., Luffy Portrait" />
                       <small className="form-hint">Leave empty if selecting existing photo</small>
                     </div>
                     <div className="form-group">
                       <label>Photo Image URL *</label>
-                      <input
-                        type="text"
-                        name="newPhotoImageUrl"
-                        className="form-control"
-                        value={shopForm.newPhotoImageUrl || ''}
-                        onChange={handleShopChange}
-                        placeholder="https://example.com/image.jpg"
-                      />
+                      <input type="text" name="newPhotoImageUrl" className="form-control" value={shopForm.newPhotoImageUrl || ''} onChange={handleShopChange} placeholder="https://example.com/image.jpg" />
                       <small className="form-hint">Must be a valid image URL</small>
                     </div>
                   </div>
@@ -2642,23 +3134,11 @@ const AdminPanel = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Start Date</label>
-                    <input
-                      type="date"
-                      name="startDate"
-                      className="form-control"
-                      value={shopForm.startDate}
-                      onChange={handleShopChange}
-                    />
+                    <input type="date" name="startDate" className="form-control" value={shopForm.startDate} onChange={handleShopChange} />
                   </div>
                   <div className="form-group">
                     <label>End Date</label>
-                    <input
-                      type="date"
-                      name="endDate"
-                      className="form-control"
-                      value={shopForm.endDate}
-                      onChange={handleShopChange}
-                    />
+                    <input type="date" name="endDate" className="form-control" value={shopForm.endDate} onChange={handleShopChange} />
                   </div>
                 </div>
               )}
@@ -2668,9 +3148,7 @@ const AdminPanel = () => {
                   {editingShopId ? 'Update' : 'Add'} to Shop
                 </button>
                 {editingShopId && (
-                  <button type="button" className="btn btn-secondary" onClick={resetShopForm}>
-                    Cancel
-                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={resetShopForm}>Cancel</button>
                 )}
               </div>
             </form>
@@ -2678,9 +3156,7 @@ const AdminPanel = () => {
 
           <div className="admin-list-card">
             <h2>Shop Items ({shopItems.length})</h2>
-            {shopItems.length === 0 ? (
-              <p className="empty-message">No items in shop.</p>
-            ) : (
+            {shopItems.length === 0 ? <p className="empty-message">No items in shop.</p> : (
               <div className="shop-admin-grid">
                 {shopItems.map(item => (
                   <div key={item._id} className="shop-admin-card">
@@ -2732,6 +3208,7 @@ const AdminPanel = () => {
                       <th>Wins</th>
                       <th>Streak</th>
                       <th>Gems</th>
+                      <th>Shards</th>
                       <th>Joined</th>
                     </tr>
                   </thead>
@@ -2745,6 +3222,7 @@ const AdminPanel = () => {
                         <td>{u.stats?.gamesWon || 0}</td>
                         <td>{u.stats?.winStreak || 0}</td>
                         <td><span className="gems-badge">{u.gems || 0}</span></td>
+                        <td><span className="shards-badge">{u.shards || 0}</span></td>
                         <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))}
@@ -2779,6 +3257,18 @@ const AdminPanel = () => {
               <div className="stat-number">{stats.totalUsers}</div>
               <div className="stat-label">Users</div>
             </div>
+            <div className="stat-card">
+              <div className="stat-number">{stats.totalTransactions || 0}</div>
+              <div className="stat-label">Transactions</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{stats.pendingTransactions || 0}</div>
+              <div className="stat-label">Pending</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">₹{stats.totalRevenue || 0}</div>
+              <div className="stat-label">Revenue</div>
+            </div>
           </div>
 
           <div className="admin-list-card">
@@ -2801,6 +3291,8 @@ const AdminPanel = () => {
       )}
 
       {activeTab === 'gift' && renderGiftTab()}
+      {activeTab === 'seasons' && renderSeasonPassTab()}
+      {activeTab === 'transactions' && <Transactions />}
     </div>
   );
 };

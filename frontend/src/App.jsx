@@ -35,6 +35,7 @@ import WarPage from './components/clan/WarPage';
 import WarHistory from './pages/WarHistory';
 import WarLeaderboard from './pages/WarLeaderboard';
 import Notifications from './pages/Notifications';
+import SeasonPass from './pages/SeasonPass';
 import './App.css';
 
 // ✅ NEW: ScrollToTop component to fix scroll position on route change
@@ -226,6 +227,11 @@ const AppContent = () => {
           {/* ===== NOTIFICATIONS ROUTE ===== */}
           <Route path="/notifications" element={
             <PrivateRouteWrapper><Notifications /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== SEASON PASS ROUTE ===== */}
+          <Route path="/season-pass" element={
+            <PrivateRouteWrapper><SeasonPass /></PrivateRouteWrapper>
           } />
           
           <Route path="/admin" element={

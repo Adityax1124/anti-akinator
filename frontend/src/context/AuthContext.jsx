@@ -1,3 +1,4 @@
+// /frontend/src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axios';
 
@@ -91,7 +92,9 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user, resetSessionTimer]);
 
+  // ============================================================
   // ===== FETCH USER (ONLY ONCE) =====
+  // ============================================================
   const fetchUser = useCallback(async () => {
     if (fetchUserRef.current) return;
     fetchUserRef.current = true;
@@ -100,16 +103,35 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get('/auth/me');
       const userData = response.data.user;
       
-      // ✅ Ensure user has _id
-      if (userData && !userData._id && userData.id) {
-        userData._id = userData.id;
+      // ✅ Ensure user has _id (for payment system)
+      if (userData) {
+        if (!userData._id && userData.id) {
+          userData._id = userData.id;
+        }
+        // Ensure shards field exists
+        if (userData.shards === undefined) {
+          userData.shards = 0;
+        }
+        // Ensure seasonPass field exists
+        if (!userData.seasonPass) {
+          userData.seasonPass = {
+            active: false,
+            expiresAt: null,
+            currentTier: 1,
+            progress: 0
+          };
+        }
+        // Ensure transactionHistory exists
+        if (!userData.transactionHistory) {
+          userData.transactionHistory = [];
+        }
       }
       
       setUser(userData);
       setAuthError(null);
       resetSessionTimer();
       
-      // ✅ Also store in localStorage with _id
+      // ✅ Store in localStorage with all fields
       localStorage.setItem('user', JSON.stringify(userData));
       
       return userData;
@@ -155,8 +177,14 @@ export const AuthProvider = ({ children }) => {
     if (storedUser && !user) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        // Ensure _id exists
+        if (parsedUser && !parsedUser._id && parsedUser.id) {
+          parsedUser._id = parsedUser.id;
+        }
         setUser(parsedUser);
-      } catch (e) {}
+      } catch (e) {
+        console.error('Failed to parse stored user:', e);
+      }
     }
     
     if (token) {
@@ -204,9 +232,25 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
-      // ✅ Ensure user has _id
-      if (user && !user._id && user.id) {
-        user._id = user.id;
+      // ✅ Ensure user has _id and all required fields
+      if (user) {
+        if (!user._id && user.id) {
+          user._id = user.id;
+        }
+        if (user.shards === undefined) {
+          user.shards = 0;
+        }
+        if (!user.seasonPass) {
+          user.seasonPass = {
+            active: false,
+            expiresAt: null,
+            currentTier: 1,
+            progress: 0
+          };
+        }
+        if (!user.transactionHistory) {
+          user.transactionHistory = [];
+        }
       }
       
       localStorage.setItem('token', token);
@@ -221,6 +265,8 @@ export const AuthProvider = ({ children }) => {
       
       console.log(`✅ Auth: ${user.username} logged in successfully`);
       console.log(`👤 User ID: ${user._id || user.id}`);
+      console.log(`🎴 Shards: ${user.shards || 0}`);
+      console.log(`🎫 Season Pass: ${user.seasonPass?.active ? 'Active' : 'Inactive'}`);
       
       return { 
         success: true,
@@ -361,9 +407,25 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
-      // ✅ Ensure user has _id
-      if (user && !user._id && user.id) {
-        user._id = user.id;
+      // ✅ Ensure user has _id and all required fields
+      if (user) {
+        if (!user._id && user.id) {
+          user._id = user.id;
+        }
+        if (user.shards === undefined) {
+          user.shards = 0;
+        }
+        if (!user.seasonPass) {
+          user.seasonPass = {
+            active: false,
+            expiresAt: null,
+            currentTier: 1,
+            progress: 0
+          };
+        }
+        if (!user.transactionHistory) {
+          user.transactionHistory = [];
+        }
       }
       
       localStorage.setItem('token', token);
@@ -372,11 +434,13 @@ export const AuthProvider = ({ children }) => {
       setAuthHeader(token);
       setUser(user);
       setAuthError(null);
+      resetSessionTimer();
       
       fetchUserRef.current = false;
       
       console.log(`✅ Auth: ${user.username} registered successfully`);
       console.log(`👤 User ID: ${user._id || user.id}`);
+      console.log(`🎴 Shards: ${user.shards || 0}`);
       
       return {
         success: true,
@@ -416,7 +480,7 @@ export const AuthProvider = ({ children }) => {
         message: message
       };
     }
-  }, [setAuthHeader]);
+  }, [setAuthHeader, resetSessionTimer]);
 
   // ============================================================
   // ===== VERIFY OTP =====
@@ -434,9 +498,25 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
-      // ✅ Ensure user has _id
-      if (user && !user._id && user.id) {
-        user._id = user.id;
+      // ✅ Ensure user has _id and all required fields
+      if (user) {
+        if (!user._id && user.id) {
+          user._id = user.id;
+        }
+        if (user.shards === undefined) {
+          user.shards = 0;
+        }
+        if (!user.seasonPass) {
+          user.seasonPass = {
+            active: false,
+            expiresAt: null,
+            currentTier: 1,
+            progress: 0
+          };
+        }
+        if (!user.transactionHistory) {
+          user.transactionHistory = [];
+        }
       }
       
       localStorage.setItem('token', token);
@@ -532,6 +612,48 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // ============================================================
+  // ===== UPDATE USER DATA =====
+  // ============================================================
+  const updateUser = useCallback((updatedData) => {
+    if (!user) return null;
+    
+    const newUser = { ...user, ...updatedData };
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    return newUser;
+  }, [user]);
+
+  // ============================================================
+  // ===== UPDATE SHARDS =====
+  // ============================================================
+  const updateShards = useCallback((newShardCount) => {
+    if (!user) return null;
+    
+    const newUser = { 
+      ...user, 
+      shards: newShardCount 
+    };
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    return newUser;
+  }, [user]);
+
+  // ============================================================
+  // ===== UPDATE SEASON PASS =====
+  // ============================================================
+  const updateSeasonPass = useCallback((seasonPassData) => {
+    if (!user) return null;
+    
+    const newUser = { 
+      ...user, 
+      seasonPass: { ...user.seasonPass, ...seasonPassData }
+    };
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    return newUser;
+  }, [user]);
+
   // ===== CLEAR ERROR =====
   const clearError = useCallback(() => {
     setAuthError(null);
@@ -569,7 +691,10 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: isAuthenticated(),
     getAuthHeader,
     getSessionTimeLeft,
-    setUser
+    setUser,
+    updateUser,
+    updateShards,
+    updateSeasonPass
   };
 
   return (

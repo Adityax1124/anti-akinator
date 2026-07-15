@@ -1,7 +1,9 @@
+// /frontend/src/pages/BuyShards.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import PaymentQRModal from '../components/PaymentQRModal';
 import './BuyShards.css';
 
 const shardPackages = [
@@ -23,21 +25,13 @@ const BuyShards = () => {
   const [success, setSuccess] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   const purchaseRef = useRef(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setIsVisible(true));
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      document.body.removeChild(script);
-    };
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -57,7 +51,7 @@ const BuyShards = () => {
     setError('');
   };
 
-  const handlePurchase = async () => {
+  const handleQRPayment = () => {
     if (!selectedPack) {
       setError('Please select a shards pack.');
       return;
@@ -68,72 +62,22 @@ const BuyShards = () => {
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const orderResponse = await api.post('/payment/create-order', {
-        amount: selectedPack.priceValue,
-        shards: selectedPack.shards,
-        packId: selectedPack.id,
-      });
-
-      const { orderId, amount, currency } = orderResponse.data;
-
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: amount * 100,
-        currency: currency,
-        name: 'Anti-Akinator',
-        description: `${selectedPack.shards} Shards Pack - ${selectedPack.name}`,
-        image: '/logo.png',
-        order_id: orderId,
-        handler: async (response) => {
-          try {
-            const verifyResponse = await api.post('/payment/verify-payment', {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-              shards: selectedPack.shards,
-            });
-
-            if (verifyResponse.data.success) {
-              setSuccess(`✅ Successfully purchased ${selectedPack.shards} Shards!`);
-              setSelectedPack(null);
-              setAgreed(false);
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
-            } else {
-              setError('Payment verification failed. Please contact support.');
-            }
-          } catch (error) {
-            setError('Payment verification failed. Please contact support.');
-          }
-          setLoading(false);
-        },
-        prefill: {
-          name: user?.username || '',
-          email: user?.email || '',
-        },
-        theme: {
-          color: '#6c63ff',
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-            setError('Payment cancelled.');
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to initiate payment. Please try again.');
-      setLoading(false);
+    if (!user) {
+      setError('Please login to continue.');
+      return;
     }
+
+    setShowQRModal(true);
+  };
+
+  const handleQRSuccess = (data) => {
+    setSuccess(`✅ Payment verification submitted for ${selectedPack.shards} Shards! We will verify and add them to your account.`);
+    setSelectedPack(null);
+    setAgreed(false);
+  };
+
+  const handleQRError = (error) => {
+    setError(error || 'Failed to submit payment verification. Please try again.');
   };
 
   return (
@@ -220,12 +164,33 @@ const BuyShards = () => {
 
           <button
             className="purchase-btn"
-            onClick={handlePurchase}
+            onClick={handleQRPayment}
             disabled={!agreed || loading}
           >
-            {loading ? 'Processing...' : `Buy ${selectedPack.shards} Shards · ${selectedPack.price}`}
+            {loading ? 'Processing...' : `Pay ${selectedPack.price} via QR Code`}
           </button>
         </div>
+      )}
+
+      {/* QR Payment Modal */}
+      {user && selectedPack && (
+        <PaymentQRModal
+          isOpen={showQRModal}
+          onClose={() => {
+            setShowQRModal(false);
+          }}
+          userId={user._id}
+          itemType="shards"
+          itemName={`${selectedPack.shards} Shards Pack`}
+          amount={selectedPack.priceValue}
+          itemDetails={{
+            shardCount: selectedPack.shards,
+            packId: selectedPack.id,
+            packName: selectedPack.name
+          }}
+          onSuccess={handleQRSuccess}
+          onError={handleQRError}
+        />
       )}
     </div>
   );

@@ -1590,3 +1590,115 @@
     flex-wrap: wrap;
   }
 }
+
+/* ============================================================
+   PROFILE BACKGROUND - ADD TO Profile.css
+   ============================================================ */
+
+/* Profile Background Section */
+.profile-background-section {
+  margin: 16px 0 20px 0;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.background-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.background-section-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.background-edit-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.background-edit-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Background Preview */
+.profile-background-preview {
+  position: relative;
+  min-height: 120px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.profile-background-preview:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Background Equipped Info Badge */
+.background-equipped-info {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.background-equipped-info .bg-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.background-equipped-info .bg-rarity {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.bg-unequip-btn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff6b6b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.bg-unequip-btn:hover {
+  background: rgba(255, 107, 107, 0.25);
+}
+
+/* No background placeholder text */
+.profile-background-preview > span {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+}

@@ -145,9 +145,7 @@ const Navbar = () => {
   const handleClanAction = (clan) => {
     console.log('🛡️ Clan action completed:', clan);
     closeClanModal();
-    // Refresh clan status
     checkClanStatus();
-    // Navigate to clan page
     navigate('/clan');
   };
 
@@ -270,6 +268,16 @@ const Navbar = () => {
                   </button>
                 </div>
 
+                {/* ✅ Season Pass - Standalone Nav Item */}
+                <Link 
+                  to="/season-pass" 
+                  className={`nav-link ${isActive('/season-pass') ? 'active' : ''}`}
+                  onClick={closeAllDropdowns}
+                >
+                  <span className="nav-icon">🎫</span>
+                  <span className="nav-label">Season Pass</span>
+                </Link>
+
                 <div
                   className="dropdown-wrapper"
                   ref={leaderboardRef}
@@ -306,7 +314,7 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                {/* ✅ Notification Bell - Now looks like a nav item */}
+                {/* ✅ Notification Bell */}
                 <div className="nav-notification-wrapper">
                   <NotificationBell />
                 </div>

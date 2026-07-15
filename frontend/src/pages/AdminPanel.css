@@ -1050,3 +1050,325 @@
   .admin-tabs .tab-btn { font-size: 11px; padding: 7px 10px; }
   .admin-tabs .tab-btn .tab-badge { font-size: 9px; padding: 1px 7px; }
 }
+
+/* ============================================================
+   SEASON PASS ADMIN CSS
+   ============================================================ */
+
+/* ===== SEASON LIST ===== */
+.season-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.season-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  flex-wrap: wrap;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.season-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.season-item.active {
+  border-color: rgba(78, 205, 196, 0.2);
+  background: rgba(78, 205, 196, 0.03);
+}
+
+.season-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.season-number {
+  font-weight: 700;
+  color: #fff;
+  font-size: 14px;
+}
+
+.season-name {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}
+
+.season-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.season-status.active {
+  color: #4ecdc4;
+  background: rgba(78, 205, 196, 0.1);
+}
+
+.season-status.inactive {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.season-dates {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.season-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ===== TIER MANAGEMENT ===== */
+.tier-reward-form {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 12px 0 16px 0;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tier-reward-form h3 {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.tier-reward-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tier-reward-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tier-reward-form .form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tier-reward-form .form-control {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #fff;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.tier-reward-form .form-control:focus {
+  outline: none;
+  border-color: rgba(108, 99, 255, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tier-reward-form .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.tier-reward-form .form-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.2);
+  margin-top: 2px;
+}
+
+.tier-reward-form .btn-primary {
+  margin-top: 8px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tier-reward-form .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+}
+
+/* ===== TIER LIST ===== */
+.tier-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.tier-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: all 0.3s ease;
+}
+
+.tier-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tier-item h4 {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.no-rewards-text {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  margin: 0;
+}
+
+/* ===== TIER REWARDS LIST ===== */
+.tier-rewards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tier-reward-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.tier-reward-item .reward-type {
+  color: #4ecdc4;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  min-width: 50px;
+}
+
+.tier-reward-item .reward-name {
+  color: rgba(255, 255, 255, 0.6);
+  flex: 1;
+}
+
+.tier-reward-item .reward-amount {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.tier-reward-item .btn-danger-sm {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.tier-reward-item .btn-danger-sm:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .season-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .season-info {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .season-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tier-reward-form .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tier-list {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-tabs .tab-btn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .season-item {
+    padding: 10px 12px;
+  }
+
+  .season-number {
+    font-size: 12px;
+  }
+
+  .season-name {
+    font-size: 12px;
+  }
+
+  .season-dates {
+    font-size: 10px;
+  }
+
+  .season-actions .btn-sm {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .tier-item {
+    padding: 10px 12px;
+  }
+
+  .tier-item h4 {
+    font-size: 12px;
+  }
+
+  .tier-reward-item {
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+
+  .tier-reward-form {
+    padding: 12px;
+  }
+
+  .tier-reward-form h3 {
+    font-size: 14px;
+  }
+}

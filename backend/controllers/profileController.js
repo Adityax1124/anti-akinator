@@ -1,49 +1,13 @@
-const express = require('express');
-const { body, param, query, validationResult } = require('express-validator');
-const router = express.Router();
-const { authMiddleware } = require('../middleware/auth');
 const User = require('../models/User');
 const Banner = require('../models/Banner');
 const Title = require('../models/Title');
 const ProfilePhoto = require('../models/ProfilePhoto');
 const ProfileBackground = require('../models/ProfileBackground');
 
-// ===== HELPER: Sanitize input =====
-function sanitizeInput(str) {
-  if (!str) return '';
-  return str.replace(/[<>]/g, '').trim();
-}
-
-// ===== VALIDATION RULES =====
-const validateEquip = [
-  body('bannerId').optional().isMongoId().withMessage('Invalid banner ID'),
-  body('titleId').optional().isMongoId().withMessage('Invalid title ID'),
-  body('photoId').optional().isMongoId().withMessage('Invalid photo ID'),
-  body('backgroundId').optional().isMongoId().withMessage('Invalid background ID')
-];
-
-const validateUsername = [
-  param('username')
-    .trim()
-    .escape()
-    .isLength({ min: 3, max: 20 })
-    .withMessage('Invalid username')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username contains invalid characters')
-];
-
-const validateSearch = [
-  query('q')
-    .trim()
-    .escape()
-    .isLength({ min: 2, max: 20 })
-    .withMessage('Search query must be 2-20 characters')
-    .matches(/^[a-zA-Z0-9_\s]+$/)
-    .withMessage('Search contains invalid characters')
-];
-
-// ===================== GET MY PROFILE (WITH FULL DATA & EDIT CAPABILITIES) =====================
-router.get('/me', authMiddleware, async (req, res) => {
+// ============================================================
+// ✅ GET MY PROFILE
+// ============================================================
+exports.getMyProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
       .select('-password -__v')
@@ -74,13 +38,6 @@ router.get('/me', authMiddleware, async (req, res) => {
         message: 'User not found'
       });
     }
-
-    // Cache busting headers
-    const etag = `"${user.updatedAt?.getTime() || Date.now()}"`;
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('ETag', etag);
 
     const formattedUser = {
       _id: user._id,
@@ -119,482 +76,16 @@ router.get('/me', authMiddleware, async (req, res) => {
       message: 'Error fetching profile'
     });
   }
-});
+};
 
-// ===================== GET BANNERS =====================
-router.get('/banners', authMiddleware, async (req, res) => {
+// ============================================================
+// ✅ GET PUBLIC PROFILE
+// ============================================================
+exports.getPublicProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    const allBanners = await Banner.find({ isActive: true });
-    
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
-    const bannersWithStatus = allBanners.map(banner => {
-      const isUnlocked = user.achievements.banners.some(
-        b => b.bannerId.toString() === banner._id.toString()
-      );
-      return {
-        ...banner.toObject(),
-        isUnlocked,
-        isEquipped: user.equipped.banner?.toString() === banner._id.toString()
-      };
-    });
-    
-    res.json({ 
-      success: true, 
-      banners: bannersWithStatus,
-      equipped: user.equipped.banner
-    });
-  } catch (error) {
-    console.error('Get banners error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching banners' 
-    });
-  }
-});
-
-// ===================== GET TITLES =====================
-router.get('/titles', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const allTitles = await Title.find({ isActive: true });
-    
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
-    const titlesWithStatus = allTitles.map(title => {
-      const isUnlocked = user.achievements.titles.some(
-        t => t.titleId.toString() === title._id.toString()
-      );
-      return {
-        ...title.toObject(),
-        isUnlocked,
-        isEquipped: user.equipped.title?.toString() === title._id.toString()
-      };
-    });
-    
-    res.json({ 
-      success: true, 
-      titles: titlesWithStatus,
-      equipped: user.equipped.title
-    });
-  } catch (error) {
-    console.error('Get titles error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching titles' 
-    });
-  }
-});
-
-// ===================== GET PROFILE PHOTOS =====================
-router.get('/photos', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const allPhotos = await ProfilePhoto.find({ isActive: true });
-    
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
-    const photosWithStatus = allPhotos.map(photo => {
-      const isUnlocked = user.achievements.profilePhotos.some(
-        p => p.photoId.toString() === photo._id.toString()
-      );
-      return {
-        ...photo.toObject(),
-        isUnlocked,
-        isEquipped: user.equipped.profilePhoto?.toString() === photo._id.toString()
-      };
-    });
-    
-    res.json({ 
-      success: true, 
-      photos: photosWithStatus,
-      equipped: user.equipped.profilePhoto
-    });
-  } catch (error) {
-    console.error('Get photos error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching profile photos' 
-    });
-  }
-});
-
-// ===================== ✅ NEW: GET PROFILE BACKGROUNDS =====================
-router.get('/backgrounds', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const allBackgrounds = await ProfileBackground.find({ isActive: true });
-    
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
-    const backgroundsWithStatus = allBackgrounds.map(bg => {
-      const isUnlocked = user.achievements.profileBackgrounds.some(
-        b => b.backgroundId.toString() === bg._id.toString()
-      );
-      return {
-        ...bg.toObject(),
-        isUnlocked,
-        isEquipped: user.equipped.profileBackground?.toString() === bg._id.toString()
-      };
-    });
-    
-    res.json({ 
-      success: true, 
-      backgrounds: backgroundsWithStatus,
-      equipped: user.equipped.profileBackground
-    });
-  } catch (error) {
-    console.error('Get backgrounds error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching profile backgrounds' 
-    });
-  }
-});
-
-// ===================== GET EQUIPPED ITEMS =====================
-router.get('/equipped', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id)
-      .populate('equipped.banner', 'gifUrl name')
-      .populate('equipped.title', 'displayName name')
-      .populate('equipped.profilePhoto', 'imageUrl name')
-      .populate('equipped.profileBackground', 'imageUrl name thumbnailUrl');
-
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-
-    res.json({
-      success: true,
-      banner: user.equipped?.banner || null,
-      title: user.equipped?.title || null,
-      profilePhoto: user.equipped?.profilePhoto || null,
-      profileBackground: user.equipped?.profileBackground || null
-    });
-  } catch (error) {
-    console.error('Get equipped error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching equipped items' 
-    });
-  }
-});
-
-// ===================== EQUIP BANNER =====================
-router.post('/equip-banner', authMiddleware, validateEquip, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
-    const { bannerId } = req.body;
-
-    if (!bannerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Banner ID is required'
-      });
-    }
-
-    const user = await User.findById(req.user._id);
-    
-    const ownsBanner = user.achievements.banners.some(
-      b => b.bannerId.toString() === bannerId
-    );
-    
-    if (!ownsBanner) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'You don\'t own this banner' 
-      });
-    }
-    
-    const bannerExists = await Banner.findById(bannerId);
-    if (!bannerExists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Banner not found'
-      });
-    }
-    
-    user.equipped.banner = bannerId;
-    user.updatedAt = new Date();
-    await user.save();
-
-    console.log(`🖼️ ${user.username} equipped banner: ${bannerExists.name}`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Banner equipped successfully!',
-      banner: bannerExists,
-      updatedAt: user.updatedAt
-    });
-  } catch (error) {
-    console.error('Equip banner error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error equipping banner' 
-    });
-  }
-});
-
-// ===================== EQUIP TITLE =====================
-router.post('/equip-title', authMiddleware, validateEquip, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
-    const { titleId } = req.body;
-
-    if (!titleId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Title ID is required'
-      });
-    }
-
-    const user = await User.findById(req.user._id);
-    
-    const ownsTitle = user.achievements.titles.some(
-      t => t.titleId.toString() === titleId
-    );
-    
-    if (!ownsTitle) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'You don\'t own this title' 
-      });
-    }
-
-    const titleExists = await Title.findById(titleId);
-    if (!titleExists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Title not found'
-      });
-    }
-    
-    user.equipped.title = titleId;
-    user.updatedAt = new Date();
-    await user.save();
-
-    console.log(`🏷️ ${user.username} equipped title: ${titleExists.name}`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Title equipped successfully!',
-      title: titleExists,
-      updatedAt: user.updatedAt
-    });
-  } catch (error) {
-    console.error('Equip title error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error equipping title' 
-    });
-  }
-});
-
-// ===================== EQUIP PROFILE PHOTO =====================
-router.post('/equip-photo', authMiddleware, validateEquip, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
-    const { photoId } = req.body;
-
-    if (!photoId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Photo ID is required'
-      });
-    }
-
-    const user = await User.findById(req.user._id);
-    
-    const ownsPhoto = user.achievements.profilePhotos.some(
-      p => p.photoId.toString() === photoId
-    );
-    
-    if (!ownsPhoto) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'You don\'t own this photo' 
-      });
-    }
-
-    const photoExists = await ProfilePhoto.findById(photoId);
-    if (!photoExists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Profile photo not found'
-      });
-    }
-    
-    user.equipped.profilePhoto = photoId;
-    user.updatedAt = new Date();
-    await user.save();
-
-    console.log(`📸 ${user.username} equipped profile photo: ${photoExists.name}`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Profile photo equipped successfully!',
-      photo: photoExists,
-      updatedAt: user.updatedAt
-    });
-  } catch (error) {
-    console.error('Equip photo error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error equipping profile photo' 
-    });
-  }
-});
-
-// ===================== ✅ NEW: EQUIP PROFILE BACKGROUND =====================
-router.post('/equip-background', authMiddleware, validateEquip, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
-    const { backgroundId } = req.body;
-
-    if (!backgroundId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Background ID is required'
-      });
-    }
-
-    const user = await User.findById(req.user._id);
-    
-    // Check if user owns this background
-    const ownsBackground = user.achievements.profileBackgrounds.some(
-      b => b.backgroundId.toString() === backgroundId
-    );
-    
-    if (!ownsBackground) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'You don\'t own this background' 
-      });
-    }
-
-    const bgExists = await ProfileBackground.findById(backgroundId);
-    if (!bgExists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Profile background not found'
-      });
-    }
-    
-    // Equip the background
-    user.equipped.profileBackground = backgroundId;
-    user.updatedAt = new Date();
-    await user.save();
-
-    // Increment equip count
-    await bgExists.incrementEquipCount();
-
-    console.log(`🖼️ ${user.username} equipped profile background: ${bgExists.name}`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Profile background equipped successfully!',
-      background: bgExists,
-      updatedAt: user.updatedAt
-    });
-  } catch (error) {
-    console.error('Equip background error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error equipping profile background' 
-    });
-  }
-});
-
-// ===================== ✅ NEW: UNEQUIP PROFILE BACKGROUND =====================
-router.post('/unequip-background', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-    
-    user.equipped.profileBackground = null;
-    user.updatedAt = new Date();
-    await user.save();
-
-    console.log(`🖼️ ${user.username} unequipped profile background`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Profile background unequipped successfully!',
-      updatedAt: user.updatedAt
-    });
-  } catch (error) {
-    console.error('Unequip background error:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error unequipping profile background' 
-    });
-  }
-});
-
-// ===================== GET PUBLIC PROFILE =====================
-router.get('/public/:username', validateUsername, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
-      });
-    }
-
     const { username } = req.params;
-    const sanitizedUsername = sanitizeInput(username);
     
-    const user = await User.findOne({ username: sanitizedUsername })
+    const user = await User.findOne({ username })
       .select('-password -email -__v')
       .populate('equipped.banner', 'gifUrl name')
       .populate('equipped.title', 'displayName name rarity')
@@ -623,10 +114,6 @@ router.get('/public/:username', validateUsername, async (req, res) => {
         message: 'User not found'
       });
     }
-
-    res.setHeader('Cache-Control', 'public, max-age=300');
-    res.setHeader('Pragma', 'cache');
-    res.setHeader('Expires', new Date(Date.now() + 300000).toUTCString());
 
     const publicProfile = {
       username: user.username,
@@ -661,29 +148,432 @@ router.get('/public/:username', validateUsername, async (req, res) => {
       message: 'Error fetching user profile'
     });
   }
-});
+};
 
-// ===================== SEARCH USERS =====================
-router.get('/search', authMiddleware, validateSearch, async (req, res) => {
+// ============================================================
+// ✅ GET BANNERS
+// ============================================================
+exports.getBanners = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const user = await User.findById(req.user._id);
+    const allBanners = await Banner.find({ isActive: true });
+    
+    const bannersWithStatus = allBanners.map(banner => {
+      const isUnlocked = user.achievements.banners.some(
+        b => b.bannerId.toString() === banner._id.toString()
+      );
+      return {
+        ...banner.toObject(),
+        isUnlocked,
+        isEquipped: user.equipped.banner?.toString() === banner._id.toString()
+      };
+    });
+    
+    res.json({ 
+      success: true, 
+      banners: bannersWithStatus,
+      equipped: user.equipped.banner
+    });
+  } catch (error) {
+    console.error('Get banners error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching banners' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ GET TITLES
+// ============================================================
+exports.getTitles = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const allTitles = await Title.find({ isActive: true });
+    
+    const titlesWithStatus = allTitles.map(title => {
+      const isUnlocked = user.achievements.titles.some(
+        t => t.titleId.toString() === title._id.toString()
+      );
+      return {
+        ...title.toObject(),
+        isUnlocked,
+        isEquipped: user.equipped.title?.toString() === title._id.toString()
+      };
+    });
+    
+    res.json({ 
+      success: true, 
+      titles: titlesWithStatus,
+      equipped: user.equipped.title
+    });
+  } catch (error) {
+    console.error('Get titles error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching titles' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ GET PROFILE PHOTOS
+// ============================================================
+exports.getProfilePhotos = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const allPhotos = await ProfilePhoto.find({ isActive: true });
+    
+    const photosWithStatus = allPhotos.map(photo => {
+      const isUnlocked = user.achievements.profilePhotos.some(
+        p => p.photoId.toString() === photo._id.toString()
+      );
+      return {
+        ...photo.toObject(),
+        isUnlocked,
+        isEquipped: user.equipped.profilePhoto?.toString() === photo._id.toString()
+      };
+    });
+    
+    res.json({ 
+      success: true, 
+      photos: photosWithStatus,
+      equipped: user.equipped.profilePhoto
+    });
+  } catch (error) {
+    console.error('Get photos error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching profile photos' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ GET PROFILE BACKGROUNDS
+// ============================================================
+exports.getProfileBackgrounds = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const allBackgrounds = await ProfileBackground.find({ isActive: true });
+    
+    const backgroundsWithStatus = allBackgrounds.map(bg => {
+      const isUnlocked = user.achievements.profileBackgrounds.some(
+        b => b.backgroundId.toString() === bg._id.toString()
+      );
+      return {
+        ...bg.toObject(),
+        isUnlocked,
+        isEquipped: user.equipped.profileBackground?.toString() === bg._id.toString()
+      };
+    });
+    
+    res.json({ 
+      success: true, 
+      backgrounds: backgroundsWithStatus,
+      equipped: user.equipped.profileBackground
+    });
+  } catch (error) {
+    console.error('Get backgrounds error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching profile backgrounds' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ GET EQUIPPED ITEMS
+// ============================================================
+exports.getEquippedItems = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate('equipped.banner', 'gifUrl name')
+      .populate('equipped.title', 'displayName name')
+      .populate('equipped.profilePhoto', 'imageUrl name')
+      .populate('equipped.profileBackground', 'imageUrl name thumbnailUrl');
+
+    res.json({
+      success: true,
+      banner: user.equipped?.banner || null,
+      title: user.equipped?.title || null,
+      profilePhoto: user.equipped?.profilePhoto || null,
+      profileBackground: user.equipped?.profileBackground || null
+    });
+  } catch (error) {
+    console.error('Get equipped error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching equipped items' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ EQUIP BANNER
+// ============================================================
+exports.equipBanner = async (req, res) => {
+  try {
+    const { bannerId } = req.body;
+
+    if (!bannerId) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array().map(e => e.msg)
+        message: 'Banner ID is required'
       });
     }
 
-    const { q } = req.query;
-    const sanitizedQuery = sanitizeInput(q);
+    const user = await User.findById(req.user._id);
     
-    if (!sanitizedQuery || sanitizedQuery.length < 2) {
+    const ownsBanner = user.achievements.banners.some(
+      b => b.bannerId.toString() === bannerId
+    );
+    
+    if (!ownsBanner) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You don\'t own this banner' 
+      });
+    }
+    
+    const bannerExists = await Banner.findById(bannerId);
+    if (!bannerExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Banner not found'
+      });
+    }
+    
+    user.equipped.banner = bannerId;
+    user.updatedAt = new Date();
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Banner equipped successfully!',
+      banner: bannerExists,
+      updatedAt: user.updatedAt
+    });
+  } catch (error) {
+    console.error('Equip banner error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error equipping banner' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ EQUIP TITLE
+// ============================================================
+exports.equipTitle = async (req, res) => {
+  try {
+    const { titleId } = req.body;
+
+    if (!titleId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title ID is required'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    
+    const ownsTitle = user.achievements.titles.some(
+      t => t.titleId.toString() === titleId
+    );
+    
+    if (!ownsTitle) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You don\'t own this title' 
+      });
+    }
+
+    const titleExists = await Title.findById(titleId);
+    if (!titleExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Title not found'
+      });
+    }
+    
+    user.equipped.title = titleId;
+    user.updatedAt = new Date();
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Title equipped successfully!',
+      title: titleExists,
+      updatedAt: user.updatedAt
+    });
+  } catch (error) {
+    console.error('Equip title error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error equipping title' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ EQUIP PROFILE PHOTO
+// ============================================================
+exports.equipProfilePhoto = async (req, res) => {
+  try {
+    const { photoId } = req.body;
+
+    if (!photoId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Photo ID is required'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    
+    const ownsPhoto = user.achievements.profilePhotos.some(
+      p => p.photoId.toString() === photoId
+    );
+    
+    if (!ownsPhoto) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You don\'t own this photo' 
+      });
+    }
+
+    const photoExists = await ProfilePhoto.findById(photoId);
+    if (!photoExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile photo not found'
+      });
+    }
+    
+    user.equipped.profilePhoto = photoId;
+    user.updatedAt = new Date();
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Profile photo equipped successfully!',
+      photo: photoExists,
+      updatedAt: user.updatedAt
+    });
+  } catch (error) {
+    console.error('Equip photo error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error equipping profile photo' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ EQUIP PROFILE BACKGROUND
+// ============================================================
+exports.equipProfileBackground = async (req, res) => {
+  try {
+    const { backgroundId } = req.body;
+
+    if (!backgroundId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Background ID is required'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    
+    const ownsBackground = user.achievements.profileBackgrounds.some(
+      b => b.backgroundId.toString() === backgroundId
+    );
+    
+    if (!ownsBackground) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You don\'t own this background' 
+      });
+    }
+
+    const bgExists = await ProfileBackground.findById(backgroundId);
+    if (!bgExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile background not found'
+      });
+    }
+    
+    user.equipped.profileBackground = backgroundId;
+    user.updatedAt = new Date();
+    await user.save();
+
+    await bgExists.incrementEquipCount();
+
+    res.json({ 
+      success: true, 
+      message: 'Profile background equipped successfully!',
+      background: bgExists,
+      updatedAt: user.updatedAt
+    });
+  } catch (error) {
+    console.error('Equip background error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error equipping profile background' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ UNEQUIP PROFILE BACKGROUND
+// ============================================================
+exports.unequipProfileBackground = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    user.equipped.profileBackground = null;
+    user.updatedAt = new Date();
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Profile background unequipped successfully!',
+      updatedAt: user.updatedAt
+    });
+  } catch (error) {
+    console.error('Unequip background error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error unequipping profile background' 
+    });
+  }
+};
+
+// ============================================================
+// ✅ SEARCH USERS
+// ============================================================
+exports.searchUsers = async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.length < 2) {
       return res.json({
         success: true,
         users: []
       });
     }
+
+    const sanitizedQuery = q.replace(/[<>]/g, '').trim();
 
     const users = await User.find({
       username: { $regex: sanitizedQuery, $options: 'i' },
@@ -692,10 +582,6 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
     .select('_id username stats shards gems equipped.profilePhoto')
     .populate('equipped.profilePhoto', 'imageUrl')
     .limit(10);
-
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
 
     const sanitizedUsers = users.map(user => ({
       _id: user._id,
@@ -718,10 +604,12 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
       message: 'Error searching users'
     });
   }
-});
+};
 
-// ===================== GET USER CARDS =====================
-router.get('/cards', authMiddleware, async (req, res) => {
+// ============================================================
+// ✅ GET USER CARDS
+// ============================================================
+exports.getUserCards = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     
@@ -766,6 +654,55 @@ router.get('/cards', authMiddleware, async (req, res) => {
       message: 'Failed to fetch cards'
     });
   }
-});
+};
 
-module.exports = router;
+// ============================================================
+// ✅ UPDATE PROFILE (Username, etc.)
+// ============================================================
+exports.updateProfile = async (req, res) => {
+  try {
+    const { username } = req.body;
+    const userId = req.user._id;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username is required'
+      });
+    }
+
+    // Check if username is taken
+    const existingUser = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      _id: { $ne: userId }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username is already taken'
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 
+        username: username,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).select('-password -__v');
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully!',
+      user
+    });
+  } catch (error) {
+    console.error('Update profile error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating profile'
+    });
+  }
+};

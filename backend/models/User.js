@@ -1,3 +1,4 @@
+// /backend/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -142,6 +143,94 @@ const userSchema = new mongoose.Schema({
     default: []
   },
   
+  // ============================================================
+  // ✅ NEW: PAYMENT TRANSACTION HISTORY
+  // ============================================================
+  transactionHistory: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Transaction'
+  }],
+  
+  // ============================================================
+  // ✅ UPDATED: SEASON PASS WITH PAYMENT INFO
+  // ============================================================
+  seasonPass: {
+    active: {
+      type: Boolean,
+      default: false
+    },
+    seasonId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SeasonPass',
+      default: null
+    },
+    purchasedAt: {
+      type: Date,
+      default: null
+    },
+    expiresAt: {
+      type: Date,
+      default: null
+    },
+    currentTier: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 100
+    },
+    correctGuesses: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    progress: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100
+    },
+    unlockedTiers: [{
+      tier: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 100
+      },
+      unlockedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    claimedRewards: [{
+      tier: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 100
+      },
+      rewardIndex: {
+        type: Number,
+        required: true
+      },
+      claimedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    isCompleted: {
+      type: Boolean,
+      default: false
+    },
+    completedAt: {
+      type: Date,
+      default: null
+    },
+    joinedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  
   // ===== ACHIEVEMENTS =====
   totalGuesses: { 
     type: Number, 
@@ -208,6 +297,21 @@ const userSchema = new mongoose.Schema({
         type: Boolean, 
         default: false 
       }
+    }],
+    profileBackgrounds: [{
+      backgroundId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'ProfileBackground',
+        required: true 
+      },
+      unlockedAt: { 
+        type: Date, 
+        default: Date.now 
+      },
+      isEquipped: { 
+        type: Boolean, 
+        default: false 
+      }
     }]
   },
   equipped: {
@@ -225,6 +329,11 @@ const userSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'ProfilePhoto', 
       default: null 
+    },
+    profileBackground: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'ProfileBackground', 
+      default: null 
     }
   },
 
@@ -241,34 +350,29 @@ const userSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    // ✅ Base Power (from character)
     basePower: {
       type: Number,
       required: true,
       min: 0.5,
       max: 100
     },
-    // ✅ Current Power (after upgrades)
     currentPower: {
       type: Number,
       required: true,
       min: 0.5,
       max: 200
     },
-    // ✅ Card Level (1-10)
     level: {
       type: Number,
       default: 1,
       min: 1,
       max: 10
     },
-    // ✅ Element (Fire/Water/Wind/Earth)
     element: {
       type: String,
       enum: ['Fire', 'Water', 'Wind', 'Earth'],
       default: 'Fire'
     },
-    // ✅ Rarity
     rarity: {
       type: String,
       enum: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'],
@@ -282,7 +386,6 @@ const userSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     },
-    // Track if this card is from stealing
     stolenFrom: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -313,7 +416,6 @@ const userSchema = new mongoose.Schema({
     cardsStolen: { type: Number, default: 0 },
     cardsLost: { type: Number, default: 0 },
     totalRoundsWon: { type: Number, default: 0 },
-    // ✅ Gems earned from matches
     gemsEarned: { type: Number, default: 0 }
   },
 
@@ -438,6 +540,16 @@ userSchema.index({ 'cards.level': -1 });
 userSchema.index({ clanId: 1 });
 // ✅ War card index
 userSchema.index({ warCard: 1 });
+// ✅ Season Pass index
+userSchema.index({ 'seasonPass.seasonId': 1 });
+userSchema.index({ 'seasonPass.currentTier': -1 });
+userSchema.index({ 'seasonPass.active': 1 });
+userSchema.index({ 'seasonPass.expiresAt': 1 });
+// ✅ Profile Background index
+userSchema.index({ 'equipped.profileBackground': 1 });
+userSchema.index({ 'achievements.profileBackgrounds.backgroundId': 1 });
+// ✅ Transaction history index
+userSchema.index({ 'transactionHistory': 1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -473,6 +585,24 @@ userSchema.pre('save', function(next) {
     this.seasonStats.currentSeason = DEFAULT_SEASON;
   }
   
+  // Ensure seasonPass has default values
+  if (!this.seasonPass) {
+    this.seasonPass = {
+      active: false,
+      seasonId: null,
+      purchasedAt: null,
+      expiresAt: null,
+      currentTier: 1,
+      correctGuesses: 0,
+      progress: 0,
+      unlockedTiers: [],
+      claimedRewards: [],
+      isCompleted: false,
+      completedAt: null,
+      joinedAt: new Date()
+    };
+  }
+  
   this.updatedAt = new Date();
   next();
 });
@@ -503,12 +633,197 @@ userSchema.methods.resetFailedAttempts = async function() {
 };
 
 // ============================================================
+// ✅ PAYMENT & SHARD METHODS
+// ============================================================
+
+// Add shards to user
+userSchema.methods.addShards = function(amount) {
+  if (amount < 0) return { success: false, message: 'Amount must be positive' };
+  this.shards += amount;
+  return { success: true, message: `Added ${amount} shards`, newBalance: this.shards };
+};
+
+// Remove shards from user
+userSchema.methods.removeShards = function(amount) {
+  if (amount < 0) return { success: false, message: 'Amount must be positive' };
+  if (this.shards < amount) {
+    return { success: false, message: 'Insufficient shards' };
+  }
+  this.shards -= amount;
+  return { success: true, message: `Removed ${amount} shards`, newBalance: this.shards };
+};
+
+// Check if user has enough shards
+userSchema.methods.hasEnoughShards = function(amount) {
+  return this.shards >= amount;
+};
+
+// Add transaction to history
+userSchema.methods.addTransaction = function(transactionId) {
+  if (!this.transactionHistory) {
+    this.transactionHistory = [];
+  }
+  this.transactionHistory.push(transactionId);
+  return this;
+};
+
+// Get transaction history
+userSchema.methods.getTransactionHistory = async function() {
+  const Transaction = mongoose.model('Transaction');
+  return await Transaction.find({
+    _id: { $in: this.transactionHistory }
+  }).sort({ createdAt: -1 });
+};
+
+// Get pending transactions
+userSchema.methods.getPendingTransactions = async function() {
+  const Transaction = mongoose.model('Transaction');
+  return await Transaction.find({
+    _id: { $in: this.transactionHistory },
+    status: 'pending'
+  }).sort({ createdAt: -1 });
+};
+
+// ============================================================
+// ✅ SEASON PASS METHODS (UPDATED)
+// ============================================================
+
+// Activate season pass
+userSchema.methods.activateSeasonPass = function(seasonId, durationDays = 30) {
+  this.seasonPass.active = true;
+  this.seasonPass.seasonId = seasonId;
+  this.seasonPass.purchasedAt = new Date();
+  this.seasonPass.expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+  this.seasonPass.currentTier = 1;
+  this.seasonPass.correctGuesses = 0;
+  this.seasonPass.progress = 0;
+  this.seasonPass.unlockedTiers = [];
+  this.seasonPass.claimedRewards = [];
+  this.seasonPass.isCompleted = false;
+  this.seasonPass.completedAt = null;
+  this.seasonPass.joinedAt = new Date();
+  
+  return { 
+    success: true, 
+    message: 'Season pass activated!',
+    expiresAt: this.seasonPass.expiresAt
+  };
+};
+
+// Check if season pass is active
+userSchema.methods.isSeasonPassActive = function() {
+  if (!this.seasonPass.active) return false;
+  if (!this.seasonPass.expiresAt) return false;
+  return new Date() < this.seasonPass.expiresAt;
+};
+
+// Check if season pass is expired
+userSchema.methods.isSeasonPassExpired = function() {
+  if (!this.seasonPass.expiresAt) return true;
+  return new Date() >= this.seasonPass.expiresAt;
+};
+
+// Get season pass status
+userSchema.methods.getSeasonPassStatus = function() {
+  const isActive = this.isSeasonPassActive();
+  const isExpired = this.isSeasonPassExpired();
+  
+  return {
+    active: isActive,
+    expired: isExpired,
+    expiresAt: this.seasonPass.expiresAt,
+    currentTier: this.seasonPass.currentTier,
+    progress: this.seasonPass.progress,
+    isCompleted: this.seasonPass.isCompleted,
+    daysRemaining: isActive ? Math.ceil((this.seasonPass.expiresAt - new Date()) / (1000 * 60 * 60 * 24)) : 0
+  };
+};
+
+userSchema.methods.addCorrectGuess = function(seasonPass) {
+  if (!this.isSeasonPassActive()) {
+    return { success: false, message: 'Season pass is not active' };
+  }
+  
+  this.seasonPass.correctGuesses += 1;
+  
+  const newTier = Math.floor(this.seasonPass.correctGuesses / seasonPass.correctGuessesPerTier) + 1;
+  const finalTier = Math.min(newTier, seasonPass.totalTiers);
+  
+  const tierAdvanced = finalTier > this.seasonPass.currentTier;
+  
+  this.seasonPass.currentTier = finalTier;
+  this.seasonPass.progress = seasonPass.getProgressToNextTier ? 
+    seasonPass.getProgressToNextTier(this.seasonPass.correctGuesses) : 
+    Math.round((this.seasonPass.correctGuesses % seasonPass.correctGuessesPerTier) / seasonPass.correctGuessesPerTier * 100);
+  
+  if (finalTier >= seasonPass.totalTiers && !this.seasonPass.isCompleted) {
+    this.seasonPass.isCompleted = true;
+    this.seasonPass.completedAt = new Date();
+  }
+  
+  if (tierAdvanced) {
+    for (let i = this.seasonPass.currentTier; i <= finalTier; i++) {
+      const alreadyUnlocked = this.seasonPass.unlockedTiers.some(t => t.tier === i);
+      if (!alreadyUnlocked) {
+        this.seasonPass.unlockedTiers.push({ tier: i, unlockedAt: new Date() });
+      }
+    }
+  }
+  
+  return {
+    success: true,
+    newTier: this.seasonPass.currentTier,
+    tierAdvanced,
+    progress: this.seasonPass.progress,
+    isCompleted: this.seasonPass.isCompleted,
+    correctGuesses: this.seasonPass.correctGuesses
+  };
+};
+
+userSchema.methods.canClaimTierReward = function(tier, rewardIndex) {
+  if (!this.isSeasonPassActive()) return false;
+  
+  const isUnlocked = this.seasonPass.unlockedTiers.some(t => t.tier === tier);
+  if (!isUnlocked) return false;
+  
+  const alreadyClaimed = this.seasonPass.claimedRewards.some(
+    r => r.tier === tier && r.rewardIndex === rewardIndex
+  );
+  
+  return !alreadyClaimed;
+};
+
+userSchema.methods.claimReward = function(tier, rewardIndex) {
+  if (!this.canClaimTierReward(tier, rewardIndex)) {
+    return { success: false, message: 'Cannot claim this reward' };
+  }
+  
+  this.seasonPass.claimedRewards.push({
+    tier,
+    rewardIndex,
+    claimedAt: new Date()
+  });
+  
+  return { success: true };
+};
+
+userSchema.methods.getUnlockedTiers = function() {
+  return this.seasonPass.unlockedTiers.map(t => t.tier);
+};
+
+userSchema.methods.getClaimedRewards = function() {
+  return this.seasonPass.claimedRewards;
+};
+
+userSchema.methods.isTierUnlocked = function(tier) {
+  return this.seasonPass.unlockedTiers.some(t => t.tier === tier);
+};
+
+// ============================================================
 // ✅ WAR CARD METHODS
 // ============================================================
 
-// Select war card
 userSchema.methods.selectWarCard = function(cardId) {
-  // Check if user owns this card
   const ownsCard = this.cards.some(c => 
     c.characterId.toString() === cardId.toString()
   );
@@ -521,7 +836,6 @@ userSchema.methods.selectWarCard = function(cardId) {
   return { success: true, message: 'War card selected!' };
 };
 
-// Get war card details
 userSchema.methods.getWarCard = function() {
   if (!this.warCard) return null;
   return this.cards.find(c => 
@@ -529,22 +843,19 @@ userSchema.methods.getWarCard = function() {
   );
 };
 
-// Clear war card
 userSchema.methods.clearWarCard = function() {
   this.warCard = null;
   return { success: true, message: 'War card cleared' };
 };
 
-// Check if user has war card selected
 userSchema.methods.hasWarCard = function() {
   return this.warCard !== null;
 };
 
 // ============================================================
-// ✅ CARD COLLECTION METHODS (UPDATED with Rarity)
+// ✅ CARD COLLECTION METHODS
 // ============================================================
 userSchema.methods.addCard = function(character) {
-  // Check if card already exists
   const exists = this.cards.some(c => 
     c.characterId.toString() === character._id.toString()
   );
@@ -594,7 +905,6 @@ userSchema.methods.getTopCards = function(limit = 10) {
     .slice(0, limit);
 };
 
-// ✅ Upgrade Card (UPDATED with Rarity)
 userSchema.methods.upgradeCard = function(characterId) {
   const card = this.cards.find(c => 
     c.characterId.toString() === characterId.toString()
@@ -603,7 +913,6 @@ userSchema.methods.upgradeCard = function(characterId) {
   if (!card) return { success: false, message: 'Card not found' };
   if (card.level >= 10) return { success: false, message: 'Card already at max level' };
   
-  // Calculate upgrade cost based on rarity and level
   const rarity = card.rarity || 'Common';
   const upgradeCost = getUpgradeCost(rarity, card.level);
   
@@ -616,13 +925,9 @@ userSchema.methods.upgradeCard = function(characterId) {
     };
   }
   
-  // Deduct gems
   this.gems -= upgradeCost;
-  
-  // Increase level
   card.level += 1;
   
-  // Calculate new power (based on level)
   const powerIncrease = getPowerIncrease(card.level);
   card.currentPower += powerIncrease;
   
@@ -639,44 +944,6 @@ userSchema.methods.upgradeCard = function(characterId) {
 };
 
 // ============================================================
-// ✅ GET UPGRADE COST (Helper Function - UPDATED with Rarity)
-// ============================================================
-function getUpgradeCost(rarity, level) {
-  const baseCosts = {
-    'Common': 10,
-    'Uncommon': 40,
-    'Rare': 85,
-    'Epic': 200,
-    'Legendary': 450
-  };
-  
-  const base = baseCosts[rarity] || 10;
-  const multiplier = 1.3; // 30% increase per level
-  
-  if (level >= 10) return 0;
-  return Math.round(base * Math.pow(multiplier, level - 1));
-}
-
-// ============================================================
-// ✅ GET POWER INCREASE (Helper Function)
-// ============================================================
-function getPowerIncrease(level) {
-  const increases = {
-    1: 1,
-    2: 1,
-    3: 2,
-    4: 2,
-    5: 2,
-    6: 3,
-    7: 3,
-    8: 4,
-    9: 4,
-    10: 5
-  };
-  return increases[level] || 5;
-}
-
-// ============================================================
 // ✅ GEMS METHODS
 // ============================================================
 userSchema.methods.addGems = function(amount) {
@@ -689,6 +956,81 @@ userSchema.methods.removeGems = function(amount) {
   if (amount < 0 || this.gems < amount) return false;
   this.gems -= amount;
   return true;
+};
+
+// ============================================================
+// ✅ PROFILE BACKGROUND METHODS
+// ============================================================
+
+// Check if user owns a background
+userSchema.methods.hasProfileBackground = function(backgroundId) {
+  return this.achievements.profileBackgrounds.some(bg => 
+    bg.backgroundId.toString() === backgroundId.toString()
+  );
+};
+
+// Add background to user's collection
+userSchema.methods.addProfileBackground = function(backgroundId) {
+  if (this.hasProfileBackground(backgroundId)) {
+    return { success: false, message: 'Already owns this background' };
+  }
+  
+  this.achievements.profileBackgrounds.push({
+    backgroundId: backgroundId,
+    unlockedAt: new Date(),
+    isEquipped: false
+  });
+  
+  return { success: true, message: 'Background unlocked!' };
+};
+
+// Equip a background
+userSchema.methods.equipProfileBackground = function(backgroundId) {
+  if (!this.hasProfileBackground(backgroundId)) {
+    return { success: false, message: 'You don\'t own this background' };
+  }
+  
+  // Unequip all backgrounds
+  this.achievements.profileBackgrounds.forEach(bg => {
+    bg.isEquipped = false;
+  });
+  
+  // Equip the selected one
+  const bg = this.achievements.profileBackgrounds.find(b => 
+    b.backgroundId.toString() === backgroundId.toString()
+  );
+  if (bg) {
+    bg.isEquipped = true;
+  }
+  
+  this.equipped.profileBackground = backgroundId;
+  
+  return { success: true, message: 'Background equipped!' };
+};
+
+// Unequip background (use default)
+userSchema.methods.unequipProfileBackground = function() {
+  this.achievements.profileBackgrounds.forEach(bg => {
+    bg.isEquipped = false;
+  });
+  this.equipped.profileBackground = null;
+  
+  return { success: true, message: 'Background unequipped!' };
+};
+
+// Get equipped background
+userSchema.methods.getEquippedProfileBackground = async function() {
+  if (!this.equipped.profileBackground) {
+    const ProfileBackground = mongoose.model('ProfileBackground');
+    return await ProfileBackground.getDefaultBackground();
+  }
+  
+  const ProfileBackground = mongoose.model('ProfileBackground');
+  const bg = await ProfileBackground.findById(this.equipped.profileBackground);
+  if (!bg || !bg.isActive) {
+    return await ProfileBackground.getDefaultBackground();
+  }
+  return bg;
 };
 
 // ============================================================
@@ -764,6 +1106,40 @@ userSchema.statics.isDeviceRegistered = async function(fingerprint) {
   if (!fingerprint) return false;
   const user = await this.findOne({ deviceFingerprint: fingerprint });
   return !!user;
+};
+
+// ============================================================
+// ✅ SEASON PASS STATICS
+// ============================================================
+userSchema.statics.getSeasonPassLeaderboard = async function(seasonId, limit = 50) {
+  return this.find({ 
+    'seasonPass.seasonId': seasonId,
+    'seasonPass.active': true
+  })
+  .select('username seasonPass.currentTier seasonPass.correctGuesses seasonPass.isCompleted')
+  .sort({ 
+    'seasonPass.currentTier': -1,
+    'seasonPass.correctGuesses': -1
+  })
+  .limit(limit);
+};
+
+userSchema.statics.getSeasonPassProgress = async function(userId, seasonId) {
+  const user = await this.findById(userId)
+    .select('seasonPass')
+    .populate('seasonPass.seasonId');
+  
+  if (!user) return null;
+  
+  return user.seasonPass;
+};
+
+userSchema.statics.getActiveSeasonPassUsers = async function(seasonId) {
+  return this.find({
+    'seasonPass.seasonId': seasonId,
+    'seasonPass.active': true,
+    'seasonPass.expiresAt': { $gt: new Date() }
+  }).select('username email seasonPass');
 };
 
 module.exports = mongoose.model('User', userSchema);

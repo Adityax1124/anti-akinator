@@ -1,0 +1,267 @@
+/* Season Pass Progress Component */
+.season-pass-progress-component {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.3s ease;
+}
+
+.season-pass-progress-component:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.season-pass-progress-component.compact {
+  padding: 10px 14px;
+}
+
+/* Header */
+.sp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sp-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sp-icon {
+  font-size: 18px;
+}
+
+.sp-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.sp-view-btn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sp-view-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* Stats */
+.sp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+}
+
+.sp-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.sp-stat-value.sp-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sp-stat-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* Progress Bar */
+.sp-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.sp-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.sp-progress-completed-badge {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  font-size: 12px;
+}
+
+/* Tiers Preview */
+.sp-tiers-preview {
+  margin-bottom: 12px;
+}
+
+.sp-tiers-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sp-tier-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sp-tier-dot.unlocked {
+  border-color: rgba(78, 205, 196, 0.2);
+}
+
+.sp-tier-dot.locked {
+  opacity: 0.3;
+}
+
+.sp-tier-more {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.15);
+  padding-left: 4px;
+}
+
+/* Compact Info */
+.sp-compact-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.sp-compact-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.sp-compact-progress {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a9eff;
+}
+
+/* Footer */
+.sp-footer {
+  text-align: center;
+}
+
+.sp-footer-btn {
+  padding: 4px 14px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sp-footer-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sp-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+
+  .sp-stat-value {
+    font-size: 14px;
+  }
+
+  .sp-stat-value.sp-time {
+    font-size: 10px;
+  }
+
+  .sp-stat-label {
+    font-size: 8px;
+  }
+
+  .sp-tier-dot {
+    width: 12px;
+    height: 12px;
+  }
+
+  .season-pass-progress-component {
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sp-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sp-stat {
+    padding: 4px 8px;
+  }
+
+  .sp-stat-value {
+    font-size: 16px;
+  }
+
+  .sp-name {
+    font-size: 12px;
+  }
+
+  .sp-view-btn {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .sp-tiers-row {
+    gap: 2px;
+  }
+
+  .sp-tier-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .sp-compact-text {
+    font-size: 10px;
+  }
+
+  .sp-compact-progress {
+    font-size: 11px;
+  }
+
+  .season-pass-progress-component {
+    padding: 10px 12px;
+  }
+}

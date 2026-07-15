@@ -6,14 +6,22 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    
+
     base: '/',
-    
+
     server: {
       port: 5173,
-      host: true
+      host: true,
+
+      proxy: {
+        '/api': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false
+        }
+      }
     },
-    
+
     build: {
       outDir: 'dist',
       sourcemap: isProduction ? false : true,
@@ -21,7 +29,7 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1000,
       emptyOutDir: true
     },
-    
+
     resolve: {
       alias: {
         '@': '/src',
@@ -30,8 +38,7 @@ export default defineConfig(({ mode }) => {
         '@pages': '/src/pages'
       }
     },
-    
-    // ✅ Add this to handle environment variables
+
     define: {
       'import.meta.env.VITE_SOCKET_URL': JSON.stringify(process.env.VITE_SOCKET_URL),
       'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
