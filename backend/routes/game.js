@@ -1,3 +1,4 @@
+// /backend/routes/game.js
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Character = require('../models/Character');
@@ -5,6 +6,7 @@ const GameSession = require('../models/GameSession');
 const User = require('../models/User');
 const Referral = require('../models/Referral');
 const ProfilePhoto = require('../models/ProfilePhoto');
+const SeasonPass = require('../models/SeasonPass');
 const { checkAndUnlockAchievements, unlockProfilePhoto } = require('../utils/achievementUtils');
 const { getCurrentSeason } = require('../utils/seasonUtils');
 const { askAI } = require('../utils/aiRouter');
@@ -14,7 +16,7 @@ const router = express.Router();
 function normalize(str) {
   if (!str) return '';
   return str.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -673,11 +675,13 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
 
       const user = await User.findById(req.user._id);
       
+      // ===== REGULAR STATS =====
       user.stats.gamesPlayed += 1;
       user.stats.gamesWon += 1;
       user.stats.winStreak += 1;
       user.totalGuesses += 1;
 
+      // ===== SEASON STATS =====
       const currentSeason = getCurrentSeason();
       
       if (!user.seasonStats) {
@@ -694,12 +698,15 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       user.seasonStats.seasonPlayed += 1;
       user.seasonStats.seasonStreak += 1;
 
+      // ===== ANIME GUESSES =====
       const anime = game.character.anime;
       const currentAnimeGuesses = user.animeGuesses?.get(anime) || 0;
       user.animeGuesses.set(anime, currentAnimeGuesses + 1);
 
+      // ===== SHARDS =====
       user.shards += 10;
 
+      // ===== CARD COLLECTION =====
       const character = game.character;
       const cardAdded = user.addCard(character);
       
@@ -709,6 +716,53 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         console.log(`ℹ️ Card already in collection: ${character.name}`);
       }
 
+      // ============================================================
+      // ✅ SEASON PASS PROGRESS - ADDED THIS SECTION
+      // ============================================================
+      if (user.seasonPass && user.seasonPass.active) {
+        const activeSeason = await SeasonPass.getActiveSeason();
+        
+        if (activeSeason) {
+          // Increment correct guesses
+          user.seasonPass.correctGuesses = (user.seasonPass.correctGuesses || 0) + 1;
+          
+          // Calculate new tier
+          const guessesPerTier = activeSeason.correctGuessesPerTier || 2;
+          const newTier = Math.floor(user.seasonPass.correctGuesses / guessesPerTier) + 1;
+          const finalTier = Math.min(newTier, activeSeason.totalTiers);
+          
+          const tierAdvanced = finalTier > (user.seasonPass.currentTier || 1);
+          
+          user.seasonPass.currentTier = finalTier;
+          
+          // Calculate progress percentage
+          const progressInTier = user.seasonPass.correctGuesses % guessesPerTier;
+          user.seasonPass.progress = Math.round((progressInTier / guessesPerTier) * 100);
+          
+          // Check if completed
+          if (finalTier >= activeSeason.totalTiers && !user.seasonPass.isCompleted) {
+            user.seasonPass.isCompleted = true;
+            user.seasonPass.completedAt = new Date();
+          }
+          
+          // Unlock new tiers
+          if (tierAdvanced) {
+            if (!user.seasonPass.unlockedTiers) user.seasonPass.unlockedTiers = [];
+            for (let i = (user.seasonPass.currentTier || 1); i <= finalTier; i++) {
+              const alreadyUnlocked = user.seasonPass.unlockedTiers.some(t => t.tier === i);
+              if (!alreadyUnlocked) {
+                user.seasonPass.unlockedTiers.push({ tier: i, unlockedAt: new Date() });
+              }
+            }
+          }
+          
+          console.log(`🎫 Season Pass: Tier ${user.seasonPass.currentTier}/${activeSeason.totalTiers}, Guesses: ${user.seasonPass.correctGuesses}, Progress: ${user.seasonPass.progress}%`);
+        }
+      }
+
+      // ============================================================
+      // REFERRAL REWARDS
+      // ============================================================
       const isFirstWin = user.stats.gamesWon === 1;
 
       if (user.referredBy && isFirstWin) {
@@ -740,6 +794,9 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
         }
       }
 
+      // ============================================================
+      // ACHIEVEMENTS
+      // ============================================================
       const unlockedAchievements = await checkAndUnlockAchievements(user._id);
       const photoUnlock = await unlockProfilePhoto(user._id, game.character._id);
 
