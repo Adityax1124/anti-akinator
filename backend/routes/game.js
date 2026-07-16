@@ -237,6 +237,22 @@ function getAllCharacterText(character) {
   return [...new Set(texts.filter(t => t && typeof t === 'string' && t.length > 0))];
 }
 
+// ===== HELPER: Common words to skip =====
+const skipWords = [
+  'is', 'he', 'she', 'it', 'they', 'are', 'am', 'the', 'this', 'that',
+  'his', 'her', 'their', 'them', 'what', 'who', 'when', 'where', 'why',
+  'how', 'yes', 'no', 'maybe', 'idk', 'from', 'with', 'has', 'have',
+  'does', 'do', 'did', 'was', 'were', 'been', 'being', 'can', 'will',
+  'would', 'could', 'should', 'may', 'might', 'must', 'shall',
+  'for', 'about', 'into', 'through', 'during', 'without', 'against',
+  'between', 'among', 'upon', 'toward', 'until', 'since', 'of', 'to',
+  'on', 'at', 'by', 'in', 'up', 'etc', 'eg', 'ie', 'and', 'or', 'but',
+  'nor', 'for', 'yet', 'so', 'as', 'than', 'like', 'just', 'even',
+  'though', 'although', 'while', 'whereas', 'wherever', 'whenever',
+  'whoever', 'whichever', 'whatever', 'however', 'nevertheless',
+  'nonetheless', 'accordingly', 'consequently', 'hence', 'thence'
+];
+
 // ===== HELPER: Smart answer function =====
 function getSmartAnswer(question, character) {
   // ✅ IMPORTANT: If it's an identity reveal question, return false immediately
@@ -258,20 +274,7 @@ function getSmartAnswer(question, character) {
   // Check if ANY question word matches ANY keyword (with spelling tolerance)
   for (const word of questionWords) {
     // Skip common words
-    if (['is', 'he', 'she', 'it', 'they', 'are', 'am', 'the', 'this', 'that', 
-         'his', 'her', 'their', 'them', 'what', 'who', 'when', 'where', 'why',
-         'how', 'yes', 'no', 'maybe', 'idk', 'from', 'with', 'has', 'have',
-         'does', 'do', 'did', 'was', 'were', 'been', 'being', 'can', 'will',
-         'would', 'could', 'should', 'may', 'might', 'must', 'shall',
-         'for', 'about', 'into', 'through', 'during', 'without', 'against',
-         'between', 'among', 'upon', 'toward', 'until', 'since', 'of', 'to',
-         'for', 'on', 'at', 'by', 'in', 'with', 'from', 'up', 'about', 'into',
-         'through', 'during', 'without', 'against', 'between', 'among', 'upon',
-         'toward', 'until', 'since', 'etc', 'e.g', 'i.e', 'and', 'or', 'but',
-         'nor', 'for', 'yet', 'so', 'as', 'than', 'like', 'just', 'even',
-         'though', 'although', 'while', 'whereas', 'wherever', 'whenever',
-         'whoever', 'whichever', 'whatever', 'however', 'nevertheless',
-         'nonetheless', 'accordingly', 'consequently', 'hence', 'thence']).includes(word)) {
+    if (skipWords.includes(word)) {
       continue;
     }
     
@@ -813,7 +816,8 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
     console.error('Question error:', {
       message: error.message,
       userId: req.user?._id,
-      ip: req.ip    });
+      ip: req.ip
+    });
     res.status(500).json({
       success: false,
       message: 'Error processing question. Please try again.'
