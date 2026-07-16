@@ -48,7 +48,6 @@ const SeasonPass = () => {
     fetchSeasonPass();
   }, [fetchSeasonPass]);
 
-  // ✅ FIXED: Better error handling for claim reward
   const handleClaimReward = async (tier, rewardIndex) => {
     if (claiming) return;
     
@@ -67,7 +66,6 @@ const SeasonPass = () => {
 
       if (response.data.success) {
         setSuccess(response.data.message || '✅ Reward claimed successfully!');
-        // Refresh data after claiming
         await fetchSeasonPass();
         setTimeout(() => setSuccess(''), 3000);
       } else {
@@ -77,7 +75,6 @@ const SeasonPass = () => {
       console.error('❌ Claim error:', err);
       console.error('Response data:', err.response?.data);
       
-      // Get the error message from the response
       const errorMessage = err.response?.data?.message || 'Failed to claim reward. Please try again.';
       setError(errorMessage);
       setTimeout(() => setError(''), 5000);
@@ -129,9 +126,21 @@ const SeasonPass = () => {
       'title': '🏆',
       'banner': '🎨',
       'profilePhoto': '📸',
-      'background': '🖼️'
+      'profileBackground': '🖼️'
     };
     return icons[type] || '🎁';
+  };
+
+  // ✅ Get rarity color
+  const getRarityColor = (rarity) => {
+    const colors = {
+      'Common': '#b3b3b3',
+      'Uncommon': '#00d9c0',
+      'Rare': '#6cb1ff',
+      'Epic': '#a89bff',
+      'Legendary': '#f5a623'
+    };
+    return colors[rarity] || '#b3b3b3';
   };
 
   const formatDate = (date) => {
@@ -142,22 +151,7 @@ const SeasonPass = () => {
     });
   };
 
-  // ✅ FIX: Check both progress.active AND user's seasonPass.active
   const isSeasonPassActive = progress?.active === true || user?.seasonPass?.active === true;
-
-  // ✅ Check if user has claimed this specific reward
-  const isRewardClaimed = (tierNumber, rewardIndex) => {
-    if (!progress?.claimedRewards) return false;
-    return progress.claimedRewards.some(
-      r => r.tier === tierNumber && r.rewardIndex === rewardIndex
-    );
-  };
-
-  // ✅ Check if tier is unlocked
-  const isTierUnlocked = (tierNumber) => {
-    if (!progress?.unlockedTiers) return false;
-    return progress.unlockedTiers.some(t => t.tier === tierNumber);
-  };
 
   if (loading) {
     return (
@@ -223,7 +217,7 @@ const SeasonPass = () => {
       {error && <div className="season-pass-alert error">{error}</div>}
       {success && <div className="season-pass-alert success">{success}</div>}
 
-      {/* Purchase Section - Show if no active pass */}
+      {/* Purchase Section */}
       {!hasActivePass && (
         <div className="season-pass-purchase">
           <div className="purchase-card">
@@ -232,22 +226,10 @@ const SeasonPass = () => {
                 <h2>🎯 Unlock Premium Rewards</h2>
                 <p>Get access to exclusive rewards, bonus shards, and premium content!</p>
                 <div className="purchase-benefits">
-                  <div className="benefit-item">
-                    <span>🏆</span>
-                    <span>{totalTiers}+ Tiers of Rewards</span>
-                  </div>
-                  <div className="benefit-item">
-                    <span>🎴</span>
-                    <span>Bonus Shards</span>
-                  </div>
-                  <div className="benefit-item">
-                    <span>💎</span>
-                    <span>Exclusive Gems</span>
-                  </div>
-                  <div className="benefit-item">
-                    <span>🃏</span>
-                    <span>Rare Cards</span>
-                  </div>
+                  <div className="benefit-item"><span>🏆</span><span>{totalTiers}+ Tiers of Rewards</span></div>
+                  <div className="benefit-item"><span>🎴</span><span>Bonus Shards</span></div>
+                  <div className="benefit-item"><span>💎</span><span>Exclusive Gems</span></div>
+                  <div className="benefit-item"><span>🃏</span><span>Rare Cards</span></div>
                 </div>
               </div>
               <div className="purchase-actions">
@@ -255,16 +237,9 @@ const SeasonPass = () => {
                   <span className="price-amount">₹{SEASON_PASS_PRICE}</span>
                   <span className="price-label">One-time purchase</span>
                 </div>
-                
-                {/* ✅ Only QR Code payment option */}
                 <div className="payment-methods-compact">
-                  <button
-                    className="payment-btn qr"
-                    onClick={handleQRPurchase}
-                    disabled={isPurchasing}
-                  >
-                    <span>📱</span>
-                    Pay with QR Code (UPI)
+                  <button className="payment-btn qr" onClick={handleQRPurchase} disabled={isPurchasing}>
+                    <span>📱</span> Pay with QR Code (UPI)
                   </button>
                 </div>
                 <p className="purchase-note">✓ Manual verification within 24 hours</p>
@@ -274,40 +249,25 @@ const SeasonPass = () => {
         </div>
       )}
 
-      {/* Progress Section - Show only if pass is active */}
+      {/* Progress Section */}
       {hasActivePass && (
         <div className="season-pass-progress">
           <div className="progress-header">
             <div className="progress-info">
-              <span className="progress-tier">
-                Tier {currentTier}/{totalTiers}
-              </span>
-              <span className="progress-guesses">
-                🎯 {progress?.correctGuesses || 0} correct guesses
-              </span>
-              {isCompleted && (
-                <span className="progress-completed">🏆 Completed!</span>
-              )}
+              <span className="progress-tier">Tier {currentTier}/{totalTiers}</span>
+              <span className="progress-guesses">🎯 {progress?.correctGuesses || 0} correct guesses</span>
+              {isCompleted && <span className="progress-completed">🏆 Completed!</span>}
             </div>
             <div className="progress-percentage">{Math.round(progressPercent)}%</div>
           </div>
           <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${Math.min(progressPercent, 100)}%`,
-                background: isCompleted
-                  ? 'linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b)'
-                  : 'linear-gradient(90deg, #4a9eff, #8b5cf6)'
-              }}
-            />
+            <div className="progress-fill" style={{
+              width: `${Math.min(progressPercent, 100)}%`,
+              background: isCompleted ? 'linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b)' : 'linear-gradient(90deg, #4a9eff, #8b5cf6)'
+            }} />
           </div>
           <div className="progress-hint">
-            {isCompleted ? (
-              '🎉 You completed the season pass!'
-            ) : (
-              `Need ${seasonData.correctGuessesPerTier || 2} correct guesses per tier`
-            )}
+            {isCompleted ? '🎉 You completed the season pass!' : `Need ${seasonData.correctGuessesPerTier || 2} correct guesses per tier`}
           </div>
         </div>
       )}
@@ -332,17 +292,11 @@ const SeasonPass = () => {
               <div
                 key={tierNumber}
                 className={`tier-card ${isUnlocked ? 'unlocked' : 'locked'}`}
-                style={{
-                  borderColor: isUnlocked ? getTierColor(tierNumber, totalTiers) : 'rgba(255,255,255,0.05)'
-                }}
+                style={{ borderColor: isUnlocked ? getTierColor(tierNumber, totalTiers) : 'rgba(255,255,255,0.05)' }}
               >
                 <div className="tier-header">
-                  <span className="tier-number">
-                    {getTierIcon(tierNumber)} Tier {tierNumber}
-                  </span>
-                  <span className="tier-status">
-                    {isUnlocked ? '🔓' : '🔒'}
-                  </span>
+                  <span className="tier-number">{getTierIcon(tierNumber)} Tier {tierNumber}</span>
+                  <span className="tier-status">{isUnlocked ? '🔓' : '🔒'}</span>
                 </div>
 
                 <div className="tier-rewards">
@@ -352,43 +306,66 @@ const SeasonPass = () => {
                     rewards.map((reward, index) => {
                       const isClaimed = hasActivePass && (reward.isClaimed || false);
                       const isClaimable = hasActivePass && isUnlocked && !isClaimed;
+                      const previewImage = reward.previewImage || null;
+                      const hasPreview = !!previewImage;
 
                       return (
                         <div
                           key={index}
-                          className={`tier-reward ${isClaimed ? 'claimed' : ''} ${isClaimable ? 'claimable' : ''}`}
+                          className={`tier-reward-item ${isClaimed ? 'claimed' : ''} ${isClaimable ? 'claimable' : ''}`}
                         >
-                          <span className="reward-icon">
-                            {getRewardIcon(reward.type)}
-                          </span>
-                          <span className="reward-name">
-                            {reward.itemName || reward.type}
-                            {reward.amount && ` x${reward.amount}`}
-                          </span>
+                          {/* ✅ LARGE PREVIEW IMAGE */}
+                          <div className="reward-preview-large">
+                            {hasPreview ? (
+                              <>
+                                <img 
+                                  src={previewImage} 
+                                  alt={reward.itemName || reward.type}
+                                  className="reward-preview-image-large"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML = `
+                                      <span class="reward-icon-large">${getRewardIcon(reward.type)}</span>
+                                    `;
+                                  }}
+                                />
+                                {isClaimed && <div className="reward-claimed-overlay">✅</div>}
+                                {!isUnlocked && <div className="reward-locked-overlay">🔒</div>}
+                              </>
+                            ) : (
+                              <span className="reward-icon-large">{getRewardIcon(reward.type)}</span>
+                            )}
+                          </div>
+                          
+                          {/* ✅ Reward Details */}
+                          <div className="reward-details">
+                            <span className="reward-name-large">
+                              {reward.itemName || reward.type || 'Reward'}
+                            </span>
+                            {reward.amount && (
+                              <span className="reward-amount-large">×{reward.amount}</span>
+                            )}
+                          </div>
+                          
+                          {/* ✅ Action Button */}
                           {isClaimable && (
                             <button
-                              className="reward-claim-btn"
+                              className="reward-claim-btn-large"
                               onClick={() => handleClaimReward(tierNumber, index)}
                               disabled={claiming}
                             >
                               Claim
                             </button>
                           )}
-                          {isClaimed && (
-                            <span className="reward-claimed">✅</span>
-                          )}
-                          {!hasActivePass && (
-                            <span className="reward-locked">🔒</span>
-                          )}
+                          {isClaimed && <span className="reward-claimed-badge">✅</span>}
+                          {!hasActivePass && <span className="reward-locked-badge">🔒</span>}
                         </div>
                       );
                     })
                   )}
                 </div>
 
-                {hasUnclaimed && (
-                  <div className="tier-unclaimed-badge">🎁 Unclaimed</div>
-                )}
+                {hasUnclaimed && <div className="tier-unclaimed-badge">🎁 Unclaimed</div>}
               </div>
             );
           })}
@@ -399,9 +376,7 @@ const SeasonPass = () => {
       {user && (
         <PaymentQRModal
           isOpen={showQRModal}
-          onClose={() => {
-            setShowQRModal(false);
-          }}
+          onClose={() => setShowQRModal(false)}
           userId={user._id}
           itemType="seasonpass"
           itemName={seasonData?.seasonName || `Season ${seasonData?.seasonNumber}`}

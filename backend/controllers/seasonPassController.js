@@ -6,7 +6,105 @@ const Character = require('../models/Character');
 const Title = require('../models/Title');
 const Banner = require('../models/Banner');
 const ProfilePhoto = require('../models/ProfilePhoto');
+const ProfileBackground = require('../models/ProfileBackground');
 const Notification = require('../models/Notification');
+
+// ============================================================
+// ✅ HELPER: Get reward preview image (UPDATED)
+// ============================================================
+async function getRewardPreviewImage(reward) {
+  try {
+    if (!reward) return null;
+    
+    // If reward already has an image URL directly
+    if (reward.imageUrl) {
+      return reward.imageUrl;
+    }
+    
+    // If reward has itemId - fetch from database
+    if (reward.itemId) {
+      // For cards - get character image
+      if (reward.type === 'card') {
+        const character = await Character.findById(reward.itemId);
+        if (character && character.image) {
+          return character.image;
+        }
+      }
+      
+      // For banners - get GIF/thumbnail
+      if (reward.type === 'banner') {
+        const banner = await Banner.findById(reward.itemId);
+        if (banner) {
+          return banner.gifUrl || banner.thumbnailUrl || null;
+        }
+      }
+      
+      // For profile photos - get image URL
+      if (reward.type === 'profilePhoto') {
+        const photo = await ProfilePhoto.findById(reward.itemId);
+        if (photo && photo.imageUrl) {
+          return photo.imageUrl;
+        }
+      }
+      
+      // For profile backgrounds - get image URL
+      if (reward.type === 'profileBackground') {
+        const background = await ProfileBackground.findById(reward.itemId);
+        if (background && background.imageUrl) {
+          return background.imageUrl || background.thumbnailUrl || null;
+        }
+      }
+    }
+    
+    // ✅ NEW: If only itemName exists (fallback for cases where itemId is missing)
+    if (reward.itemName) {
+      // For cards - try to find character by name
+      if (reward.type === 'card') {
+        const character = await Character.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (character && character.image) {
+          return character.image;
+        }
+      }
+      
+      // For banners - try to find banner by name
+      if (reward.type === 'banner') {
+        const banner = await Banner.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (banner) {
+          return banner.gifUrl || banner.thumbnailUrl || null;
+        }
+      }
+      
+      // For profile photos - try to find by name
+      if (reward.type === 'profilePhoto') {
+        const photo = await ProfilePhoto.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (photo && photo.imageUrl) {
+          return photo.imageUrl;
+        }
+      }
+      
+      // For profile backgrounds - try to find by name
+      if (reward.type === 'profileBackground') {
+        const background = await ProfileBackground.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (background && background.imageUrl) {
+          return background.imageUrl || background.thumbnailUrl || null;
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting reward preview:', error);
+    return null;
+  }
+}
 
 // ============================================================
 // ✅ GET ACTIVE SEASON PASS (FIXED - Auto-assigns seasonId)
@@ -45,18 +143,25 @@ exports.getActiveSeason = async (req, res) => {
     const unlockedTiers = userProgress.unlockedTiers || [];
     const claimedRewards = userProgress.claimedRewards || [];
 
-    // Build tier progress
-    const tierProgress = tiers.map(tier => {
+    // Build tier progress with preview images
+    const tierProgress = await Promise.all(tiers.map(async (tier) => {
       const isUnlocked = unlockedTiers.some(t => t.tier === tier.tier);
-      const rewards = tier.rewards.map((reward, index) => {
+      
+      // Process rewards with preview images
+      const rewards = await Promise.all(tier.rewards.map(async (reward, index) => {
         const isClaimed = claimedRewards.some(
           r => r.tier === tier.tier && r.rewardIndex === index
         );
+        
+        // Get preview image
+        const previewImage = await getRewardPreviewImage(reward);
+        
         return {
           ...reward.toObject(),
-          isClaimed
+          isClaimed,
+          previewImage // ✅ Add preview image to response
         };
-      });
+      }));
 
       return {
         tier: tier.tier,
@@ -64,7 +169,7 @@ exports.getActiveSeason = async (req, res) => {
         rewards,
         hasUnclaimedRewards: rewards.some(r => !r.isClaimed)
       };
-    });
+    }));
 
     res.json({
       success: true,
@@ -138,17 +243,23 @@ exports.getUserProgress = async (req, res) => {
       tier: { $lte: season.totalTiers }
     }).sort({ tier: 1 });
 
-    const tierProgress = tiers.map(tier => {
+    // Build tier progress with preview images
+    const tierProgress = await Promise.all(tiers.map(async (tier) => {
       const isUnlocked = unlockedTiers.some(t => t.tier === tier.tier);
-      const rewards = tier.rewards.map((reward, index) => {
+      
+      const rewards = await Promise.all(tier.rewards.map(async (reward, index) => {
         const isClaimed = claimedRewards.some(
           r => r.tier === tier.tier && r.rewardIndex === index
         );
+        
+        const previewImage = await getRewardPreviewImage(reward);
+        
         return {
           ...reward.toObject(),
-          isClaimed
+          isClaimed,
+          previewImage
         };
-      });
+      }));
 
       return {
         tier: tier.tier,
@@ -156,7 +267,7 @@ exports.getUserProgress = async (req, res) => {
         rewards,
         hasUnclaimedRewards: rewards.some(r => !r.isClaimed)
       };
-    });
+    }));
 
     res.json({
       success: true,
@@ -571,6 +682,50 @@ async function claimReward(user, reward) {
           imageUrl: photo.imageUrl
         },
         message: `📸 Profile photo "${photo.name}" added to your collection!`
+      };
+
+    case 'profileBackground':
+      if (!reward.itemId) {
+        throw new Error('Profile Background ID is required');
+      }
+      const background = await ProfileBackground.findById(reward.itemId);
+      if (!background) {
+        throw new Error('Profile background not found');
+      }
+      
+      const alreadyHasBg = user.achievements.profileBackgrounds.some(b => 
+        b.backgroundId.toString() === reward.itemId.toString()
+      );
+      
+      if (alreadyHasBg) {
+        user.gems = (user.gems || 0) + 100;
+        await user.save();
+        return {
+          type: 'gems',
+          amount: 100,
+          message: `You already have this background. Converted to 100 Gems!`
+        };
+      }
+      
+      user.achievements.profileBackgrounds.push({
+        backgroundId: reward.itemId,
+        unlockedAt: new Date(),
+        isEquipped: false
+      });
+      await user.save();
+      
+      // Increment total users for this background
+      await background.incrementTotalUsers();
+      
+      return {
+        type: 'profileBackground',
+        background: {
+          id: background._id,
+          name: background.name,
+          imageUrl: background.imageUrl,
+          thumbnailUrl: background.thumbnailUrl
+        },
+        message: `🖼️ Profile background "${background.name}" added to your collection!`
       };
 
     default:

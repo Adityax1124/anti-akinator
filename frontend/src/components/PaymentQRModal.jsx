@@ -45,6 +45,21 @@ const CreditCardIcon = () => (
   </svg>
 );
 
+const InfoIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="12" x2="12" y2="16" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <polyline points="9 12 11 14 15 10" />
+  </svg>
+);
+
 const PaymentQRModal = ({ 
   isOpen, 
   onClose, 
@@ -66,10 +81,9 @@ const PaymentQRModal = ({
   const [isUtrChecking, setIsUtrChecking] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // ✅ FIX: API_URL without /api at the end
   const API_URL = import.meta.env.VITE_API_URL || '';
 
-  // ✅ FIX: Lock body scroll when modal opens
+  // Lock body scroll when modal opens
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add('modal-open');
@@ -111,8 +125,7 @@ const PaymentQRModal = ({
         return false;
       }
 
-      // ✅ FIX: Use API_URL without /api at the end, then add /api/
-      const response = await fetch(`${API_URL}/transactions/check-utr`, {
+      const response = await fetch(`${API_URL}/api/transactions/check-utr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,8 +208,7 @@ const PaymentQRModal = ({
         return;
       }
 
-      // ✅ FIX: Use API_URL without /api at the end, then add /api/
-      const response = await fetch(`${API_URL}/transactions/create`, {
+      const response = await fetch(`${API_URL}/api/transactions/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -275,14 +287,12 @@ const PaymentQRModal = ({
     }
   };
 
-  // ✅ Generate QR Code URL dynamically
   const generateQRCode = () => {
     const upiId = 'adisinghx11@okaxis';
     const upiLink = `upi://pay?pa=${upiId}&pn=Anti-Akinator&am=${amount}&cu=INR`;
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
   };
 
-  // ✅ Fallback QR code (text-based) if QR server fails
   const getFallbackQR = () => {
     const upiId = 'adisinghx11@okaxis';
     return `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%231a1a2e"/%3E%3Ctext x="40" y="85" font-family="Arial" font-size="14" fill="%2394a3b8"%3EUPI ID:%3C/text%3E%3Ctext x="40" y="110" font-family="Arial" font-size="16" fill="%23ffffff"%3E${upiId}%3C/text%3E%3Ctext x="40" y="135" font-family="Arial" font-size="12" fill="%2364748b"%3EScan from UPI app%3C/text%3E%3Ctext x="40" y="160" font-family="Arial" font-size="11" fill="%2364748b"%3EAmount: ₹${amount}%3C/text%3E%3C/svg%3E`;
@@ -310,15 +320,53 @@ const PaymentQRModal = ({
         {/* Content */}
         <div className="payment-modal-body">
           {step === 'qr' ? (
-            // QR Code Step
+            // QR Code Step with Instructions
             <div className="qr-step">
+              {/* Trust Badge */}
+              <div className="trust-badge">
+                <ShieldIcon />
+                <span>100% Secure Payment</span>
+                <span className="trust-dot">•</span>
+                <span>Verified by Admin</span>
+              </div>
+
               {/* Item Info */}
               <div className="item-info">
                 <p className="item-name">{itemName}</p>
                 <p className="item-amount">₹{amount}</p>
               </div>
 
-              {/* QR Code - DYNAMIC GENERATION */}
+              {/* Step Indicator */}
+              <div className="step-indicator">
+                <div className="step-dot active">1</div>
+                <div className="step-line"></div>
+                <div className="step-dot">2</div>
+                <div className="step-line"></div>
+                <div className="step-dot">3</div>
+              </div>
+              <div className="step-labels">
+                <span className="step-label active">Pay</span>
+                <span className="step-label">Submit</span>
+                <span className="step-label">Verify</span>
+              </div>
+
+              {/* Instructions Box */}
+              <div className="instructions-box">
+                <div className="instruction-step">
+                  <span className="instruction-number">1</span>
+                  <span className="instruction-text">Scan QR code with your UPI app</span>
+                </div>
+                <div className="instruction-step">
+                  <span className="instruction-number">2</span>
+                  <span className="instruction-text">Pay <strong>₹{amount}</strong> via UPI</span>
+                </div>
+                <div className="instruction-step">
+                  <span className="instruction-number">3</span>
+                  <span className="instruction-text">Click <strong>"I've Made the Payment"</strong></span>
+                </div>
+              </div>
+
+              {/* QR Code */}
               <div className="qr-container">
                 <img 
                   src={generateQRCode()}
@@ -346,6 +394,12 @@ const PaymentQRModal = ({
                 </p>
               </div>
 
+              {/* Trust Message */}
+              <div className="trust-message">
+                <InfoIcon />
+                <span>Don't worry! Your payment will be verified within <strong>24 hours</strong> and you'll receive your item.</span>
+              </div>
+
               {/* Action Buttons */}
               <button
                 onClick={() => setStep('form')}
@@ -362,7 +416,7 @@ const PaymentQRModal = ({
               </button>
             </div>
           ) : (
-            // Form Step
+            // Form Step with Instructions
             <form onSubmit={handleSubmit} className="form-step">
               <button
                 type="button"
@@ -372,6 +426,25 @@ const PaymentQRModal = ({
                 <ArrowLeftIcon />
                 Back to QR
               </button>
+
+              {/* Step Indicator */}
+              <div className="step-indicator">
+                <div className="step-dot done">✓</div>
+                <div className="step-line"></div>
+                <div className="step-dot active">2</div>
+                <div className="step-line"></div>
+                <div className="step-dot">3</div>
+              </div>
+              <div className="step-labels">
+                <span className="step-label done">Pay</span>
+                <span className="step-label active">Submit</span>
+                <span className="step-label">Verify</span>
+              </div>
+
+              {/* Instruction */}
+              <div className="form-instruction">
+                <p>📋 Enter the UTR number and amount you paid. We'll verify and deliver your item within 24 hours.</p>
+              </div>
 
               {/* Order Summary */}
               <div className="order-summary">
@@ -411,7 +484,7 @@ const PaymentQRModal = ({
                     {utrError}
                   </div>
                 )}
-                <p className="input-hint">Check your UPI app for UTR number (usually 12-20 characters)</p>
+                <p className="input-hint">📱 Check your UPI app for UTR number (usually 12-20 characters)</p>
               </div>
 
               <div className="form-group">
@@ -430,7 +503,7 @@ const PaymentQRModal = ({
                   className="form-input"
                   disabled={loading}
                 />
-                <p className="input-hint">Enter the exact amount you sent</p>
+                <p className="input-hint">💵 Enter the exact amount you sent (should be ₹{amount})</p>
               </div>
 
               {/* Error/Success Messages */}
@@ -446,6 +519,12 @@ const PaymentQRModal = ({
                   <span>{success}</span>
                 </div>
               )}
+
+              {/* Trust Message */}
+              <div className="trust-message small">
+                <ShieldIcon />
+                <span>Your transaction is secure. Admin will verify and deliver within 24 hours.</span>
+              </div>
 
               {/* Submit Buttons */}
               <div className="form-actions">
@@ -482,7 +561,7 @@ const PaymentQRModal = ({
               </div>
 
               <p className="form-footer">
-                Your submission will be verified within 24 hours. 
+                🔒 Your submission will be verified within 24 hours. 
                 You'll receive a confirmation once approved.
               </p>
             </form>
