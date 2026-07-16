@@ -12,6 +12,279 @@ const { getCurrentSeason } = require('../utils/seasonUtils');
 const { askAI } = require('../utils/aiRouter');
 const router = express.Router();
 
+// ============================================================
+// 🧠 SMART MATCHING ENGINE - Handles ANY spelling mistake
+// ============================================================
+
+// ===== HELPER: Check if words match with spelling tolerance =====
+function isSimilarWord(word1, word2) {
+  if (!word1 || !word2) return false;
+  
+  const w1 = word1.toLowerCase().trim();
+  const w2 = word2.toLowerCase().trim();
+  
+  // Exact match
+  if (w1 === w2) return true;
+  
+  // Check if one is a substring of the other (for longer words)
+  if (w1.length > 3 && w2.length > 3) {
+    if (w1.includes(w2) || w2.includes(w1)) return true;
+  }
+  
+  // Calculate Levenshtein distance
+  const distance = levenshteinDistance(w1, w2);
+  const maxLength = Math.max(w1.length, w2.length);
+  
+  // If 70% similar, consider it a match (more forgiving)
+  const similarity = (maxLength - distance) / maxLength;
+  return similarity >= 0.7;
+}
+
+// ===== HELPER: Levenshtein Distance (spelling tolerance) =====
+function levenshteinDistance(str1, str2) {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  
+  if (len1 === 0) return len2;
+  if (len2 === 0) return len1;
+  
+  const matrix = [];
+  
+  for (let i = 0; i <= len1; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= len2; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  
+  return matrix[len1][len2];
+}
+
+// ===== HELPER: Check if question is trying to reveal identity =====
+function isIdentityRevealQuestion(question) {
+  const lower = question.toLowerCase();
+  
+  // Name reveal patterns
+  const namePatterns = [
+    /is it (.+?)\?/,
+    /is he (.+?)\?/,
+    /is she (.+?)\?/,
+    /is this (.+?)\?/,
+    /is that (.+?)\?/,
+    /is the character (.+?)\?/,
+    /are you (.+?)\?/,
+    /is his name (.+?)\?/,
+    /is her name (.+?)\?/,
+    /is its name (.+?)\?/,
+    /is the name (.+?)\?/,
+    /is your name (.+?)\?/,
+    /is the person (.+?)\?/,
+    /is this person (.+?)\?/,
+    /is the one (.+?)\?/,
+    /is he the (.+?)\?/,
+    /is she the (.+?)\?/,
+    /is it the (.+?)\?/,
+    /character is (.+?)\?/,
+    /name is (.+?)\?/,
+    /called (.+?)\?/,
+    /known as (.+?)\?/
+  ];
+  
+  for (const pattern of namePatterns) {
+    if (pattern.test(lower)) {
+      return true;
+    }
+  }
+  
+  // Identity reveal keywords
+  const identityKeywords = [
+    'who is it',
+    'who is he',
+    'who is she',
+    'who is this',
+    'what is his name',
+    'what is her name',
+    'what is the name',
+    'tell me the name',
+    'reveal the name',
+    'guess who',
+    'who am i thinking of',
+    'what character is this',
+    'which character',
+    'who are you'
+  ];
+  
+  for (const keyword of identityKeywords) {
+    if (lower.includes(keyword)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// ===== HELPER: Get all text from character data =====
+function getAllCharacterText(character) {
+  const texts = [];
+  
+  // Basic info (EXCLUDING name and anime - these reveal identity)
+  if (character.description) texts.push(character.description);
+  if (character.crucialHint) texts.push(character.crucialHint);
+  if (character.element) texts.push(character.element);
+  if (character.rarity) texts.push(character.rarity);
+  
+  // Appearance
+  if (character.appearance) {
+    if (character.appearance.hairColor) texts.push(character.appearance.hairColor);
+    if (character.appearance.eyeColor) texts.push(character.appearance.eyeColor);
+    if (character.appearance.skinColor) texts.push(character.appearance.skinColor);
+    if (character.appearance.height) texts.push(character.appearance.height);
+    if (character.appearance.build) texts.push(character.appearance.build);
+    if (character.appearance.distinctiveFeatures) texts.push(character.appearance.distinctiveFeatures);
+    if (character.appearance.clothing) texts.push(character.appearance.clothing);
+    if (character.appearance.accessories) texts.push(character.appearance.accessories);
+  }
+  
+  // Identity (EXCLUDING exact name, but including traits)
+  if (character.identity) {
+    if (character.identity.gender) texts.push(character.identity.gender);
+    if (character.identity.age) texts.push(character.identity.age);
+    if (character.identity.species) texts.push(character.identity.species);
+    if (character.identity.nationality) texts.push(character.identity.nationality);
+    if (character.identity.occupation) texts.push(character.identity.occupation);
+  }
+  
+  // Status
+  if (character.status) {
+    if (character.status.currentStatus) texts.push(character.status.currentStatus);
+    if (character.status.deathDetails) texts.push(character.status.deathDetails);
+  }
+  
+  // Personality
+  if (character.personality) {
+    if (character.personality.traits) texts.push(...character.personality.traits);
+    if (character.personality.likes) texts.push(...character.personality.likes);
+    if (character.personality.dislikes) texts.push(...character.personality.dislikes);
+    if (character.personality.goals) texts.push(character.personality.goals);
+    if (character.personality.fears) texts.push(character.personality.fears);
+  }
+  
+  // Abilities
+  if (character.abilities) {
+    if (character.abilities.powers) texts.push(...character.abilities.powers);
+    if (character.abilities.techniques) texts.push(...character.abilities.techniques);
+    if (character.abilities.weapons) texts.push(...character.abilities.weapons);
+    if (character.abilities.fightingStyle) texts.push(character.abilities.fightingStyle);
+    if (character.abilities.specialAbilities) texts.push(character.abilities.specialAbilities);
+  }
+  
+  // Relationships
+  if (character.relationships) {
+    if (character.relationships.family) texts.push(character.relationships.family);
+    if (character.relationships.friends) texts.push(...character.relationships.friends);
+    if (character.relationships.rivals) texts.push(...character.relationships.rivals);
+    if (character.relationships.mentors) texts.push(...character.relationships.mentors);
+    if (character.relationships.students) texts.push(...character.relationships.students);
+    if (character.relationships.master) texts.push(character.relationships.master);
+    if (character.relationships.affiliatedGroups) texts.push(...character.relationships.affiliatedGroups);
+  }
+  
+  // Background
+  if (character.background) {
+    if (character.background.origin) texts.push(character.background.origin);
+    if (character.background.backstory) texts.push(character.background.backstory);
+    if (character.background.keyEvents) texts.push(...character.background.keyEvents);
+    if (character.background.achievements) texts.push(...character.background.achievements);
+    if (character.background.notableFights) texts.push(...character.background.notableFights);
+  }
+  
+  // Traits
+  if (character.traits) {
+    if (character.traits.gender) texts.push(character.traits.gender);
+    if (character.traits.species) texts.push(character.traits.species);
+    if (character.traits.occupation) texts.push(character.traits.occupation);
+    if (character.traits.powers) texts.push(...character.traits.powers);
+    if (character.traits.personality) texts.push(...character.traits.personality);
+    if (character.traits.affiliations) texts.push(...character.traits.affiliations);
+    if (character.traits.relationships) texts.push(...character.traits.relationships);
+    if (character.traits.keyEvents) texts.push(...character.traits.keyEvents);
+  }
+  
+  // Attributes (convert booleans to text)
+  if (character.attributes) {
+    for (const key in character.attributes) {
+      if (character.attributes[key] === true) {
+        const readableName = key.replace(/([A-Z])/g, ' $1').trim();
+        texts.push(readableName);
+        texts.push('yes');
+      }
+    }
+  }
+  
+  // Clean and return unique values
+  return [...new Set(texts.filter(t => t && typeof t === 'string' && t.length > 0))];
+}
+
+// ===== HELPER: Smart answer function =====
+function getSmartAnswer(question, character) {
+  // ✅ IMPORTANT: If it's an identity reveal question, return false immediately
+  if (isIdentityRevealQuestion(question)) {
+    return { match: false, isIdentityQuestion: true };
+  }
+  
+  const questionWords = question.toLowerCase()
+    .replace(/[^a-zA-Z0-9\s']/g, ' ')
+    .split(' ')
+    .filter(w => w.length > 1);
+  
+  // Get all character data as text
+  const allTexts = getAllCharacterText(character);
+  
+  // Get all important keywords from character
+  const keywords = allTexts.map(t => t.toLowerCase());
+  
+  // Check if ANY question word matches ANY keyword (with spelling tolerance)
+  for (const word of questionWords) {
+    // Skip common words
+    if (['is', 'he', 'she', 'it', 'they', 'are', 'am', 'the', 'this', 'that', 
+         'his', 'her', 'their', 'them', 'what', 'who', 'when', 'where', 'why',
+         'how', 'yes', 'no', 'maybe', 'idk', 'from', 'with', 'has', 'have',
+         'does', 'do', 'did', 'was', 'were', 'been', 'being', 'can', 'will',
+         'would', 'could', 'should', 'may', 'might', 'must', 'shall',
+         'for', 'about', 'into', 'through', 'during', 'without', 'against',
+         'between', 'among', 'upon', 'toward', 'until', 'since', 'of', 'to',
+         'for', 'on', 'at', 'by', 'in', 'with', 'from', 'up', 'about', 'into',
+         'through', 'during', 'without', 'against', 'between', 'among', 'upon',
+         'toward', 'until', 'since', 'etc', 'e.g', 'i.e', 'and', 'or', 'but',
+         'nor', 'for', 'yet', 'so', 'as', 'than', 'like', 'just', 'even',
+         'though', 'although', 'while', 'whereas', 'wherever', 'whenever',
+         'whoever', 'whichever', 'whatever', 'however', 'nevertheless',
+         'nonetheless', 'accordingly', 'consequently', 'hence', 'thence']).includes(word)) {
+      continue;
+    }
+    
+    for (const keyword of keywords) {
+      if (isSimilarWord(word, keyword)) {
+        return { match: true, matchedWord: keyword, userWord: word, isIdentityQuestion: false };
+      }
+    }
+  }
+  
+  return { match: false, isIdentityQuestion: false };
+}
+
 // ===== HELPER: Normalize string for flexible matching =====
 function normalize(str) {
   if (!str) return '';
@@ -27,7 +300,9 @@ function sanitizeInput(str) {
   return str.replace(/[<>]/g, '').trim();
 }
 
-// ===== VALIDATION RULES =====
+// ============================================================
+// VALIDATION RULES
+// ============================================================
 const validateGameId = [
   body('gameId')
     .notEmpty()
@@ -343,6 +618,28 @@ You are a SECURITY-FIRST AI with ZERO tolerance for identity leaks. Your ONLY jo
    - "Villain (turned hero)" → Is he villain? YES. Is he hero? YES. 
    - "Not a main character" → Is he main? NO.
 
+===== SPELLING & SYNONYM RULES =====
+
+1. IGNORE MINOR SPELLING MISTAKES:
+   - "hman" = "human" → YES
+   - "arankar" = "arrancar" → YES
+   - "saiyen" = "saiyan" → YES
+   - "shinobi" = "shinobi" → YES
+   - Any word that is 70% similar = match
+
+2. USE COMMON SYNONYMS:
+   - "boy", "man", "guy", "dude" = "Male" → YES
+   - "girl", "woman", "lady", "gal" = "Female" → YES
+   - "kid", "young", "youth" = "Child" → YES
+   - "old", "elderly", "senior" = "Elder" → YES
+   - "alive", "living", "breathing" = "Alive" → YES
+   - "dead", "deceased", "gone" = "Dead" → YES
+   - "hero", "protagonist", "main" = "Main Character" → YES
+   - "villain", "antagonist", "evil" = "Villain" → YES
+   - "power", "ability", "skill" = "Has Special Power" → YES
+   - "weapon", "sword", "gun" = "Has Weapon" → YES
+   - "family", "brother", "sister" = "Has Family" → YES
+
 ===== YOUR RESPONSE RULES =====
 
 YES → When ANY data matches the question
@@ -351,6 +648,7 @@ YES → When ANY data matches the question
    - Partial match: "Black and Red hair" → "Is his hair black?" = YES
    - Synonym match: "Ninja (Shinobi)" → "Is he a ninja?" = YES
    - Relationship: "Brother of X" → "Is he related to X?" = YES
+   - Spelling mistake: "arankar" → "arrancar" = YES
 
 NO → ONLY when data EXPLICITLY says the opposite
    - "Alive" → "Is he dead?" = NO
@@ -443,33 +741,49 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
     let finalAnswer = 'IDK';
     const lowerAnswer = answer.toLowerCase().trim();
 
-    // Check if this is an identity question
-    const identityKeywords = ['is it', 'is he', 'is she', 'is this', 'are you', 'is that'];
-    const isIdentityQuestion = identityKeywords.some(kw => lowerAnswer.includes(kw));
-
-    if (isIdentityQuestion) {
+    // ✅ CHECK IF IDENTITY REVEAL QUESTION (SECURITY LAYER 1)
+    if (isIdentityRevealQuestion(sanitizedQuestion)) {
       finalAnswer = 'IDK';
-      console.log(`🔒 Identity question → "IDK"`);
+      console.log(`🔒 Identity reveal question → "IDK"`);
     } else {
-      // Check for Yes
-      if (lowerAnswer === 'yes') {
-        finalAnswer = 'Yes';
-      } 
-      // Check for No
-      else if (lowerAnswer === 'no' || lowerAnswer.includes('not') || lowerAnswer.includes('isn\'t') || lowerAnswer.includes('doesn\'t')) {
-        finalAnswer = 'No';
-      } 
-      // Check for Maybe
-      else if (lowerAnswer === 'maybe') {
-        finalAnswer = 'Maybe';
-      } 
-      // Check for IDK
-      else if (lowerAnswer === 'idk' || lowerAnswer.includes('dont know') || lowerAnswer.includes("don't know") || lowerAnswer.includes('not sure') || lowerAnswer.includes('unknown')) {
+      // ✅ SMART MATCHING (SECURITY LAYER 2)
+      const smartMatch = getSmartAnswer(sanitizedQuestion, character);
+      
+      if (smartMatch.isIdentityQuestion) {
         finalAnswer = 'IDK';
-      } 
-      // Default to IDK
-      else {
-        finalAnswer = 'IDK';
+        console.log(`🔒 Identity question detected via smart match → "IDK"`);
+      } else if (smartMatch.match) {
+        // We found a match in character data
+        console.log(`📝 Smart match: "${smartMatch.userWord}" → "${smartMatch.matchedWord}"`);
+        
+        // Check if the AI answer is IDK but we found a match
+        if (lowerAnswer === 'idk' || lowerAnswer === 'maybe' || lowerAnswer === 'no') {
+          finalAnswer = 'Yes';
+          console.log(`✅ Overridden AI answer to YES based on smart match!`);
+        } else {
+          finalAnswer = 'Yes';
+        }
+      } else {
+        // Check for Yes
+        if (lowerAnswer === 'yes') {
+          finalAnswer = 'Yes';
+        } 
+        // Check for No
+        else if (lowerAnswer === 'no' || lowerAnswer.includes('not') || lowerAnswer.includes('isn\'t') || lowerAnswer.includes('doesn\'t')) {
+          finalAnswer = 'No';
+        } 
+        // Check for Maybe
+        else if (lowerAnswer === 'maybe') {
+          finalAnswer = 'Maybe';
+        } 
+        // Check for IDK
+        else if (lowerAnswer === 'idk' || lowerAnswer.includes('dont know') || lowerAnswer.includes("don't know") || lowerAnswer.includes('not sure') || lowerAnswer.includes('unknown')) {
+          finalAnswer = 'IDK';
+        } 
+        // Default to IDK
+        else {
+          finalAnswer = 'IDK';
+        }
       }
     }
 
@@ -499,8 +813,7 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
     console.error('Question error:', {
       message: error.message,
       userId: req.user?._id,
-      ip: req.ip
-    });
+      ip: req.ip    });
     res.status(500).json({
       success: false,
       message: 'Error processing question. Please try again.'
@@ -717,7 +1030,7 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       }
 
       // ============================================================
-      // ✅ SEASON PASS PROGRESS - ADDED THIS SECTION
+      // ✅ SEASON PASS PROGRESS
       // ============================================================
       if (user.seasonPass && user.seasonPass.active) {
         const activeSeason = await SeasonPass.getActiveSeason();
