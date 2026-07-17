@@ -151,11 +151,16 @@ const Navbar = () => {
 
   const dimActive = hoveredDropdown !== null || openDropdown !== null || mobileMenuOpen;
 
+  // Close mobile menu when clicking a link
+  const handleLinkClick = () => {
+    closeAllDropdowns();
+  };
+
   return (
     <>
       <nav className={`navbar ${dimActive ? 'dim-active' : ''}`}>
         <div className="navbar-container">
-          <Link to="/" className="navbar-brand" onClick={closeAllDropdowns}>
+          <Link to="/" className="navbar-brand" onClick={handleLinkClick}>
             <img src="/anime-logo.jpg" alt="Anti-Akinator" className="brand-logo" />
             <span className="brand-text">Anti-Akinator</span>
           </Link>
@@ -177,11 +182,11 @@ const Navbar = () => {
                     </svg>
                   </button>
                   <div className={`dropdown-menu ${openDropdown === 'cards' ? 'open' : ''}`}>
-                    <Link to="/collection" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/collection" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">📁</span>
                       Collection
                     </Link>
-                    <Link to="/match" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/match" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">⚔️</span>
                       Battle
                     </Link>
@@ -202,18 +207,17 @@ const Navbar = () => {
                     </svg>
                   </button>
                   <div className={`dropdown-menu ${openDropdown === 'shop' ? 'open' : ''}`}>
-                    <Link to="/shop" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/shop" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">🛍️</span>
                       Shop
                     </Link>
-                    <Link to="/buy-shards" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/buy-shards" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">🎴</span>
                       Buy Shards
                     </Link>
                   </div>
                 </div>
 
-                {/* ✅ Community Dropdown with Promote & Earn INSIDE */}
                 <div
                   className="dropdown-wrapper"
                   ref={communityRef}
@@ -236,8 +240,7 @@ const Navbar = () => {
                       <span className="dropdown-icon">🤝</span>
                       Refer & Earn
                     </button>
-                    {/* ✅ Promote & Earn inside Community */}
-                    <Link to="/promote-earn" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/promote-earn" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">📢</span>
                       Promote & Earn
                     </Link>
@@ -266,7 +269,7 @@ const Navbar = () => {
                 <Link 
                   to="/season-pass" 
                   className={`nav-link ${isActive('/season-pass') ? 'active' : ''}`}
-                  onClick={closeAllDropdowns}
+                  onClick={handleLinkClick}
                 >
                   <span className="nav-icon">🎫</span>
                   <span className="nav-label">Season Pass</span>
@@ -275,7 +278,7 @@ const Navbar = () => {
                 <Link 
                   to="/blur-game" 
                   className={`nav-link ${isActive('/blur-game') ? 'active' : ''}`}
-                  onClick={closeAllDropdowns}
+                  onClick={handleLinkClick}
                 >
                   <span className="nav-icon">🔮</span>
                   <span className="nav-label">Mystery</span>
@@ -295,15 +298,15 @@ const Navbar = () => {
                     </svg>
                   </button>
                   <div className={`dropdown-menu ${openDropdown === 'leaderboard' ? 'open' : ''}`}>
-                    <Link to="/leaderboard" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/leaderboard" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">📊</span>
                       Global Leaderboard
                     </Link>
-                    <Link to="/season-winners" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/season-winners" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">🏅</span>
                       Season Winners
                     </Link>
-                    <Link to="/clan/war/leaderboard" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/clan/war/leaderboard" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">⚔️</span>
                       Clan War Leaderboard
                     </Link>
@@ -311,7 +314,7 @@ const Navbar = () => {
                 </div>
 
                 {user?.role === 'admin' && (
-                  <Link to="/admin" className={`nav-link admin-link ${isActive('/admin') ? 'active' : ''}`} onClick={closeAllDropdowns}>
+                  <Link to="/admin" className={`nav-link admin-link ${isActive('/admin') ? 'active' : ''}`} onClick={handleLinkClick}>
                     <span className="nav-icon">⚙️</span>
                     <span className="nav-label">Admin</span>
                   </Link>
@@ -341,11 +344,11 @@ const Navbar = () => {
                     </svg>
                   </button>
                   <div className={`dropdown-menu profile-dropdown ${openDropdown === 'profile' ? 'open' : ''}`}>
-                    <Link to="/profile" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/profile" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">👤</span>
                       Profile
                     </Link>
-                    <Link to="/settings" className="dropdown-item" onClick={closeAllDropdowns}>
+                    <Link to="/settings" className="dropdown-item" onClick={handleLinkClick}>
                       <span className="dropdown-icon">⚙️</span>
                       Settings
                     </Link>
@@ -359,8 +362,8 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link to="/login" className="nav-link login-btn" onClick={closeAllDropdowns}>Login</Link>
-                <Link to="/register" className="nav-link register-btn" onClick={closeAllDropdowns}>Register</Link>
+                <Link to="/login" className="nav-link login-btn" onClick={handleLinkClick}>Login</Link>
+                <Link to="/register" className="nav-link register-btn" onClick={handleLinkClick}>Register</Link>
               </>
             )}
           </div>
