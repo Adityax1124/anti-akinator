@@ -166,16 +166,17 @@ router.get('/leaderboard', validateLeaderboard, async (req, res) => {
           username: w.username,
           wins: w.wins,
           streak: w.streak,
-          prize: w.prize
+          prize: w.prize,
+          isSeasonPassActive: false
         }))
       });
     }
     
-    // Find top players for current season WITH profile photo
+    // Find top players for current season WITH profile photo AND season pass status
     const users = await User.find({
       'seasonStats.currentSeason': currentSeasonCode
     })
-    .select('username seasonStats stats shards equipped achievements')
+    .select('username seasonStats stats shards equipped achievements seasonPass')
     .populate({
       path: 'equipped.profilePhoto',
       select: 'imageUrl'
@@ -187,7 +188,7 @@ router.get('/leaderboard', validateLeaderboard, async (req, res) => {
     })
     .limit(sanitizedLimit);
 
-    // Format leaderboard with profile photo
+    // Format leaderboard with profile photo and season pass status
     const leaderboard = users.map((user, index) => {
       let profilePhotoUrl = null;
       
@@ -208,6 +209,9 @@ router.get('/leaderboard', validateLeaderboard, async (req, res) => {
         }
       }
       
+      // ✅ CHECK SEASON PASS STATUS
+      const isSeasonPassActive = user.seasonPass?.active || false;
+      
       return {
         rank: index + 1,
         username: user.username,
@@ -215,7 +219,9 @@ router.get('/leaderboard', validateLeaderboard, async (req, res) => {
         streak: user.seasonStats?.seasonStreak || 0,
         played: user.seasonStats?.seasonPlayed || 0,
         shards: user.shards || 0,
-        profilePhoto: profilePhotoUrl
+        profilePhoto: profilePhotoUrl,
+        // ✅ ADD SEASON PASS STATUS
+        isSeasonPassActive: isSeasonPassActive
       };
     });
 

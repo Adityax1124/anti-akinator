@@ -256,7 +256,7 @@
 
 .leaderboard-item {
   display: grid;
-  grid-template-columns: 44px 48px 1fr 90px 80px;
+  grid-template-columns: 44px 48px 1fr 70px 70px 90px;
   padding: 10px 16px;
   background: rgba(0, 0, 0, 0.25);
   border-radius: 12px;
@@ -307,7 +307,7 @@
   background: transparent !important;
   font-weight: 600;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   padding-bottom: 10px;
@@ -316,6 +316,7 @@
   transform: none !important;
   transition: none !important;
   cursor: default;
+  grid-template-columns: 44px 48px 1fr 70px 70px 90px;
 }
 
 .leaderboard-item.header:hover {
@@ -345,6 +346,204 @@
 .leaderboard-item.top:first-child:hover {
   background: rgba(108, 99, 255, 0.1);
   border-color: rgba(108, 99, 255, 0.3);
+}
+
+/* ============================================================
+   ⭐ PREMIUM SEASON PASS STYLES - GOLDEN THEME
+   ============================================================ */
+
+/* 🌟 SEASON PASS USER ROW - GOLDEN PREMIUM LOOK */
+.leaderboard-item.season-pass-premium {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.08) 0%,
+    rgba(255, 215, 0, 0.02) 50%,
+    rgba(255, 215, 0, 0.08) 100%
+  ) !important;
+  border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  box-shadow: 
+    0 0 20px rgba(255, 215, 0, 0.05),
+    inset 0 0 60px rgba(255, 215, 0, 0.02) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ✨ GOLDEN SHIMMER ANIMATION */
+.leaderboard-item.season-pass-premium::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 215, 0, 0.05) 50%,
+    transparent 70%
+  );
+  animation: shimmerGold 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmerGold {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  50% { transform: translateX(0%) translateY(0%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* 🔥 GOLDEN GLOW PULSE */
+.leaderboard-item.season-pass-premium::after {
+  content: '👑';
+  position: absolute;
+  top: -5px;
+  right: 10px;
+  font-size: 28px;
+  opacity: 0.06;
+  animation: crownPulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes crownPulse {
+  0%, 100% { 
+    opacity: 0.04;
+    transform: scale(1) rotate(0deg);
+  }
+  50% { 
+    opacity: 0.12;
+    transform: scale(1.2) rotate(10deg);
+  }
+}
+
+/* 🌟 GOLDEN USERNAME */
+.player.golden-name {
+  color: #ffd700 !important;
+  font-weight: 700 !important;
+  text-shadow: 
+    0 0 20px rgba(255, 215, 0, 0.3),
+    0 0 40px rgba(255, 215, 0, 0.1) !important;
+  letter-spacing: 0.5px;
+}
+
+/* 👑 SEASON PASS BADGE */
+.season-pass-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 16px;
+  animation: badgeGlow 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
+}
+
+@keyframes badgeGlow {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+  }
+  50% { 
+    transform: scale(1.2) rotate(8deg);
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8));
+  }
+}
+
+/* 🔥 HOVER EFFECT - SEASON PASS USERS GLOW MORE */
+.leaderboard-item.season-pass-premium:hover {
+  transform: translateX(6px) scale(1.02);
+  box-shadow: 
+    0 8px 40px rgba(255, 215, 0, 0.15),
+    inset 0 0 60px rgba(255, 215, 0, 0.05) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+}
+
+/* ✨ SEASON PASS AVATAR */
+.leaderboard-avatar.season-pass-avatar {
+  border: 2px solid #ffd700 !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-item.season-pass-premium:hover .leaderboard-avatar.season-pass-avatar {
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+}
+
+/* ============================================================
+   STATUS COLUMN
+   ============================================================ */
+
+.status-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* ============================================================
+   SEASON PASS STATUS - "Season Pass" Vertical Text
+   ============================================================ */
+
+.season-pass-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.12), 
+    rgba(255, 215, 0, 0.04)
+  );
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  margin: 0 auto;
+  min-height: 34px;
+  height: 100%;
+}
+
+.season-pass-line {
+  font-size: 9px;
+  font-weight: 600;
+  color: #b8860b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.season-pass-line.highlight {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+/* On hover, glow more */
+.leaderboard-item.season-pass-premium:hover .season-pass-status {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.2), 
+    rgba(255, 215, 0, 0.08)
+  );
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+.leaderboard-item.season-pass-premium:hover .season-pass-line.highlight {
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+}
+
+/* ============================================================
+   REGULAR BADGE
+   ============================================================ */
+
+.regular-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 auto;
 }
 
 /* ============================================================
@@ -532,7 +731,7 @@
   }
 
   .leaderboard-item {
-    grid-template-columns: 36px 38px 1fr 60px 55px;
+    grid-template-columns: 36px 38px 1fr 55px 50px 75px;
     font-size: 12px;
     padding: 8px 10px;
     gap: 4px;
@@ -540,10 +739,10 @@
   }
 
   .leaderboard-item.header {
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.5px;
     padding-bottom: 8px;
-    grid-template-columns: 36px 38px 1fr 60px 55px;
+    grid-template-columns: 36px 38px 1fr 55px 50px 75px;
   }
 
   .leaderboard-avatar {
@@ -571,6 +770,28 @@
 
   .streak {
     font-size: 12px;
+  }
+
+  .season-pass-badge {
+    font-size: 14px;
+  }
+
+  .season-pass-status {
+    padding: 3px 8px;
+    min-height: 28px;
+  }
+
+  .season-pass-line {
+    font-size: 7px;
+  }
+
+  .season-pass-line.highlight {
+    font-size: 9px;
+  }
+
+  .regular-badge {
+    font-size: 9px;
+    padding: 3px 8px;
   }
 }
 
@@ -604,7 +825,7 @@
   }
 
   .leaderboard-item {
-    grid-template-columns: 28px 30px 1fr 44px 40px;
+    grid-template-columns: 28px 30px 1fr 40px 35px 60px;
     font-size: 10px;
     padding: 6px 6px;
     gap: 2px;
@@ -612,10 +833,10 @@
   }
 
   .leaderboard-item.header {
-    font-size: 9px;
+    font-size: 8px;
     letter-spacing: 0.3px;
     padding-bottom: 6px;
-    grid-template-columns: 28px 30px 1fr 44px 40px;
+    grid-template-columns: 28px 30px 1fr 40px 35px 60px;
   }
 
   .leaderboard-avatar {
@@ -644,5 +865,28 @@
 
   .streak {
     font-size: 10px;
+  }
+
+  .season-pass-badge {
+    font-size: 12px;
+    margin-left: 3px;
+  }
+
+  .season-pass-status {
+    padding: 2px 6px;
+    min-height: 24px;
+  }
+
+  .season-pass-line {
+    font-size: 6px;
+  }
+
+  .season-pass-line.highlight {
+    font-size: 8px;
+  }
+
+  .regular-badge {
+    font-size: 8px;
+    padding: 2px 6px;
   }
 }

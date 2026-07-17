@@ -111,24 +111,30 @@ const PublicProfile = () => {
     }
   }
 
+  // ✅ BACKGROUND IMAGE FOR FULL PAGE
+  const backgroundImage = equippedBackground?.imageUrl || null;
+
   return (
-    <div className={`public-profile-container ${isVisible ? 'visible' : ''}`}>
+    <div 
+      className={`public-profile-container ${isVisible ? 'visible' : ''} ${backgroundImage ? 'has-background' : ''}`}
+      style={
+        backgroundImage ? {
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        } : {}
+      }
+    >
       <div className="bg-noise"></div>
       <div className="bg-grid"></div>
 
-      {/* ✅ Profile Banner with Background */}
       <div
         className="public-profile-banner"
         style={
-          equippedBackground?.imageUrl 
-            ? { 
-                backgroundImage: `url(${equippedBackground.imageUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              } 
-            : profile.equipped?.banner?.gifUrl 
-              ? { backgroundImage: `url(${profile.equipped.banner.gifUrl})` } 
-              : {}
+          profile.equipped?.banner?.gifUrl 
+            ? { backgroundImage: `url(${profile.equipped.banner.gifUrl})` } 
+            : {}
         }
       >
         <div className="aurora aurora-1"></div>
@@ -160,19 +166,6 @@ const PublicProfile = () => {
                 <span className="public-title-rarity">
                   {' '}{getRarityEmoji(profile.equipped.title.rarity)} {profile.equipped.title.rarity}
                 </span>
-              </div>
-            )}
-
-            {/* ✅ Show equipped background name */}
-            {equippedBackground && (
-              <div className="public-banner-background">
-                <span className="bg-label">🖼️</span>
-                <span className="bg-name">{equippedBackground.name}</span>
-                {equippedBackground.rarity && (
-                  <span className="bg-rarity" style={{ color: getRarityColor(equippedBackground.rarity) }}>
-                    {getRarityEmoji(equippedBackground.rarity)} {equippedBackground.rarity}
-                  </span>
-                )}
               </div>
             )}
           </div>
@@ -211,7 +204,6 @@ const PublicProfile = () => {
           <div className="public-stat-number">{profile.achievements?.profilePhotos?.length || 0}</div>
           <div className="public-stat-label">📸 Photos</div>
         </div>
-        {/* ✅ NEW: Backgrounds stat */}
         <div className="public-stat-card">
           <div className="public-stat-number">{unlockedBackgrounds.length || 0}</div>
           <div className="public-stat-label">🖼️ Backgrounds</div>

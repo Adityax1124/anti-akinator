@@ -79,7 +79,6 @@ const Leaderboard = () => {
 
       setLoading(false);
     } catch (error) {
-
       if (error.response?.status === 404) {
         setError('Leaderboard feature coming soon! 🚀');
       } else if (error.response?.status === 429) {
@@ -87,7 +86,6 @@ const Leaderboard = () => {
       } else {
         setError('Failed to load leaderboard. Please try again.');
       }
-
       setLoading(false);
     }
   };
@@ -178,8 +176,9 @@ const Leaderboard = () => {
               <span className="rank">#</span>
               <span className="avatar-col">Avatar</span>
               <span className="player">Player</span>
-              <span className="games">Season Wins</span>
+              <span className="games">Wins</span>
               <span className="streak">🔥 Streak</span>
+              <span className="status-col">Status</span>
             </div>
 
             {leaderboard.map((player, index) => {
@@ -190,12 +189,13 @@ const Leaderboard = () => {
               const rankClass = getRankClass(index);
               const rankDisplay = getRankDisplay(index, rank);
               const isTop = index < 3;
+              const isSeasonPass = player.isSeasonPassActive || false;
 
               return (
                 <div
                   key={username + index + player._id || index}
                   ref={el => itemRefs.current[index] = el}
-                  className={`leaderboard-item ${isTop ? 'top' : ''}`}
+                  className={`leaderboard-item ${isTop ? 'top' : ''} ${isSeasonPass ? 'season-pass-premium' : ''}`}
                   onClick={() => handlePlayerClick(username)}
                   style={{ cursor: username !== 'Unknown' ? 'pointer' : 'default' }}
                 >
@@ -207,7 +207,7 @@ const Leaderboard = () => {
                       <img
                         src={player.profilePhoto}
                         alt={username}
-                        className="leaderboard-avatar"
+                        className={`leaderboard-avatar ${isSeasonPass ? 'season-pass-avatar' : ''}`}
                         onError={(e) => {
                           e.target.style.display = 'none';
                           const parent = e.target.parentElement;
@@ -223,10 +223,25 @@ const Leaderboard = () => {
                       </span>
                     )}
                   </span>
-                  <span className="player">{username}</span>
+                  <span className={`player ${isSeasonPass ? 'golden-name' : ''}`}>
+                    {username}
+                    {isSeasonPass && (
+                      <span className="season-pass-badge" title="Season Pass Holder">👑</span>
+                    )}
+                  </span>
                   <span className="games">{wins}</span>
                   <span className={`streak ${streak >= 10 ? 'high' : ''}`}>
                     {streak}
+                  </span>
+                  <span className="status-col">
+                    {isSeasonPass ? (
+                      <div className="season-pass-status">
+                        <span className="season-pass-line">Season</span>
+                        <span className="season-pass-line highlight">Pass</span>
+                      </div>
+                    ) : (
+                      <span className="regular-badge">Free</span>
+                    )}
                   </span>
                 </div>
               );

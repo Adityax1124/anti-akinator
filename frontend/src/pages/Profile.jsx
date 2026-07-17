@@ -154,7 +154,6 @@ const Profile = () => {
     }
   };
 
-  // ✅ NEW: Load profile backgrounds
   const loadBackgrounds = async (forceRefresh = false) => {
     if (backgroundsLoaded && !forceRefresh) return;
     try {
@@ -165,6 +164,10 @@ const Profile = () => {
     }
   };
 
+  // ============================================================
+  // ✅ SHOWCASE PHOTO FUNCTIONS
+  // ============================================================
+
   const saveShowcase = (newShowcase) => {
     setShowcasePhotos(newShowcase);
     const ids = newShowcase.map(p => p?._id || null);
@@ -172,9 +175,13 @@ const Profile = () => {
   };
 
   const setShowcasePhoto = (slotIndex, photoId) => {
+    if (slotIndex === null || slotIndex === undefined) {
+      return;
+    }
+    
     const photo = profilePhotos.find(p => p._id === photoId && p.isUnlocked);
     if (!photo) return;
-
+    
     const existingSlot = showcasePhotos.findIndex(p => p?._id === photoId);
     if (existingSlot !== -1 && existingSlot !== slotIndex) {
       const newShowcase = [...showcasePhotos];
@@ -186,7 +193,7 @@ const Profile = () => {
       newShowcase[slotIndex] = photo;
       saveShowcase(newShowcase);
     }
-
+    
     setSelectedSlotIndex(null);
     setShowPhotoModal(false);
   };
@@ -203,11 +210,24 @@ const Profile = () => {
         removeShowcasePhoto(index);
       }
     } else {
-      await loadPhotos(true);
+      if (!photosLoaded) {
+        await loadPhotos(true);
+      }
+      
+      const unlocked = profilePhotos.filter(p => p.isUnlocked);
+      if (unlocked.length === 0) {
+        alert('You don\'t have any profile photos unlocked yet!');
+        return;
+      }
+      
       setSelectedSlotIndex(index);
       setShowPhotoModal(true);
     }
   };
+
+  // ============================================================
+  // EQUIP FUNCTIONS
+  // ============================================================
 
   const equipBanner = async (bannerId) => {
     try {
@@ -278,7 +298,6 @@ const Profile = () => {
     }
   };
 
-  // ✅ NEW: Equip profile background
   const equipBackground = async (backgroundId) => {
     try {
       setLoading(true);
@@ -302,7 +321,6 @@ const Profile = () => {
     }
   };
 
-  // ✅ NEW: Unequip profile background
   const unequipBackground = async () => {
     try {
       setLoading(true);
@@ -339,7 +357,6 @@ const Profile = () => {
     setShowPhotoModal(true);
   };
 
-  // ✅ NEW: Open background modal
   const openBackgroundModal = () => {
     loadBackgrounds();
     setShowBackgroundModal(true);
@@ -403,13 +420,24 @@ const Profile = () => {
     p.isUnlocked && p.name?.toLowerCase().includes(photoSearchTerm.toLowerCase())
   );
 
-  // ✅ NEW: Filter backgrounds
   const filteredBackgrounds = profileBackgrounds.filter(b =>
     b.isUnlocked && b.name?.toLowerCase().includes(backgroundSearchTerm.toLowerCase())
   );
 
+  const backgroundImage = equippedBackground?.imageUrl || null;
+
   return (
-    <div className={`profile-container ${isVisible ? 'visible' : ''}`}>
+    <div 
+      className={`profile-container ${isVisible ? 'visible' : ''} ${backgroundImage ? 'has-background' : ''}`}
+      style={
+        backgroundImage ? {
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        } : {}
+      }
+    >
       <div className="bg-noise"></div>
       <div className="bg-grid"></div>
 
@@ -421,6 +449,9 @@ const Profile = () => {
         <div className="profile-alert profile-alert-error">{error}</div>
       )}
 
+      {/* ============================================================
+          BANNER SECTION
+          ============================================================ */}
       <div
         className="profile-banner"
         style={equippedBanner?.gifUrl ? { backgroundImage: `url(${equippedBanner.gifUrl})` } : {}}
@@ -498,7 +529,9 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Profile Background */}
+      {/* ============================================================
+          PROFILE BACKGROUND SECTION - WITH CHANGE BACKGROUND BUTTON
+          ============================================================ */}
       <div className="profile-background-section">
         <div className="background-section-header">
           <h2>🖼️ Profile Background</h2>
@@ -545,6 +578,9 @@ const Profile = () => {
         </div>
       </div>
 
+      {/* ============================================================
+          STATS GRID
+          ============================================================ */}
       <div className="profile-stats-grid">
         <div className="stat-card">
           <div className="stat-number">{unlockedBanners.length}</div>
@@ -568,6 +604,9 @@ const Profile = () => {
         </div>
       </div>
 
+      {/* ============================================================
+          TOP PROFILE PHOTOS - SHOWCASE
+          ============================================================ */}
       <div className="profile-photos-section">
         <div className="photos-section-header">
           <h2>📸 Top Profile Photos</h2>
@@ -616,6 +655,9 @@ const Profile = () => {
         <p className="showcase-hint">💡 Click an empty slot to add a photo • Click a filled slot to remove it</p>
       </div>
 
+      {/* ============================================================
+          GAME HISTORY
+          ============================================================ */}
       <div className="profile-history">
         <h2>📜 Game History</h2>
         {history.length === 0 ? (
@@ -650,7 +692,9 @@ const Profile = () => {
         )}
       </div>
 
-      {/* Banner Modal */}
+      {/* ============================================================
+          BANNER MODAL
+          ============================================================ */}
       {showBannerModal && (
         <div className="modal-overlay" onClick={() => setShowBannerModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -704,7 +748,9 @@ const Profile = () => {
         </div>
       )}
 
-      {/* Title Modal */}
+      {/* ============================================================
+          TITLE MODAL
+          ============================================================ */}
       {showTitleModal && (
         <div className="modal-overlay" onClick={() => setShowTitleModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -742,7 +788,9 @@ const Profile = () => {
         </div>
       )}
 
-      {/* Photo Modal */}
+      {/* ============================================================
+          PHOTO MODAL - FIXED (Shows as popup overlay)
+          ============================================================ */}
       {showPhotoModal && (
         <div className="modal-overlay" onClick={() => {
           setShowPhotoModal(false);
@@ -758,7 +806,7 @@ const Profile = () => {
             </div>
 
             {selectedSlotIndex !== null && (
-              <p className="modal-hint">Choose a photo to add to slot {selectedSlotIndex + 1}</p>
+              <p className="modal-hint">✨ Click a photo to add it to slot {selectedSlotIndex + 1}</p>
             )}
 
             <div className="photo-search-container">
@@ -782,12 +830,14 @@ const Profile = () => {
             <div className="photo-grid">
               {(photoSearchTerm ? filteredPhotos : profilePhotos.filter(p => p.isUnlocked)).map((photo) => {
                 const isEquipped = equippedPhoto?._id === photo._id || equipped.profilePhoto === photo._id;
+                const isInShowcase = showcasePhotos.some(p => p?._id === photo._id);
+                
                 return (
                   <div
                     key={photo._id}
-                    className={`photo-item ${isEquipped ? 'equipped' : ''}`}
+                    className={`photo-item ${isEquipped ? 'equipped' : ''} ${isInShowcase ? 'in-showcase' : ''}`}
                     onClick={() => {
-                      if (selectedSlotIndex !== null) {
+                      if (selectedSlotIndex !== null && selectedSlotIndex !== undefined) {
                         setShowcasePhoto(selectedSlotIndex, photo._id);
                       } else {
                         equipPhoto(photo._id);
@@ -800,9 +850,12 @@ const Profile = () => {
                       backgroundPosition: 'center'
                     } : {}}>
                       {isEquipped && (
-                        <div className="photo-equipped-badge">✅</div>
+                        <div className="photo-equipped-badge">✅ Equipped</div>
                       )}
-                      {selectedSlotIndex !== null && !isEquipped && (
+                      {isInShowcase && (
+                        <div className="photo-showcase-badge">⭐</div>
+                      )}
+                      {selectedSlotIndex !== null && !isEquipped && !isInShowcase && (
                         <div className="photo-select-hint">➕</div>
                       )}
                     </div>
@@ -821,11 +874,27 @@ const Profile = () => {
             {photoSearchTerm && filteredPhotos.length === 0 && (
               <div className="photo-search-empty">No photos found matching "{photoSearchTerm}"</div>
             )}
+
+            {selectedSlotIndex !== null && (
+              <div className="modal-footer" style={{ marginTop: 16, textAlign: 'center' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => {
+                    setShowPhotoModal(false);
+                    setSelectedSlotIndex(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* ✅ NEW: Profile Background Modal */}
+      {/* ============================================================
+          BACKGROUND MODAL
+          ============================================================ */}
       {showBackgroundModal && (
         <div className="modal-overlay" onClick={() => setShowBackgroundModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
