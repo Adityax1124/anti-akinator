@@ -30,7 +30,6 @@ const WarPage = ({ onWarAction, userRole }) => {
         setError(response.data.message || 'Failed to fetch war status');
       }
     } catch (err) {
-      console.error('Fetch war status error:', err);
       setError(err.response?.data?.message || 'Failed to fetch war status');
     } finally {
       setLoading(false);
@@ -83,7 +82,6 @@ const WarPage = ({ onWarAction, userRole }) => {
         setError(response.data.message || 'Attack failed');
       }
     } catch (err) {
-      console.error('Attack error:', err);
       setError(err.response?.data?.message || 'Failed to attack');
     } finally {
       setAttacking(false);

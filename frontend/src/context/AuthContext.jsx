@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
       setSessionExpiry(null);
       
-      console.log('🔴 Auth: Logged out successfully');
     }
   }, []);
 
@@ -70,7 +69,6 @@ export const AuthProvider = ({ children }) => {
       setSessionExpiry(expiry);
       
       sessionTimerRef.current = setTimeout(() => {
-        console.warn('🔐 Session expired due to inactivity');
         logout();
       }, SESSION_TIMEOUT);
     }
@@ -136,7 +134,6 @@ export const AuthProvider = ({ children }) => {
       
       return userData;
     } catch (error) {
-      console.error('🔴 Auth: Error fetching user:', error.message);
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -183,7 +180,6 @@ export const AuthProvider = ({ children }) => {
         }
         setUser(parsedUser);
       } catch (e) {
-        console.error('Failed to parse stored user:', e);
       }
     }
     
@@ -263,17 +259,12 @@ export const AuthProvider = ({ children }) => {
       
       fetchUserRef.current = false;
       
-      console.log(`✅ Auth: ${user.username} logged in successfully`);
-      console.log(`👤 User ID: ${user._id || user.id}`);
-      console.log(`🎴 Shards: ${user.shards || 0}`);
-      console.log(`🎫 Season Pass: ${user.seasonPass?.active ? 'Active' : 'Inactive'}`);
       
       return { 
         success: true,
         user: user
       };
     } catch (error) {
-      console.error('❌ Auth: Login error:', error.message);
       
       let message = 'Login failed. Please try again.';
       
@@ -378,12 +369,9 @@ export const AuthProvider = ({ children }) => {
 
     if (referralCode && referralCode.trim() !== '' && referralCode !== 'undefined') {
       requestData.referralCode = referralCode.trim().toUpperCase();
-      console.log('📝 [AuthContext] Sending referral code:', requestData.referralCode);
     } else {
-      console.log('ℹ️ [AuthContext] No referral code provided');
     }
 
-    console.log('📝 [AuthContext] Sending device fingerprint:', requestData.deviceFingerprint);
 
     try {
       const response = await api.post('/auth/register', requestData);
@@ -391,7 +379,6 @@ export const AuthProvider = ({ children }) => {
       const data = response.data;
 
       if (data.requiresVerification) {
-        console.log('📧 [AuthContext] Email verification required');
         return {
           success: true,
           requiresVerification: true,
@@ -438,9 +425,6 @@ export const AuthProvider = ({ children }) => {
       
       fetchUserRef.current = false;
       
-      console.log(`✅ Auth: ${user.username} registered successfully`);
-      console.log(`👤 User ID: ${user._id || user.id}`);
-      console.log(`🎴 Shards: ${user.shards || 0}`);
       
       return {
         success: true,
@@ -448,7 +432,6 @@ export const AuthProvider = ({ children }) => {
         message: data.message
       };
     } catch (error) {
-      console.error('❌ Auth: Register error:', error.message);
       
       let message = 'Registration failed. Please try again.';
       
@@ -529,8 +512,6 @@ export const AuthProvider = ({ children }) => {
       
       fetchUserRef.current = false;
       
-      console.log(`✅ Auth: ${user.username} email verified successfully`);
-      console.log(`👤 User ID: ${user._id || user.id}`);
       
       return {
         success: true,
@@ -538,7 +519,6 @@ export const AuthProvider = ({ children }) => {
         message: response.data.message
       };
     } catch (error) {
-      console.error('❌ Auth: Verify OTP error:', error.message);
       
       let message = 'Failed to verify OTP. Please try again.';
       
@@ -584,7 +564,6 @@ export const AuthProvider = ({ children }) => {
         message: response.data.message || 'New OTP sent to your email'
       };
     } catch (error) {
-      console.error('❌ Auth: Resend OTP error:', error.message);
       
       let message = 'Failed to resend OTP. Please try again.';
       

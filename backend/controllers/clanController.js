@@ -68,7 +68,6 @@ exports.createClan = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Create clan error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -129,7 +128,6 @@ exports.joinClan = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Join clan error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -192,7 +190,6 @@ exports.leaveClan = async (req, res) => {
 
     res.status(200).json({ message: 'Left clan successfully' });
   } catch (error) {
-    console.error('Leave clan error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -242,7 +239,6 @@ exports.getAllClans = async (req, res) => {
 
     res.status(200).json({ clans });
   } catch (error) {
-    console.error('Get clans error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -306,7 +302,6 @@ exports.getMyClan = async (req, res) => {
       userRole: clanMember.role
     });
   } catch (error) {
-    console.error('Get my clan error:', error);
     res.status(500).json({ 
       success: false,
       message: 'Server error: ' + error.message 
@@ -339,7 +334,6 @@ exports.getClanMembers = async (req, res) => {
       members: memberList 
     });
   } catch (error) {
-    console.error('Get members error:', error);
     res.status(500).json({ 
       success: false,
       message: 'Server error: ' + error.message 
@@ -360,7 +354,6 @@ exports.getChatMessages = async (req, res) => {
 
     res.status(200).json({ messages: messages.reverse() });
   } catch (error) {
-    console.error('Get chat error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -401,7 +394,6 @@ exports.sendChatMessage = async (req, res) => {
       data: newMessage
     });
   } catch (error) {
-    console.error('Send message error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -468,12 +460,10 @@ exports.donateDiamonds = async (req, res) => {
     // DEDUCT shards from donor (payment for gems)
     donor.shards -= shardCost;
     await donor.save();
-    console.log(`💰 Deducted ${shardCost} shards from ${donor.username} for ${amount} gems. Remaining shards: ${donor.shards}`);
 
     // ADD gems to target (NOT shards!)
     target.gems += amount;
     await target.save();
-    console.log(`💎 Added ${amount} gems to ${target.username}. New gems total: ${target.gems}`);
 
     // Update clan member stats
     donorMember.diamondsDonated += amount;
@@ -513,7 +503,6 @@ exports.donateDiamonds = async (req, res) => {
       targetNewGems: target.gems
     });
   } catch (error) {
-    console.error('Donate error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -562,7 +551,6 @@ exports.requestDiamonds = async (req, res) => {
       requestAmount: amount
     });
   } catch (error) {
-    console.error('Request error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -601,7 +589,6 @@ exports.transferLeadership = async (req, res) => {
 
     res.status(200).json({ message: 'Leadership transferred successfully' });
   } catch (error) {
-    console.error('Transfer leadership error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
@@ -685,7 +672,6 @@ exports.kickMember = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Kick member error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };

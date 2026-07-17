@@ -19,7 +19,6 @@ const ClanModal = ({ isOpen, onClose, onClanAction }) => {
     if (typeof onClanAction === 'function') {
       onClanAction(clan);
     } else {
-      console.warn('onClanAction is not a function:', onClanAction);
     }
     handleClose();
   };

@@ -49,12 +49,10 @@ const SeasonWinners = () => {
       setWinners(response.data.winners || []);
       setCurrentSeason(response.data.currentSeason || null);
     } catch (error) {
-      console.error('Error fetching season winners:', error);
       try {
         const seasonRes = await api.get('/season/current');
         setCurrentSeason(seasonRes.data.season || null);
       } catch (seasonError) {
-        console.error('Error fetching current season:', seasonError);
       }
     } finally {
       setLoading(false);

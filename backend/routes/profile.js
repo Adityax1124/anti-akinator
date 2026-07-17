@@ -113,7 +113,6 @@ router.get('/me', authMiddleware, async (req, res) => {
       user: formattedUser
     });
   } catch (error) {
-    console.error('Get profile error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching profile'
@@ -148,7 +147,6 @@ router.get('/banners', authMiddleware, async (req, res) => {
       equipped: user.equipped.banner
     });
   } catch (error) {
-    console.error('Get banners error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching banners' 
@@ -183,7 +181,6 @@ router.get('/titles', authMiddleware, async (req, res) => {
       equipped: user.equipped.title
     });
   } catch (error) {
-    console.error('Get titles error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching titles' 
@@ -218,7 +215,6 @@ router.get('/photos', authMiddleware, async (req, res) => {
       equipped: user.equipped.profilePhoto
     });
   } catch (error) {
-    console.error('Get photos error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching profile photos' 
@@ -253,7 +249,6 @@ router.get('/backgrounds', authMiddleware, async (req, res) => {
       equipped: user.equipped.profileBackground
     });
   } catch (error) {
-    console.error('Get backgrounds error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching profile backgrounds' 
@@ -282,7 +277,6 @@ router.get('/equipped', authMiddleware, async (req, res) => {
       profileBackground: user.equipped?.profileBackground || null
     });
   } catch (error) {
-    console.error('Get equipped error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching equipped items' 
@@ -335,8 +329,6 @@ router.post('/equip-banner', authMiddleware, validateEquip, async (req, res) => 
     user.equipped.banner = bannerId;
     user.updatedAt = new Date();
     await user.save();
-
-    console.log(`🖼️ ${user.username} equipped banner: ${bannerExists.name}`);
     
     res.json({ 
       success: true, 
@@ -345,7 +337,6 @@ router.post('/equip-banner', authMiddleware, validateEquip, async (req, res) => 
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip banner error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping banner' 
@@ -398,8 +389,6 @@ router.post('/equip-title', authMiddleware, validateEquip, async (req, res) => {
     user.equipped.title = titleId;
     user.updatedAt = new Date();
     await user.save();
-
-    console.log(`🏷️ ${user.username} equipped title: ${titleExists.name}`);
     
     res.json({ 
       success: true, 
@@ -408,7 +397,6 @@ router.post('/equip-title', authMiddleware, validateEquip, async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip title error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping title' 
@@ -461,8 +449,6 @@ router.post('/equip-photo', authMiddleware, validateEquip, async (req, res) => {
     user.equipped.profilePhoto = photoId;
     user.updatedAt = new Date();
     await user.save();
-
-    console.log(`📸 ${user.username} equipped profile photo: ${photoExists.name}`);
     
     res.json({ 
       success: true, 
@@ -471,7 +457,6 @@ router.post('/equip-photo', authMiddleware, validateEquip, async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip photo error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping profile photo' 
@@ -529,8 +514,6 @@ router.post('/equip-background', authMiddleware, validateEquip, async (req, res)
 
     // Increment equip count
     await bgExists.incrementEquipCount();
-
-    console.log(`🖼️ ${user.username} equipped profile background: ${bgExists.name}`);
     
     res.json({ 
       success: true, 
@@ -539,7 +522,6 @@ router.post('/equip-background', authMiddleware, validateEquip, async (req, res)
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip background error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping profile background' 
@@ -562,8 +544,6 @@ router.post('/unequip-background', authMiddleware, async (req, res) => {
     user.equipped.profileBackground = null;
     user.updatedAt = new Date();
     await user.save();
-
-    console.log(`🖼️ ${user.username} unequipped profile background`);
     
     res.json({ 
       success: true, 
@@ -571,7 +551,6 @@ router.post('/unequip-background', authMiddleware, async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Unequip background error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error unequipping profile background' 
@@ -655,7 +634,6 @@ router.get('/public/:username', validateUsername, async (req, res) => {
       user: publicProfile
     });
   } catch (error) {
-    console.error('Get public profile error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching user profile'
@@ -712,7 +690,6 @@ router.get('/search', authMiddleware, validateSearch, async (req, res) => {
       count: sanitizedUsers.length
     });
   } catch (error) {
-    console.error('Search users error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error searching users'
@@ -760,7 +737,6 @@ router.get('/cards', authMiddleware, async (req, res) => {
       count: cardsWithDetails.length
     });
   } catch (error) {
-    console.error('Get cards error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch cards'

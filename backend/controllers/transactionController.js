@@ -68,7 +68,6 @@ exports.createTransaction = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating transaction:', error);
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -108,7 +107,6 @@ exports.checkUtrAvailability = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error checking UTR:', error);
     // Always return JSON, never throw an unhandled error
     return res.status(500).json({
       success: false,
@@ -150,7 +148,6 @@ exports.getMyTransactions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching user transactions:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch transactions'
@@ -180,7 +177,6 @@ exports.getTransactionById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching transaction:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch transaction'
@@ -269,7 +265,6 @@ exports.getAllTransactions = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching all transactions:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch transactions'
@@ -315,7 +310,6 @@ exports.verifyTransaction = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error verifying transaction:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify transaction'
@@ -375,9 +369,7 @@ exports.deliverTransaction = async (req, res) => {
           const activeSeason = await SeasonPass.getActiveSeason();
           if (activeSeason) {
             seasonId = activeSeason._id;
-            console.log(`✅ Using active season: ${activeSeason.seasonName} (${seasonId})`);
           } else {
-            console.warn('⚠️ No active season found!');
           }
         }
         
@@ -400,7 +392,6 @@ exports.deliverTransaction = async (req, res) => {
         user.seasonPass.joinedAt = new Date();
         
         deliveryMessage = `Season Pass activated for ${durationDays} days`;
-        console.log(`🎫 Season pass delivered to ${user.username} with seasonId: ${seasonId}`);
         break;
 
       case 'bundle':
@@ -467,7 +458,6 @@ exports.deliverTransaction = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error delivering item:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to deliver item'
@@ -515,7 +505,6 @@ exports.rejectTransaction = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error rejecting transaction:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to reject transaction'
@@ -585,7 +574,6 @@ exports.getTransactionStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting transaction stats:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get transaction statistics'

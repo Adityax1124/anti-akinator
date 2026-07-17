@@ -23,7 +23,6 @@ const ReferralPage = () => {
       setReferralData(response.data);
       setError('');
     } catch (error) {
-      console.error('Error fetching referral data:', error);
       setError('Failed to load referral data');
     } finally {
       setLoading(false);

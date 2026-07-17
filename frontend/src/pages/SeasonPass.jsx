@@ -37,7 +37,6 @@ const SeasonPass = () => {
         }
       }
     } catch (err) {
-      console.error('Fetch season pass error:', err);
       setError('Failed to load season pass');
     } finally {
       setLoading(false);
@@ -56,13 +55,10 @@ const SeasonPass = () => {
     setSuccess('');
 
     try {
-      console.log('🎯 Claiming reward:', { tier, rewardIndex });
       
       const response = await api.post(`/season-pass/claim/${tier}`, {
         rewardIndex: rewardIndex
       });
-
-      console.log('📦 Response:', response.data);
 
       if (response.data.success) {
         setSuccess(response.data.message || '✅ Reward claimed successfully!');
@@ -72,8 +68,6 @@ const SeasonPass = () => {
         setError(response.data.message || 'Failed to claim reward');
       }
     } catch (err) {
-      console.error('❌ Claim error:', err);
-      console.error('Response data:', err.response?.data);
       
       const errorMessage = err.response?.data?.message || 'Failed to claim reward. Please try again.';
       setError(errorMessage);

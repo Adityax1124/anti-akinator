@@ -33,7 +33,6 @@ const Notifications = () => {
         setUnclaimedCount(response.data.counts?.unclaimed || 0);
       }
     } catch (err) {
-      console.error('Fetch notifications error:', err);
       setError('Failed to load notifications');
     } finally {
       setLoading(false);
@@ -48,7 +47,6 @@ const Notifications = () => {
         setUnreadCount(response.data.count || 0);
       }
     } catch (err) {
-      console.error('Fetch unread count error:', err);
     }
   }, []);
 
@@ -60,7 +58,6 @@ const Notifications = () => {
         setUnclaimedCount(response.data.count || 0);
       }
     } catch (err) {
-      console.error('Fetch unclaimed count error:', err);
     }
   }, []);
 
@@ -83,7 +80,6 @@ const Notifications = () => {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (err) {
-      console.error('Mark as read error:', err);
       setError('Failed to mark as read');
     }
   };
@@ -101,7 +97,6 @@ const Notifications = () => {
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
-      console.error('Mark all as read error:', err);
       setError('Failed to mark all as read');
     }
   };
@@ -121,7 +116,6 @@ const Notifications = () => {
         }
       }
     } catch (err) {
-      console.error('Delete notification error:', err);
       setError('Failed to delete notification');
     }
   };
@@ -140,7 +134,6 @@ const Notifications = () => {
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
-      console.error('Clear read error:', err);
       setError('Failed to clear read notifications');
     }
   };

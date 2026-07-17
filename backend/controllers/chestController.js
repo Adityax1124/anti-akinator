@@ -27,7 +27,6 @@ exports.getUnopenedChests = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get unopened chests error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get chests: ' + error.message
@@ -50,7 +49,6 @@ exports.getUnopenedCount = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get unopened count error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get chest count: ' + error.message
@@ -118,7 +116,6 @@ exports.getChestDetails = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get chest details error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get chest details: ' + error.message
@@ -221,7 +218,6 @@ exports.openChest = async (req, res) => {
     res.json(response);
 
   } catch (error) {
-    console.error('Open chest error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to open chest: ' + error.message
@@ -257,7 +253,6 @@ exports.getChestHistory = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get chest history error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get chest history: ' + error.message
@@ -366,7 +361,6 @@ exports.bulkOpenChests = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Bulk open chests error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to open chests: ' + error.message
@@ -427,7 +421,6 @@ exports.getChestStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get chest stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get chest stats: ' + error.message
@@ -462,7 +455,6 @@ exports.getUpcomingChests = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get upcoming chests error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get upcoming chests: ' + error.message

@@ -45,7 +45,6 @@ exports.getNotifications = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get notifications: ' + error.message
@@ -70,7 +69,6 @@ exports.getUnreadNotifications = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get unread notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get unread notifications: ' + error.message
@@ -93,7 +91,6 @@ exports.getUnreadCount = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get unread count error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get unread count: ' + error.message
@@ -152,7 +149,6 @@ exports.getNotificationDetails = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get notification details error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get notification details: ' + error.message
@@ -194,7 +190,6 @@ exports.markAsRead = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Mark as read error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to mark as read: ' + error.message
@@ -218,7 +213,6 @@ exports.markAllAsRead = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Mark all as read error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to mark all as read: ' + error.message
@@ -259,7 +253,6 @@ exports.deleteNotification = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Delete notification error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete notification: ' + error.message
@@ -283,7 +276,6 @@ exports.clearReadNotifications = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Clear read notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to clear read notifications: ' + error.message
@@ -327,7 +319,6 @@ exports.getUnclaimedNotifications = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get unclaimed notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get unclaimed notifications: ' + error.message
@@ -361,7 +352,6 @@ exports.getNotificationsByType = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get notifications by type error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get notifications: ' + error.message
@@ -410,7 +400,6 @@ exports.getNotificationSummary = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get notification summary error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get notification summary: ' + error.message
@@ -456,7 +445,6 @@ exports.createCustomNotification = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Create custom notification error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create notification: ' + error.message
@@ -513,7 +501,6 @@ exports.bulkCreateNotifications = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Bulk create notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create notifications: ' + error.message
@@ -553,7 +540,6 @@ exports.getWarNotifications = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get war notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get war notifications: ' + error.message
@@ -605,7 +591,6 @@ exports.getChestNotifications = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get chest notifications error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get chest notifications: ' + error.message

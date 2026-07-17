@@ -65,7 +65,6 @@ router.get('/info', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Referral info error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch referral info'
@@ -110,7 +109,6 @@ router.post('/verify', async (req, res) => {
       message: `You've been referred by ${referrer.username}!`
     });
   } catch (error) {
-    console.error('Verify referral error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify referral code'
@@ -156,7 +154,6 @@ router.get('/leaderboard', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Referral leaderboard error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch referral leaderboard'

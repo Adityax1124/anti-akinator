@@ -32,7 +32,6 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
       const response = await axios.get(`/clan/members/${clanId}`);
       setMembers(response.data.members);
     } catch (error) {
-      console.error('Failed to fetch members:', error);
     } finally {
       setLoading(false);
     }
@@ -47,7 +46,6 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
         setWarCards(response.data.warCards || []);
       }
     } catch (error) {
-      console.error('Failed to fetch war cards:', error);
     } finally {
       setLoadingWarCards(false);
     }
@@ -61,7 +59,6 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
         setSelectedWarCard(response.data.warCard);
       }
     } catch (error) {
-      console.error('Failed to fetch war card:', error);
     }
   };
 
@@ -75,7 +72,6 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
         setShowWarCardSelector(true);
       }
     } catch (error) {
-      console.error('Failed to fetch user cards:', error);
       alert('Failed to load your cards');
     } finally {
       setLoadingUserCards(false);
@@ -95,7 +91,6 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
         }
       }
     } catch (error) {
-      console.error('Failed to select war card:', error);
       alert(error.response?.data?.message || 'Failed to select war card');
     }
   };
@@ -125,7 +120,6 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
         alert(`✅ ${targetMember.username} has been kicked from the clan.`);
       }
     } catch (error) {
-      console.error('Failed to kick member:', error);
       alert(error.response?.data?.message || 'Failed to kick member');
     } finally {
       setKicking(false);
@@ -144,7 +138,6 @@ const ClanMembers = ({ clanId, userRole, onLeave, onWarCardUpdate }) => {
       await axios.post('/clan/leave', { clanId });
       onLeave();
     } catch (error) {
-      console.error('Failed to leave clan:', error);
       alert(error.response?.data?.message || 'Failed to leave clan');
     } finally {
       setLeaving(false);

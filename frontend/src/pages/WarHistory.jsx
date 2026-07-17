@@ -27,7 +27,6 @@ const WarHistory = () => {
         setStreak(response.data.streak || 0);
       }
     } catch (err) {
-      console.error('Fetch history error:', err);
       setError(err.response?.data?.message || 'Failed to load history');
     } finally {
       setLoading(false);

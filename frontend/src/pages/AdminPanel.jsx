@@ -283,7 +283,6 @@ const AdminPanel = () => {
       const items = response.data.characters || response.data.banners || response.data.titles || response.data.photos || response.data.backgrounds || [];
       setGiftItems(items);
     } catch (err) {
-      console.error('Failed to fetch gift items:', err);
       setGiftItems([]);
     } finally {
       setLoadingGiftItems(false);

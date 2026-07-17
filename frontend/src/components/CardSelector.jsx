@@ -26,7 +26,6 @@ const CardSelector = ({ onSelect, maxCards = 10, onClose }) => {
         setSelected(topCards.map(c => c.characterId));
       }
     } catch (error) {
-      console.error('Fetch cards error:', error);
       setError('Failed to load cards');
     } finally {
       setLoading(false);

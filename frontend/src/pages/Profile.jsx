@@ -89,7 +89,6 @@ const Profile = () => {
       await loadPhotos();
       await loadBackgrounds();
     } catch (error) {
-      console.error('Error fetching profile data:', error);
       setError('Failed to load profile data');
     } finally {
       setLoading(false);
@@ -103,7 +102,6 @@ const Profile = () => {
       setBanners(res.data.banners || []);
       setBannersLoaded(true);
     } catch (error) {
-      console.error('Error loading banners:', error);
     }
   };
 
@@ -114,7 +112,6 @@ const Profile = () => {
       setTitles(res.data.titles || []);
       setTitlesLoaded(true);
     } catch (error) {
-      console.error('Error loading titles:', error);
     }
   };
 
@@ -154,7 +151,6 @@ const Profile = () => {
         );
       }
     } catch (error) {
-      console.error('Error loading photos:', error);
     }
   };
 
@@ -166,7 +162,6 @@ const Profile = () => {
       setProfileBackgrounds(res.data.backgrounds || []);
       setBackgroundsLoaded(true);
     } catch (error) {
-      console.error('Error loading backgrounds:', error);
     }
   };
 
@@ -232,7 +227,6 @@ const Profile = () => {
       }
     } catch (error) {
       setError('Failed to equip banner');
-      console.error('Equip banner error:', error);
     } finally {
       setLoading(false);
     }
@@ -256,7 +250,6 @@ const Profile = () => {
       }
     } catch (error) {
       setError('Failed to equip title');
-      console.error('Equip title error:', error);
     } finally {
       setLoading(false);
     }
@@ -280,7 +273,6 @@ const Profile = () => {
       }
     } catch (error) {
       setError('Failed to equip photo');
-      console.error('Equip photo error:', error);
     } finally {
       setLoading(false);
     }
@@ -305,7 +297,6 @@ const Profile = () => {
       }
     } catch (error) {
       setError('Failed to equip background');
-      console.error('Equip background error:', error);
     } finally {
       setLoading(false);
     }
@@ -328,7 +319,6 @@ const Profile = () => {
       }
     } catch (error) {
       setError('Failed to unequip background');
-      console.error('Unequip background error:', error);
     } finally {
       setLoading(false);
     }

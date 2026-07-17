@@ -21,7 +21,6 @@ const ReferralModal = ({ isOpen, onClose }) => {
       setReferralData(response.data);
       setError('');
     } catch (error) {
-      console.error('Error fetching referral data:', error);
       if (error.response?.status === 404) {
         setError('Referral system is not set up yet. Please contact support.');
       } else if (error.response?.status === 401) {

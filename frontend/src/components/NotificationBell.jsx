@@ -16,7 +16,6 @@ const NotificationBell = () => {
         setUnreadCount(response.data.count || 0);
       }
     } catch (err) {
-      console.error('Fetch unread count error:', err);
     }
   }, []);
 
@@ -28,7 +27,6 @@ const NotificationBell = () => {
         setUnclaimedCount(response.data.count || 0);
       }
     } catch (err) {
-      console.error('Fetch unclaimed count error:', err);
     }
   }, []);
 

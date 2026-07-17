@@ -75,7 +75,6 @@ const authMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
     return res.status(500).json({
       success: false,
       message: 'Authentication error. Please try again.'
@@ -104,7 +103,6 @@ const adminMiddleware = (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Admin middleware error:', error);
     res.status(500).json({
       success: false,
       message: 'Admin verification failed.'

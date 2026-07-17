@@ -364,7 +364,6 @@ router.get('/anime-options', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get anime options error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get anime options'
@@ -426,8 +425,6 @@ router.post('/start', async (req, res) => {
 
     await game.save();
 
-    console.log(`🎮 Game started: ${game._id} for user ${req.user.username} | Anime: ${anime} | Character: ${randomCharacter.name}`);
-
     res.json({
       success: true,
       gameId: game._id,
@@ -437,11 +434,6 @@ router.post('/start', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Start game error:', {
-      message: error.message,
-      userId: req.user?._id,
-      ip: req.ip
-    });
     res.status(500).json({
       success: false,
       message: 'Error starting game. Please try again.'
@@ -731,9 +723,7 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
       const result = await askAI(messages);
       answer = result.answer || 'IDK';
       usedProvider = result.provider || 'none';
-      console.log(`🤖 AI Raw Answer: "${answer}"`);
     } catch (error) {
-      console.error('AI provider error:', error.message);
       return res.status(503).json({
         success: false,
         message: 'AI service temporarily unavailable. Please try again.'
@@ -747,22 +737,18 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
     // ✅ CHECK IF IDENTITY REVEAL QUESTION (SECURITY LAYER 1)
     if (isIdentityRevealQuestion(sanitizedQuestion)) {
       finalAnswer = 'IDK';
-      console.log(`🔒 Identity reveal question → "IDK"`);
     } else {
       // ✅ SMART MATCHING (SECURITY LAYER 2)
       const smartMatch = getSmartAnswer(sanitizedQuestion, character);
       
       if (smartMatch.isIdentityQuestion) {
         finalAnswer = 'IDK';
-        console.log(`🔒 Identity question detected via smart match → "IDK"`);
       } else if (smartMatch.match) {
         // We found a match in character data
-        console.log(`📝 Smart match: "${smartMatch.userWord}" → "${smartMatch.matchedWord}"`);
         
         // Check if the AI answer is IDK but we found a match
         if (lowerAnswer === 'idk' || lowerAnswer === 'maybe' || lowerAnswer === 'no') {
           finalAnswer = 'Yes';
-          console.log(`✅ Overridden AI answer to YES based on smart match!`);
         } else {
           finalAnswer = 'Yes';
         }
@@ -790,8 +776,6 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
       }
     }
 
-    console.log(`📝 Final answer: "${finalAnswer}" (from: "${answer}")`);
-
     game.questions.push({ 
       question: sanitizedQuestion, 
       answer: finalAnswer, 
@@ -813,11 +797,6 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
     });
 
   } catch (error) {
-    console.error('Question error:', {
-      message: error.message,
-      userId: req.user?._id,
-      ip: req.ip
-    });
     res.status(500).json({
       success: false,
       message: 'Error processing question. Please try again.'
@@ -889,8 +868,6 @@ router.post('/hint', validateGameId, async (req, res) => {
 
     const hint = game.character.crucialHint || 'No hint available for this character.';
 
-    console.log(`💡 Hint used: ${gameId} by ${user.username}`);
-
     res.json({
       success: true,
       hint: hint,
@@ -899,11 +876,6 @@ router.post('/hint', validateGameId, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Hint error:', {
-      message: error.message,
-      userId: req.user?._id,
-      ip: req.ip
-    });
     res.status(500).json({
       success: false,
       message: 'Error using hint. Please try again.'
@@ -928,12 +900,10 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
     const { gameId, guess } = req.body;
     const sanitizedGuess = sanitizeInput(guess);
 
-    console.log(`🔍 Guess attempt: gameId=${gameId}`);
 
     const game = await GameSession.findById(gameId).populate('character');
 
     if (!game) {
-      console.log('❌ Game not found:', gameId);
       return res.status(404).json({
         success: false,
         message: 'Game not found'
@@ -941,7 +911,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
     }
 
     if (game.status !== 'active') {
-      console.log('❌ Game is not active:', game.status);
       return res.status(400).json({
         success: false,
         message: 'Game is not active. Start a new game.'
@@ -949,7 +918,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
     }
 
     if (game.user.toString() !== req.user._id.toString()) {
-      console.log('❌ User not authorized for this game');
       return res.status(403).json({
         success: false,
         message: 'Not authorized'
@@ -1028,9 +996,7 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       const cardAdded = user.addCard(character);
       
       if (cardAdded) {
-        console.log(`🃏 Card added to ${user.username}'s collection: ${character.name} (Power: ${character.powerLevel})`);
       } else {
-        console.log(`ℹ️ Card already in collection: ${character.name}`);
       }
 
       // ============================================================
@@ -1072,8 +1038,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
               }
             }
           }
-          
-          console.log(`🎫 Season Pass: Tier ${user.seasonPass.currentTier}/${activeSeason.totalTiers}, Guesses: ${user.seasonPass.correctGuesses}, Progress: ${user.seasonPass.progress}%`);
         }
       }
 
@@ -1106,7 +1070,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
             referral.completedAt = new Date();
             await referral.save();
 
-            console.log(`🎉 Referral reward: ${referrer.username} and ${user.username} both got 50 Shards!`);
           }
         }
       }
@@ -1122,13 +1085,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       if (unlockedAchievements.length > 0) allUnlocked = allUnlocked.concat(unlockedAchievements);
 
       await user.save();
-
-      console.log(`🏆 ${user.username} won! Season stats:`, {
-        wins: user.seasonStats.seasonWins,
-        streak: user.seasonStats.seasonStreak,
-        played: user.seasonStats.seasonPlayed,
-        season: user.seasonStats.currentSeason
-      });
 
       return res.json({
         success: true,
@@ -1168,7 +1124,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
           }
         });
 
-        console.log(`❌ ${req.user.username} lost! Character: ${game.character.name}`);
 
         return res.json({
           success: true,
@@ -1192,11 +1147,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
     }
 
   } catch (error) {
-    console.error('Guess error:', {
-      message: error.message,
-      userId: req.user?._id,
-      ip: req.ip
-    });
     res.status(500).json({
       success: false,
       message: 'Error processing guess. Please try again.'
@@ -1220,12 +1170,10 @@ router.post('/giveup', validateGameId, async (req, res) => {
 
     const { gameId } = req.body;
 
-    console.log(`🏳️ Giveup request: ${gameId} by ${req.user.username}`);
 
     const game = await GameSession.findById(gameId).populate('character');
 
     if (!game) {
-      console.log('❌ Game not found:', gameId);
       return res.status(404).json({
         success: false,
         message: 'Game not found'
@@ -1233,7 +1181,6 @@ router.post('/giveup', validateGameId, async (req, res) => {
     }
 
     if (game.status !== 'active') {
-      console.log('❌ Game not active:', game.status);
       return res.status(400).json({
         success: false,
         message: 'Game is not active'
@@ -1241,11 +1188,6 @@ router.post('/giveup', validateGameId, async (req, res) => {
     }
 
     if (game.user.toString() !== req.user._id.toString()) {
-      console.log('❌ User not authorized');
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized'
-      });
     }
 
     game.status = 'abandoned';
@@ -1277,11 +1219,6 @@ router.post('/giveup', validateGameId, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Give up error:', {
-      message: error.message,
-      userId: req.user?._id,
-      ip: req.ip
-    });
     res.status(500).json({
       success: false,
       message: 'Error giving up. Please try again.'
@@ -1315,10 +1252,6 @@ router.get('/history', async (req, res) => {
       games: sanitizedGames
     });
   } catch (error) {
-    console.error('History error:', {
-      message: error.message,
-      userId: req.user?._id
-    });
     res.status(500).json({
       success: false,
       message: 'Error fetching history. Please try again.'

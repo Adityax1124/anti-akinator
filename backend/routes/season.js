@@ -67,7 +67,6 @@ router.get('/winners', async (req, res) => {
       count: winnersWithDisplay.length
     });
   } catch (error) {
-    console.error('Error fetching season winners:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching season winners'
@@ -109,7 +108,6 @@ router.get('/winners/:season', validateSeason, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching season winner:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching season winner'
@@ -129,7 +127,6 @@ router.get('/current', async (req, res) => {
       display: `Season ${displayNumber}`
     });
   } catch (error) {
-    console.error('Error fetching current season:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching current season'
@@ -230,7 +227,6 @@ router.get('/leaderboard', validateLeaderboard, async (req, res) => {
       totalPlayers: users.length
     });
   } catch (error) {
-    console.error('Error fetching leaderboard:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching leaderboard'
@@ -283,7 +279,6 @@ router.get('/rank/:userId', validateUserId, async (req, res) => {
       userStats: user.seasonStats
     });
   } catch (error) {
-    console.error('Error fetching user rank:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching user rank'

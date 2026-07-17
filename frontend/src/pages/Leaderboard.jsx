@@ -79,7 +79,6 @@ const Leaderboard = () => {
 
       setLoading(false);
     } catch (error) {
-      console.error('Leaderboard fetch error:', error);
 
       if (error.response?.status === 404) {
         setError('Leaderboard feature coming soon! 🚀');

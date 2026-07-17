@@ -45,7 +45,6 @@ router.get('/quiz-characters', async (req, res) => {
       count: characters.length
     });
   } catch (error) {
-    console.error('Get quiz characters error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching quiz characters'
@@ -70,7 +69,6 @@ router.get('/collection-characters', async (req, res) => {
       count: characters.length
     });
   } catch (error) {
-    console.error('Get collection characters error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching collection characters'
@@ -98,7 +96,6 @@ router.get('/character/:id', async (req, res) => {
       character
     });
   } catch (error) {
-    console.error('Get character error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching character'
@@ -134,7 +131,6 @@ router.get('/characters/element/:element', async (req, res) => {
       count: characters.length
     });
   } catch (error) {
-    console.error('Get characters by element error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching characters by element'
@@ -170,7 +166,6 @@ router.get('/characters/rarity/:rarity', async (req, res) => {
       count: characters.length
     });
   } catch (error) {
-    console.error('Get characters by rarity error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching characters by rarity'
@@ -208,7 +203,6 @@ router.get('/random-characters/:count', async (req, res) => {
       count: characters.length
     });
   } catch (error) {
-    console.error('Get random characters error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching random characters'
@@ -256,7 +250,6 @@ router.get('/element-stats', async (req, res) => {
       stats: formattedStats
     });
   } catch (error) {
-    console.error('Get element stats error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching element statistics'
@@ -316,7 +309,6 @@ router.get('/rarity-stats', async (req, res) => {
       stats: formattedStats
     });
   } catch (error) {
-    console.error('Get rarity stats error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching rarity statistics'
@@ -372,7 +364,6 @@ router.get('/search', async (req, res) => {
       query: q
     });
   } catch (error) {
-    console.error('Search characters error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error searching characters'

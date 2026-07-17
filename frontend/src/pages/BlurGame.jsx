@@ -61,7 +61,6 @@ const BlurGame = () => {
     startTimeRef.current = Date.now();
     isGameStartingRef.current = false;
     
-    console.log('⏱️ Timer started at:', startTimeRef.current);
 
     timerRef.current = setInterval(() => {
       const now = Date.now();
@@ -73,7 +72,6 @@ const BlurGame = () => {
       setDisplayBlur(display);
       
       if (elapsed >= 60) {
-        console.log('⏰ Time up!');
         clearInterval(timerRef.current);
         timerRef.current = null;
         endGame(null, true);
@@ -117,21 +115,16 @@ const BlurGame = () => {
   // ============================================================
   const abandonGame = useCallback(async () => {
     if (isGameStartingRef.current) {
-      console.log('⏳ Game is starting, ignoring abandon request');
       return;
     }
     
     if (gameAbandonedRef.current || isGameEndingRef.current) {
-      console.log('⏳ Already abandoning or ended, ignoring');
       return;
     }
     
     if (!gameStarted || gameEnded) {
-      console.log('⏳ Game not started or already ended, ignoring');
       return;
     }
-    
-    console.log('🚪 Abandoning game...');
     isGameEndingRef.current = true;
     gameAbandonedRef.current = true;
     
@@ -165,9 +158,7 @@ const BlurGame = () => {
           },
           body: JSON.stringify({ gameId })
         });
-        console.log('📤 Game abandoned on server');
       } catch (err) {
-        console.error('Error abandoning game:', err);
       }
     }
     
@@ -183,10 +174,8 @@ const BlurGame = () => {
     
     const handleVisibilityChange = () => {
       if (document.hidden && gameStarted && !gameEnded && !gameAbandonedRef.current) {
-        console.log('👀 Tab switch detected - waiting 500ms to confirm...');
         timeoutId = setTimeout(() => {
           if (document.hidden && gameStarted && !gameEnded && !gameAbandonedRef.current) {
-            console.log('👀 Tab still hidden - abandoning game');
             abandonGame();
           }
         }, 500);
@@ -248,7 +237,6 @@ const BlurGame = () => {
         setStats(data.data);
       }
     } catch (err) {
-      console.error('Error fetching stats:', err);
     }
   }, []);
 
@@ -260,7 +248,6 @@ const BlurGame = () => {
   // ✅ START NEW GAME
   // ============================================================
   const startNewGame = async () => {
-    console.log('🚀 START NEW GAME CALLED');
     
     isGameStartingRef.current = true;
     
@@ -281,15 +268,12 @@ const BlurGame = () => {
     isGameEndingRef.current = false;
     
     try {
-      console.log('🔄 Calling startGame API...');
       const data = await startGame();
-      console.log('📦 API Response:', data);
       
       if (data.success && data.gameId) {
-        console.log('✅ Game started successfully!');
         
         setGameId(data.gameId);
-        setImageUrl(data.imageUrl);
+        setImageUrl(data.imageUrl);  // ✅ DIRECT URL FROM BACKEND
         setCharacterName(data.characterName || '');
         setAnime(data.anime || '');
         setGameStarted(true);
@@ -304,7 +288,6 @@ const BlurGame = () => {
         
         setTimeout(() => {
           isGameStartingRef.current = false;
-          console.log('⏱️ Starting timer...');
           startTimer();
         }, 300);
         
@@ -315,19 +298,16 @@ const BlurGame = () => {
         }, 400);
         
       } else {
-        console.error('❌ Invalid response:', data);
         setError(data.message || 'Failed to start game. Please try again.');
         setLoading(false);
         isGameStartingRef.current = false;
       }
     } catch (err) {
-      console.error('❌ Error starting game:', err);
       
       if (err.response?.data?.gameId && err.response?.data?.imageUrl) {
-        console.log('🔄 Resuming existing game...');
         const data = err.response.data;
         setGameId(data.gameId);
-        setImageUrl(data.imageUrl);
+        setImageUrl(data.imageUrl);  // ✅ DIRECT URL FROM BACKEND
         setCharacterName(data.characterName || '');
         setAnime(data.anime || '');
         setGameStarted(true);
@@ -342,7 +322,6 @@ const BlurGame = () => {
         
         setTimeout(() => {
           isGameStartingRef.current = false;
-          console.log('⏱️ Starting timer for existing game...');
           startTimer();
         }, 300);
       } else {
@@ -360,8 +339,6 @@ const BlurGame = () => {
     if (isGameEndingRef.current || gameAbandonedRef.current) return;
     if (gameEnded) return;
     
-    console.log('🏁 Ending game...', { guessText, timedOut });
-    
     if (timedOut) {
       isGameEndingRef.current = true;
       
@@ -376,9 +353,9 @@ const BlurGame = () => {
       setResult({
         isCorrect: false,
         wonCard: false,
-        characterName: characterName,
-        anime: anime,
-        imageUrl: imageUrl,
+        characterName: characterName || 'Unknown',
+        anime: anime || 'Unknown',
+        imageUrl: imageUrl || '',
         timeTaken: timeElapsed,
         message: '⏰ Time\'s up!',
         rewardMessage: 'The image is fully clear now! Better luck next time!'
@@ -398,13 +375,10 @@ const BlurGame = () => {
     if (guessText) {
       setIsSubmitting(true);
       try {
-        console.log('📤 Submitting guess:', guessText);
         const data = await submitGuess(gameId, guessText, timeElapsed);
-        console.log('📦 Guess response:', data);
         
         // ✅ WRONG GUESS - CAN RETRY
         if (data.success === false && data.canRetry) {
-          console.log('🔄 Wrong guess, can retry. Remaining:', data.remainingGuesses);
           
           setWrongGuesses(data.wrongGuesses || 0);
           setRemainingGuesses(data.remainingGuesses || 0);
@@ -425,7 +399,6 @@ const BlurGame = () => {
         
         // ✅ GAME OVER OR CORRECT
         if (data.success || data.gameOver) {
-          console.log('🏁 Game is over');
           
           if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -438,9 +411,9 @@ const BlurGame = () => {
           setResult({
             isCorrect: data.isCorrect || false,
             wonCard: data.winsCard || false,
-            characterName: data.characterName || characterName,
-            anime: data.anime || anime,
-            imageUrl: data.imageUrl || imageUrl,
+            characterName: data.characterName || characterName || 'Unknown',
+            anime: data.anime || anime || 'Unknown',
+            imageUrl: data.imageUrl || imageUrl || '',
             timeTaken: data.timeTaken || timeElapsed,
             message: data.message || 'Game Over!',
             rewardMessage: data.rewardMessage || '',
@@ -464,7 +437,6 @@ const BlurGame = () => {
           }
         }
       } catch (err) {
-        console.error('❌ Error submitting guess:', err);
         setError(err.response?.data?.message || 'Failed to submit guess. Please try again.');
       } finally {
         setIsSubmitting(false);
@@ -481,7 +453,6 @@ const BlurGame = () => {
     if (!guess.trim() || !canGuess || isSubmitting || gameEnded || gameAbandonedRef.current) {
       return;
     }
-    console.log('🎯 Submitting guess:', guess);
     endGame(guess.trim());
   };
 
@@ -646,8 +617,6 @@ const BlurGame = () => {
                 objectFit: 'cover'
               }}
               onError={(e) => {
-                // Fallback: if proxy fails, try direct URL (though we don't have it)
-                console.error('Image load error, using fallback');
                 e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect width="400" height="400" fill="%231a1a2e"/%3E%3Ctext x="50" y="200" font-family="Arial" font-size="24" fill="%2394a3b8"%3ENo Image Available%3C/text%3E%3C/svg%3E';
               }}
             />

@@ -50,7 +50,6 @@ const Matchmaking = () => {
       setCardCount(response.data.count || 0);
       setAllCards(response.data.cards || []);
     } catch (error) {
-      console.error('Fetch cards error:', error);
     }
   };
 
@@ -59,7 +58,6 @@ const Matchmaking = () => {
       const response = await api.get('/friend/list');
       setFriends(response.data.friends || []);
     } catch (error) {
-      console.error('Fetch friends error:', error);
     }
   };
 
@@ -186,7 +184,6 @@ const Matchmaking = () => {
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (error) {
-      console.error('❌ Failed to cancel room:', error);
       setError(error.response?.data?.message || 'Failed to cancel room');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -227,7 +224,6 @@ const Matchmaking = () => {
     try {
       await api.post('/match/cancel-quick-match', { matchCode: code });
     } catch (error) {
-      console.error('Cancel quick match error:', error);
     }
   };
 
@@ -287,7 +283,6 @@ const Matchmaking = () => {
             }
           }
         } catch (pollError) {
-          console.error('Poll quick match error:', pollError);
         }
       }, 2000);
 

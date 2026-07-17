@@ -140,7 +140,6 @@ router.get('/collection', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get collection error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get collection'
@@ -196,7 +195,6 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get card details'
@@ -209,7 +207,6 @@ router.get('/card/:characterId', authMiddleware, async (req, res) => {
 // ============================================================
 router.post('/upgrade', authMiddleware, async (req, res) => {
   try {
-    console.log('🔍 [UPGRADE] Request body:', req.body);
     
     const { characterId } = req.body;
 
@@ -273,7 +270,6 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
 
     await user.save();
 
-    console.log(`⬆️ ${user.username} upgraded ${card.characterName} (${rarity}) from Level ${oldLevel} to Level ${card.level} (${oldPower} → ${card.currentPower}) - Cost: ${upgradeInfo.cost} gems`);
 
     res.json({
       success: true,
@@ -293,7 +289,6 @@ router.post('/upgrade', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Upgrade card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to upgrade card: ' + error.message
@@ -375,7 +370,6 @@ router.post('/upgrade-bulk', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Bulk upgrade error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to upgrade cards'
@@ -441,8 +435,6 @@ router.post('/sell', authMiddleware, async (req, res) => {
 
     await user.save();
 
-    console.log(`💰 ${user.username} sold ${card.characterName} (${card.rarity}) for ${sellPrice} gems`);
-
     res.json({
       success: true,
       message: `✅ ${card.characterName} sold for ${sellPrice} gems!`,
@@ -459,7 +451,6 @@ router.post('/sell', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Sell card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to sell card: ' + error.message
@@ -510,7 +501,6 @@ router.get('/upgrade-cost/:rarity/:level', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get upgrade cost error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get upgrade cost'
@@ -545,7 +535,6 @@ router.get('/rarity-colors', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get colors error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get colors'
@@ -594,7 +583,6 @@ router.get('/sell-price/:cardId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get sell price error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get sell price'

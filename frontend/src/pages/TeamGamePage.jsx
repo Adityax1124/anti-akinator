@@ -115,7 +115,6 @@ const TeamGamePage = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching character for time up:', error);
     }
 
     setGameOver(true);
@@ -134,7 +133,6 @@ const TeamGamePage = () => {
     try {
       await api.post('/team/end-game', { roomCode });
     } catch (error) {
-      console.error('Error ending game:', error);
     }
   };
 
@@ -180,7 +178,6 @@ const TeamGamePage = () => {
       setIsMicOn(false);
       isConnectedRef.current = false;
     } catch (error) {
-      console.error('Error during voice cleanup:', error);
     }
   };
 
@@ -237,7 +234,6 @@ const TeamGamePage = () => {
               });
             }
           } catch (error) {
-            console.error('Error subscribing to remote audio:', error);
           }
         }
       });
@@ -295,7 +291,6 @@ const TeamGamePage = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to start voice chat:', error);
       setMicError('Failed to start voice chat: ' + (error.message || 'Unknown error'));
       setIsMicOn(false);
     }
@@ -353,7 +348,6 @@ const TeamGamePage = () => {
         setTimeout(() => fetchRoomData(), 500);
       }
     } catch (error) {
-      console.error('Ask question error:', error);
       alert(error.response?.data?.message || 'Failed to ask question');
     } finally {
       setSending(false);
@@ -398,7 +392,6 @@ const TeamGamePage = () => {
         setTimeout(() => fetchRoomData(), 500);
       }
     } catch (error) {
-      console.error('Guess error:', error);
       alert(error.response?.data?.message || 'Failed to make guess');
     } finally {
       setSending(false);
@@ -475,7 +468,6 @@ const TeamGamePage = () => {
         setLoading(false);
       }
     } catch (error) {
-      console.error('Fetch room error:', error);
       setError('Failed to load game');
       setLoading(false);
     }

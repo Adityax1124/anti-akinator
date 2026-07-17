@@ -75,7 +75,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
 
     socket.on('disconnect', () => {});
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
     });
 
     return () => {
@@ -127,7 +126,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       }
     } catch (error) {
       if (error.response?.status !== 404) {
-        console.error('Fetch room error:', error);
       }
     }
   };
@@ -146,7 +144,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
         navigate(`/team-game/${invite.roomCode}`);
       }
     } catch (error) {
-      console.error('Accept invite error:', error);
       setError(error.response?.data?.message || 'Failed to accept invite');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -161,7 +158,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       });
       setPendingInvites(prev => prev.filter(i => i.roomCode !== invite.roomCode));
     } catch (error) {
-      console.error('Decline invite error:', error);
       setPendingInvites(prev => prev.filter(i => i.roomCode !== invite.roomCode));
     }
   };
@@ -194,7 +190,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
         }
       }
     } catch (error) {
-      console.error('Create room error:', error);
       setError(error.response?.data?.message || 'Failed to create room');
     } finally {
       setLoading(false);
@@ -215,7 +210,6 @@ const TeamPlayModal = ({ isOpen, onClose }) => {
       setRoom(null);
       setRoomCode('');
     } catch (error) {
-      console.error('Leave room error:', error);
       setView('main');
       setRoom(null);
       setRoomCode('');

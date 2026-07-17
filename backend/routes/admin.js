@@ -33,7 +33,6 @@ router.post('/reset-season', adminMiddleware, async (req, res) => {
     const { checkAndResetSeason, getCurrentSeason } = require('../utils/seasonUtils');
     
     const currentSeason = getCurrentSeason();
-    console.log(`🔧 Admin ${req.user.username} triggered manual season reset...`);
     
     const resetTriggered = await checkAndResetSeason();
     
@@ -53,7 +52,6 @@ router.post('/reset-season', adminMiddleware, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Admin manual reset error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error resetting season: ' + error.message
@@ -76,7 +74,6 @@ router.get('/characters', adminMiddleware, async (req, res) => {
       count: characters.length
     });
   } catch (error) {
-    console.error('Admin get characters error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching characters' 
@@ -190,7 +187,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
     const character = new Character(characterData);
     await character.save();
 
-    console.log(`📝 Admin ${req.user.username} created character: ${character.name}`);
 
     res.status(201).json({ 
       success: true, 
@@ -198,7 +194,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
       message: 'Character created successfully'
     });
   } catch (error) {
-    console.error('Admin create character error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error creating character: ' + error.message
@@ -323,7 +318,6 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`📝 Admin ${req.user.username} updated character: ${character.name}`);
 
     res.json({ 
       success: true, 
@@ -331,7 +325,6 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
       message: 'Character updated successfully'
     });
   } catch (error) {
-    console.error('Admin update character error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error updating character: ' + error.message
@@ -350,14 +343,12 @@ router.delete('/characters/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`🗑️ Admin ${req.user.username} deleted character: ${character.name}`);
 
     res.json({ 
       success: true, 
       message: 'Character deleted successfully' 
     });
   } catch (error) {
-    console.error('Admin delete character error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error deleting character' 
@@ -373,7 +364,6 @@ router.get('/banners', adminMiddleware, async (req, res) => {
     const banners = await Banner.find().sort({ createdAt: -1 });
     res.json({ success: true, banners });
   } catch (error) {
-    console.error('Admin get banners error:', error.message);
     res.status(500).json({ success: false, message: 'Error fetching banners' });
   }
 });
@@ -413,7 +403,6 @@ router.post('/banners', adminMiddleware, async (req, res) => {
     const banner = new Banner(bannerData);
     await banner.save();
 
-    console.log(`📝 Admin ${req.user.username} created banner: ${banner.name}`);
 
     res.status(201).json({ 
       success: true, 
@@ -421,7 +410,6 @@ router.post('/banners', adminMiddleware, async (req, res) => {
       message: 'Banner created successfully'
     });
   } catch (error) {
-    console.error('Admin create banner error:', error.message);
     
     if (error.name === 'ValidationError') {
       const errors = {};
@@ -468,7 +456,6 @@ router.put('/banners/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`📝 Admin ${req.user.username} updated banner: ${banner.name}`);
 
     res.json({ 
       success: true, 
@@ -476,7 +463,6 @@ router.put('/banners/:id', adminMiddleware, async (req, res) => {
       message: 'Banner updated successfully'
     });
   } catch (error) {
-    console.error('Admin update banner error:', error.message);
     res.status(500).json({ success: false, message: 'Error updating banner' });
   }
 });
@@ -492,14 +478,12 @@ router.delete('/banners/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`🗑️ Admin ${req.user.username} deleted banner: ${banner.name}`);
 
     res.json({ 
       success: true, 
       message: 'Banner deleted successfully' 
     });
   } catch (error) {
-    console.error('Admin delete banner error:', error.message);
     res.status(500).json({ success: false, message: 'Error deleting banner' });
   }
 });
@@ -512,7 +496,6 @@ router.get('/titles', adminMiddleware, async (req, res) => {
     const titles = await Title.find().sort({ createdAt: -1 });
     res.json({ success: true, titles });
   } catch (error) {
-    console.error('Admin get titles error:', error.message);
     res.status(500).json({ success: false, message: 'Error fetching titles' });
   }
 });
@@ -528,7 +511,6 @@ router.post('/titles', adminMiddleware, async (req, res) => {
     const title = new Title(titleData);
     await title.save();
 
-    console.log(`📝 Admin ${req.user.username} created title: ${title.name}`);
 
     res.status(201).json({ 
       success: true, 
@@ -536,7 +518,6 @@ router.post('/titles', adminMiddleware, async (req, res) => {
       message: 'Title created successfully'
     });
   } catch (error) {
-    console.error('Admin create title error:', error.message);
     res.status(500).json({ success: false, message: 'Error creating title' });
   }
 });
@@ -560,7 +541,6 @@ router.put('/titles/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`📝 Admin ${req.user.username} updated title: ${title.name}`);
 
     res.json({ 
       success: true, 
@@ -568,7 +548,6 @@ router.put('/titles/:id', adminMiddleware, async (req, res) => {
       message: 'Title updated successfully'
     });
   } catch (error) {
-    console.error('Admin update title error:', error.message);
     res.status(500).json({ success: false, message: 'Error updating title' });
   }
 });
@@ -584,14 +563,12 @@ router.delete('/titles/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`🗑️ Admin ${req.user.username} deleted title: ${title.name}`);
 
     res.json({ 
       success: true, 
       message: 'Title deleted successfully' 
     });
   } catch (error) {
-    console.error('Admin delete title error:', error.message);
     res.status(500).json({ success: false, message: 'Error deleting title' });
   }
 });
@@ -604,7 +581,6 @@ router.get('/profile-photos', adminMiddleware, async (req, res) => {
     const photos = await ProfilePhoto.find().sort({ createdAt: -1 });
     res.json({ success: true, photos });
   } catch (error) {
-    console.error('Admin get profile photos error:', error.message);
     res.status(500).json({ success: false, message: 'Error fetching profile photos' });
   }
 });
@@ -620,7 +596,6 @@ router.post('/profile-photos', adminMiddleware, async (req, res) => {
     const photo = new ProfilePhoto(photoData);
     await photo.save();
 
-    console.log(`📝 Admin ${req.user.username} created profile photo: ${photo.name}`);
 
     res.status(201).json({ 
       success: true, 
@@ -628,7 +603,6 @@ router.post('/profile-photos', adminMiddleware, async (req, res) => {
       message: 'Profile photo created successfully'
     });
   } catch (error) {
-    console.error('Admin create profile photo error:', error.message);
     res.status(500).json({ success: false, message: 'Error creating profile photo' });
   }
 });
@@ -652,7 +626,6 @@ router.put('/profile-photos/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`📝 Admin ${req.user.username} updated profile photo: ${photo.name}`);
 
     res.json({ 
       success: true, 
@@ -660,7 +633,6 @@ router.put('/profile-photos/:id', adminMiddleware, async (req, res) => {
       message: 'Profile photo updated successfully'
     });
   } catch (error) {
-    console.error('Admin update profile photo error:', error.message);
     res.status(500).json({ success: false, message: 'Error updating profile photo' });
   }
 });
@@ -676,14 +648,12 @@ router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`🗑️ Admin ${req.user.username} deleted profile photo: ${photo.name}`);
 
     res.json({ 
       success: true, 
       message: 'Profile photo deleted successfully' 
     });
   } catch (error) {
-    console.error('Admin delete profile photo error:', error.message);
     res.status(500).json({ success: false, message: 'Error deleting profile photo' });
   }
 });
@@ -704,7 +674,6 @@ router.get('/profile-backgrounds', adminMiddleware, async (req, res) => {
       count: backgrounds.length
     });
   } catch (error) {
-    console.error('Admin get profile backgrounds error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching profile backgrounds' 
@@ -762,7 +731,6 @@ router.post('/profile-backgrounds', adminMiddleware, async (req, res) => {
 
     await background.save();
 
-    console.log(`📝 Admin ${req.user.username} created profile background: ${background.name}`);
 
     res.status(201).json({ 
       success: true, 
@@ -770,7 +738,6 @@ router.post('/profile-backgrounds', adminMiddleware, async (req, res) => {
       message: 'Profile background created successfully'
     });
   } catch (error) {
-    console.error('Admin create profile background error:', error.message);
     
     if (error.name === 'ValidationError') {
       const errors = {};
@@ -813,7 +780,6 @@ router.put('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`📝 Admin ${req.user.username} updated profile background: ${background.name}`);
 
     res.json({ 
       success: true, 
@@ -821,7 +787,6 @@ router.put('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
       message: 'Profile background updated successfully'
     });
   } catch (error) {
-    console.error('Admin update profile background error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error updating profile background: ' + error.message
@@ -851,14 +816,12 @@ router.delete('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
 
     await background.remove();
 
-    console.log(`🗑️ Admin ${req.user.username} deleted profile background: ${background.name}`);
 
     res.json({ 
       success: true, 
       message: 'Profile background deleted successfully' 
     });
   } catch (error) {
-    console.error('Admin delete profile background error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error deleting profile background: ' + error.message
@@ -909,8 +872,6 @@ router.post('/assign-background', adminMiddleware, async (req, res) => {
     // Increment total users
     await background.incrementTotalUsers();
 
-    console.log(`🎁 Admin ${req.user.username} assigned background "${background.name}" to ${user.username}`);
-
     res.json({
       success: true,
       message: 'Background assigned successfully!',
@@ -924,7 +885,6 @@ router.post('/assign-background', adminMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Assign background error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error assigning background: ' + error.message
@@ -946,7 +906,6 @@ router.get('/shop-items', adminMiddleware, async (req, res) => {
       items: shopItems
     });
   } catch (error) {
-    console.error('Get shop items error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching shop items'
@@ -985,7 +944,6 @@ router.post('/shop-items', adminMiddleware, async (req, res) => {
 
     await shopItem.save();
 
-    console.log(`🛒 Admin ${req.user.username} added ${itemType} to shop: ${shopItem._id}`);
 
     res.status(201).json({
       success: true,
@@ -993,7 +951,6 @@ router.post('/shop-items', adminMiddleware, async (req, res) => {
       item: shopItem
     });
   } catch (error) {
-    console.error('Add shop item error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error adding item to shop'
@@ -1024,7 +981,6 @@ router.put('/shop-items/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`🛒 Admin ${req.user.username} updated shop item: ${shopItem._id}`);
 
     res.json({
       success: true,
@@ -1032,7 +988,6 @@ router.put('/shop-items/:id', adminMiddleware, async (req, res) => {
       item: shopItem
     });
   } catch (error) {
-    console.error('Update shop item error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error updating shop item'
@@ -1051,14 +1006,12 @@ router.delete('/shop-items/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`🛒 Admin ${req.user.username} removed shop item: ${shopItem._id}`);
 
     res.json({
       success: true,
       message: 'Shop item removed successfully!'
     });
   } catch (error) {
-    console.error('Delete shop item error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error removing shop item'
@@ -1096,7 +1049,6 @@ router.get('/users', adminMiddleware, async (req, res) => {
       count: sanitizedUsers.length
     });
   } catch (error) {
-    console.error('Admin get users error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching users' 
@@ -1157,7 +1109,6 @@ router.get('/stats', adminMiddleware, async (req, res) => {
       topPlayers: sanitizedTopPlayers
     });
   } catch (error) {
-    console.error('Admin get stats error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching stats' 
@@ -1180,7 +1131,6 @@ router.get('/seasons', adminMiddleware, async (req, res) => {
       seasons
     });
   } catch (error) {
-    console.error('Admin get seasons error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching seasons'
@@ -1209,7 +1159,6 @@ router.get('/seasons/:seasonId', adminMiddleware, async (req, res) => {
       tiers
     });
   } catch (error) {
-    console.error('Admin get season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching season'
@@ -1273,7 +1222,6 @@ router.post('/seasons', adminMiddleware, async (req, res) => {
     }
     await Promise.all(tierPromises);
 
-    console.log(`📝 Admin ${req.user.username} created season ${seasonNumber}`);
 
     res.status(201).json({
       success: true,
@@ -1281,7 +1229,6 @@ router.post('/seasons', adminMiddleware, async (req, res) => {
       season
     });
   } catch (error) {
-    console.error('Admin create season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error creating season: ' + error.message
@@ -1322,7 +1269,6 @@ router.put('/seasons/:seasonId', adminMiddleware, async (req, res) => {
 
     await season.save();
 
-    console.log(`📝 Admin ${req.user.username} updated season ${season.seasonNumber}`);
 
     res.json({
       success: true,
@@ -1330,7 +1276,6 @@ router.put('/seasons/:seasonId', adminMiddleware, async (req, res) => {
       season
     });
   } catch (error) {
-    console.error('Admin update season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error updating season: ' + error.message
@@ -1351,7 +1296,6 @@ router.post('/seasons/:seasonId/activate', adminMiddleware, async (req, res) => 
 
     await SeasonPass.activateSeason(season.seasonNumber);
 
-    console.log(`✅ Admin ${req.user.username} activated season ${season.seasonNumber}`);
 
     res.json({
       success: true,
@@ -1359,7 +1303,6 @@ router.post('/seasons/:seasonId/activate', adminMiddleware, async (req, res) => 
       season
     });
   } catch (error) {
-    console.error('Admin activate season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error activating season: ' + error.message
@@ -1380,7 +1323,6 @@ router.post('/seasons/:seasonId/deactivate', adminMiddleware, async (req, res) =
 
     await SeasonPass.deactivateSeason(season.seasonNumber);
 
-    console.log(`🔴 Admin ${req.user.username} deactivated season ${season.seasonNumber}`);
 
     res.json({
       success: true,
@@ -1388,7 +1330,6 @@ router.post('/seasons/:seasonId/deactivate', adminMiddleware, async (req, res) =
       season
     });
   } catch (error) {
-    console.error('Admin deactivate season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error deactivating season: ' + error.message
@@ -1427,15 +1368,12 @@ router.put('/seasons/:seasonId/tiers/:tier', adminMiddleware, async (req, res) =
       await season.save();
     }
 
-    console.log(`📝 Admin ${req.user.username} updated tier ${tier} rewards`);
-
     res.json({
       success: true,
       message: `Tier ${tier} rewards updated successfully!`,
       tier: tierDoc
     });
   } catch (error) {
-    console.error('Admin update tier error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error updating tier: ' + error.message
@@ -1456,7 +1394,6 @@ router.get('/seasons/:seasonId/leaderboard', adminMiddleware, async (req, res) =
       leaderboard
     });
   } catch (error) {
-    console.error('Admin get season leaderboard error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching leaderboard: ' + error.message
@@ -1546,7 +1483,6 @@ router.get('/transactions', adminMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin get transactions error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching transactions: ' + error.message
@@ -1624,7 +1560,6 @@ router.get('/transactions/stats', adminMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin get transaction stats error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching transaction stats: ' + error.message
@@ -1651,7 +1586,6 @@ router.get('/transactions/:id', adminMiddleware, async (req, res) => {
       data: transaction
     });
   } catch (error) {
-    console.error('Admin get transaction error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching transaction: ' + error.message
@@ -1681,7 +1615,6 @@ router.put('/transactions/:id/verify', adminMiddleware, async (req, res) => {
     // Mark as verified
     await transaction.markAsVerified(req.user._id);
 
-    console.log(`✅ Admin ${req.user.username} verified transaction ${transaction.utrNumber}`);
 
     res.json({
       success: true,
@@ -1693,7 +1626,6 @@ router.put('/transactions/:id/verify', adminMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin verify transaction error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error verifying transaction: ' + error.message
@@ -1794,8 +1726,6 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
     transaction.verifiedAt = transaction.verifiedAt || new Date();
     await transaction.save();
 
-    console.log(`📦 Admin ${req.user.username} delivered ${transaction.itemType} to ${user.username}`);
-
     res.json({
       success: true,
       message: 'Item delivered successfully',
@@ -1807,7 +1737,6 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin deliver transaction error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error delivering item: ' + error.message
@@ -1838,7 +1767,6 @@ router.put('/transactions/:id/reject', adminMiddleware, async (req, res) => {
     // Reject the transaction
     await transaction.reject(req.user._id, reason || 'Transaction rejected by admin');
 
-    console.log(`❌ Admin ${req.user.username} rejected transaction ${transaction.utrNumber}`);
 
     res.json({
       success: true,
@@ -1850,7 +1778,6 @@ router.put('/transactions/:id/reject', adminMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin reject transaction error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error rejecting transaction: ' + error.message

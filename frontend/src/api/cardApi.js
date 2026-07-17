@@ -13,7 +13,6 @@ export const getCollection = async () => {
     const response = await api.get('/cards/collection');
     return response.data;
   } catch (error) {
-    console.error('Get collection error:', error);
     throw error.response?.data || { success: false, message: 'Failed to fetch collection' };
   }
 };
@@ -28,7 +27,6 @@ export const getCard = async (characterId) => {
     const response = await api.get(`/cards/card/${characterId}`);
     return response.data;
   } catch (error) {
-    console.error('Get card error:', error);
     throw error.response?.data || { success: false, message: 'Failed to fetch card' };
   }
 };
@@ -43,7 +41,6 @@ export const upgradeCard = async (characterId) => {
     const response = await api.post('/cards/upgrade', { characterId });
     return response.data;
   } catch (error) {
-    console.error('Upgrade card error:', error);
     throw error.response?.data || { success: false, message: 'Failed to upgrade card' };
   }
 };
@@ -58,7 +55,6 @@ export const upgradeCardsBulk = async (characterIds) => {
     const response = await api.post('/cards/upgrade-bulk', { characterIds });
     return response.data;
   } catch (error) {
-    console.error('Bulk upgrade error:', error);
     throw error.response?.data || { success: false, message: 'Failed to upgrade cards' };
   }
 };
@@ -73,7 +69,6 @@ export const getUpgradeCost = async (level) => {
     const response = await api.get(`/cards/upgrade-cost/${level}`);
     return response.data;
   } catch (error) {
-    console.error('Get upgrade cost error:', error);
     throw error.response?.data || { success: false, message: 'Failed to get upgrade cost' };
   }
 };
@@ -87,7 +82,6 @@ export const getCardColors = async () => {
     const response = await api.get('/cards/rarity-colors');
     return response.data;
   } catch (error) {
-    console.error('Get card colors error:', error);
     throw error.response?.data || { success: false, message: 'Failed to get card colors' };
   }
 };

@@ -70,7 +70,6 @@ exports.getMyProfile = async (req, res) => {
       user: formattedUser
     });
   } catch (error) {
-    console.error('Get profile error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching profile'
@@ -142,7 +141,6 @@ exports.getPublicProfile = async (req, res) => {
       user: publicProfile
     });
   } catch (error) {
-    console.error('Get public profile error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching user profile'
@@ -175,7 +173,6 @@ exports.getBanners = async (req, res) => {
       equipped: user.equipped.banner
     });
   } catch (error) {
-    console.error('Get banners error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching banners' 
@@ -208,7 +205,6 @@ exports.getTitles = async (req, res) => {
       equipped: user.equipped.title
     });
   } catch (error) {
-    console.error('Get titles error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching titles' 
@@ -241,7 +237,6 @@ exports.getProfilePhotos = async (req, res) => {
       equipped: user.equipped.profilePhoto
     });
   } catch (error) {
-    console.error('Get photos error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching profile photos' 
@@ -274,7 +269,6 @@ exports.getProfileBackgrounds = async (req, res) => {
       equipped: user.equipped.profileBackground
     });
   } catch (error) {
-    console.error('Get backgrounds error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching profile backgrounds' 
@@ -301,7 +295,6 @@ exports.getEquippedItems = async (req, res) => {
       profileBackground: user.equipped?.profileBackground || null
     });
   } catch (error) {
-    console.error('Get equipped error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching equipped items' 
@@ -355,7 +348,6 @@ exports.equipBanner = async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip banner error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping banner' 
@@ -409,7 +401,6 @@ exports.equipTitle = async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip title error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping title' 
@@ -463,7 +454,6 @@ exports.equipProfilePhoto = async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip photo error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping profile photo' 
@@ -519,7 +509,6 @@ exports.equipProfileBackground = async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Equip background error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error equipping profile background' 
@@ -551,7 +540,6 @@ exports.unequipProfileBackground = async (req, res) => {
       updatedAt: user.updatedAt
     });
   } catch (error) {
-    console.error('Unequip background error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error unequipping profile background' 
@@ -598,7 +586,6 @@ exports.searchUsers = async (req, res) => {
       count: sanitizedUsers.length
     });
   } catch (error) {
-    console.error('Search users error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error searching users'
@@ -648,7 +635,6 @@ exports.getUserCards = async (req, res) => {
       count: cardsWithDetails.length
     });
   } catch (error) {
-    console.error('Get cards error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch cards'
@@ -699,7 +685,6 @@ exports.updateProfile = async (req, res) => {
       user
     });
   } catch (error) {
-    console.error('Update profile error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error updating profile'

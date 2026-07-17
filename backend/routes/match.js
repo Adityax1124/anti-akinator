@@ -11,7 +11,6 @@ let ioInstance = null;
 
 const setIO = (io) => {
   ioInstance = io;
-  console.log('🔌 Socket.io instance set in match routes');
 };
 
 // ===== GENERATE MATCH CODE =====
@@ -72,7 +71,6 @@ router.post('/create', authMiddleware, async (req, res) => {
     const user = req.user;
     const { team } = req.body;
 
-    console.log('👤 [CREATE] User:', user.username);
 
     const userData = await User.findById(user._id);
 
@@ -186,7 +184,6 @@ router.post('/create', authMiddleware, async (req, res) => {
     });
 
     await match.save();
-    console.log('✅ [CREATE] Match created:', match.matchCode);
     
     match.addLog('info', `${user.username} created a battle! Waiting for opponent...`);
     await match.save();
@@ -213,7 +210,6 @@ router.post('/create', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [CREATE] Create match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create match: ' + error.message
@@ -228,8 +224,6 @@ router.post('/quick-match', authMiddleware, async (req, res) => {
   try {
     const user = req.user;
     const { team } = req.body;
-
-    console.log(`⚡ [QUICK MATCH] ${user.username} searching for opponent...`);
 
     const userData = await User.findById(user._id);
 
@@ -284,7 +278,6 @@ router.post('/quick-match', authMiddleware, async (req, res) => {
 
       await waitingMatch.save();
 
-      console.log(`✅ [QUICK MATCH] ${user.username} matched into ${waitingMatch.matchCode}`);
 
       if (ioInstance) {
         ioInstance.to(waitingMatch.matchCode).emit('match-started', {
@@ -351,7 +344,6 @@ router.post('/quick-match', authMiddleware, async (req, res) => {
     match.addLog('info', `${user.username} is searching for an opponent via Quick Match...`);
     await match.save();
 
-    console.log(`⏳ [QUICK MATCH] ${user.username} created waiting room ${match.matchCode}`);
 
     return res.json({
       success: true,
@@ -361,7 +353,6 @@ router.post('/quick-match', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [QUICK MATCH] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to find quick match'
@@ -412,7 +403,6 @@ router.post('/cancel-quick-match', authMiddleware, async (req, res) => {
     }
 
     await Match.deleteOne({ _id: match._id });
-    console.log(`🚫 [CANCEL QUICK MATCH] ${user.username} cancelled search ${matchCode}`);
 
     res.json({
       success: true,
@@ -420,7 +410,6 @@ router.post('/cancel-quick-match', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [CANCEL QUICK MATCH] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to cancel search'
@@ -533,7 +522,6 @@ router.post('/join', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Join match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to join match'
@@ -548,8 +536,6 @@ router.post('/start', authMiddleware, async (req, res) => {
   try {
     const { matchCode } = req.body;
     const user = req.user;
-
-    console.log(`🎮 [START MATCH] ${user.username} starting match: ${matchCode}`);
 
     const match = await Match.findOne({
       matchCode: matchCode.toUpperCase().trim(),
@@ -599,7 +585,6 @@ router.post('/start', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Start match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to start match'
@@ -615,7 +600,6 @@ router.delete('/cancel/:matchCode', authMiddleware, async (req, res) => {
     const { matchCode } = req.params;
     const user = req.user;
 
-    console.log(`🚫 [CANCEL MATCH] ${user.username} cancelling match: ${matchCode}`);
 
     const match = await Match.findOne({
       matchCode: matchCode.toUpperCase().trim()
@@ -665,8 +649,6 @@ router.delete('/cancel/:matchCode', authMiddleware, async (req, res) => {
     // ✅ DELETE the match from database
     await Match.deleteOne({ _id: match._id });
 
-    console.log(`🗑️ [CANCEL MATCH] Match ${matchCodeSaved} deleted by ${user.username}`);
-
     res.json({
       success: true,
       message: 'Match cancelled and deleted successfully',
@@ -674,7 +656,6 @@ router.delete('/cancel/:matchCode', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [CANCEL MATCH] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to cancel match: ' + error.message
@@ -829,9 +810,6 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
       }
     }
 
-    console.log('🔍 [GET MATCH] bothConfirmed:', bothConfirmed);
-    console.log('🔍 [GET MATCH] roundResult:', roundResult);
-
     res.json({
       success: true,
       match: {
@@ -889,7 +867,6 @@ router.get('/:matchCode', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get match state'
@@ -985,7 +962,6 @@ router.post('/select', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Select card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to select card'
@@ -1000,8 +976,6 @@ router.post('/confirm', authMiddleware, async (req, res) => {
   try {
     const { matchCode } = req.body;
     const user = req.user;
-
-    console.log(`🔍 [CONFIRM] ${user.username} confirming card for match: ${matchCode}`);
 
     const match = await Match.findOne({
       matchCode: matchCode.toUpperCase().trim()
@@ -1058,10 +1032,6 @@ router.post('/confirm', authMiddleware, async (req, res) => {
     playerData.confirmedCardIndex = cardIndex;
     await match.save();
 
-    console.log(`✅ [CONFIRM] ${user.username} confirmed card ${cardIndex}`);
-    console.log(`🔍 [CONFIRM] Player1 confirmed: ${match.player1.confirmedCardIndex}`);
-    console.log(`🔍 [CONFIRM] Player2 confirmed: ${match.player2.confirmedCardIndex}`);
-    console.log(`🔍 [CONFIRM] Both confirmed: ${match.isBothConfirmed()}`);
 
     if (ioInstance) {
       ioInstance.to(match.matchCode).emit('match-card-confirmed', {
@@ -1072,10 +1042,8 @@ router.post('/confirm', authMiddleware, async (req, res) => {
     }
 
     if (match.isBothConfirmed()) {
-      console.log('🎯 [CONFIRM] Both confirmed! Revealing round...');
       await revealRound(match);
     } else {
-      console.log('⏳ [CONFIRM] Waiting for opponent to confirm...');
     }
 
     res.json({
@@ -1090,7 +1058,6 @@ router.post('/confirm', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Confirm card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to confirm card'
@@ -1149,9 +1116,6 @@ function calculateEffectivePower(card, opponentCard) {
 // REVEAL ROUND
 // ============================================================
 async function revealRound(match) {
-  console.log('🎯 [REVEAL] Revealing round...');
-  console.log('🎯 [REVEAL] Player1 card index:', match.player1.confirmedCardIndex);
-  console.log('🎯 [REVEAL] Player2 card index:', match.player2.confirmedCardIndex);
 
   const p1Index = match.player1.confirmedCardIndex;
   const p2Index = match.player2.confirmedCardIndex;
@@ -1164,9 +1128,6 @@ async function revealRound(match) {
 
   const p1EffectivePower = calculateEffectivePower(p1Card, p2Card);
   const p2EffectivePower = calculateEffectivePower(p2Card, p1Card);
-
-  console.log('🎯 [REVEAL] Player1 card:', p1Card.characterName, 'Power:', p1Card.powerLevel, 'Element:', p1Element, 'Effective:', p1EffectivePower);
-  console.log('🎯 [REVEAL] Player2 card:', p2Card.characterName, 'Power:', p2Card.powerLevel, 'Element:', p2Element, 'Effective:', p2EffectivePower);
 
   p1Card.used = true;
   p1Card.roundUsed = match.currentRound;
@@ -1256,7 +1217,6 @@ async function revealRound(match) {
         }
       }
     } catch (error) {
-      console.error('❌ [REVEAL] Error in next round timeout:', error);
     }
   }, 3000);
 }
@@ -1273,7 +1233,6 @@ async function endMatch(match) {
   let loserSide = null;
   let winnerUsername = null;
 
-  console.log('🏆 [END MATCH] Scores:', p1Score, '-', p2Score);
 
   const gemRewards = match.gemRewards || { winner: 20, loser: 5, draw: 10, duplicateBonus: 20 };
 
@@ -1282,15 +1241,12 @@ async function endMatch(match) {
     winnerUsername = match.player1.username;
     winnerSide = 'player1';
     loserSide = 'player2';
-    console.log('🏆 [END MATCH] Winner:', winnerUsername);
   } else if (p2Score > p1Score) {
     winner = match.player2.user;
     winnerUsername = match.player2.username;
     winnerSide = 'player2';
     loserSide = 'player1';
-    console.log('🏆 [END MATCH] Winner:', winnerUsername);
   } else {
-    console.log('⚖️ [END MATCH] Draw!');
     match.winnerUsername = 'Draw';
     match.status = 'finished';
     await match.save();
@@ -1351,7 +1307,6 @@ async function endMatch(match) {
 
   await match.save();
 
-  console.log('🏆 [END MATCH] saved - winnerUsername:', match.winnerUsername);
 
   if (ioInstance) {
     ioInstance.to(match.matchCode).emit('match-ended-waiting-selection', {
@@ -1493,7 +1448,6 @@ router.post('/leave', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Player leave error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to process leave'
@@ -1618,7 +1572,6 @@ router.post('/steal', authMiddleware, async (req, res) => {
         const bonusGems = gemRewards.duplicateBonus || 20;
         winnerUser.gems = (winnerUser.gems || 0) + bonusGems;
         winnerUser.matchStats.cardsStolen = (winnerUser.matchStats.cardsStolen || 0) + 1;
-        console.log(`💰 Duplicate card! ${winnerUser.username} gets ${bonusGems} bonus gems`);
       }
       await winnerUser.save();
     }
@@ -1670,7 +1623,6 @@ router.post('/steal', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Steal card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to steal card'
@@ -1718,7 +1670,6 @@ router.get('/history', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get match history error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get match history'
@@ -1733,8 +1684,6 @@ router.post('/invite', authMiddleware, async (req, res) => {
   try {
     const { matchCode, friendId } = req.body;
     const user = req.user;
-
-    console.log(`📨 [MATCH INVITE] ${user.username} inviting to match: ${matchCode}`);
 
     if (!matchCode || !friendId) {
       return res.status(400).json({
@@ -1798,8 +1747,6 @@ router.post('/invite', authMiddleware, async (req, res) => {
         ...inviteData,
         targetUserId: friendId
       });
-
-      console.log(`✅ Match invite sent from ${user.username} to ${friend.username}`);
     }
 
     res.json({
@@ -1808,7 +1755,6 @@ router.post('/invite', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [MATCH INVITE] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send invite'
@@ -1824,7 +1770,6 @@ router.post('/accept-invite', authMiddleware, async (req, res) => {
     const { matchCode } = req.body;
     const user = req.user;
 
-    console.log(`📨 [ACCEPT MATCH INVITE] ${user.username} accepting invite to match: ${matchCode}`);
 
     if (!matchCode) {
       return res.status(400).json({
@@ -1912,7 +1857,6 @@ router.post('/accept-invite', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Accept match invite error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to accept invite'
@@ -1928,7 +1872,6 @@ router.post('/decline-invite', authMiddleware, async (req, res) => {
     const { matchCode } = req.body;
     const user = req.user;
 
-    console.log(`📨 ${user.username} declined match invite to: ${matchCode}`);
 
     res.json({
       success: true,
@@ -1936,7 +1879,6 @@ router.post('/decline-invite', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Decline match invite error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to decline invite'

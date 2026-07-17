@@ -36,7 +36,6 @@ api.interceptors.request.use(
   (config) => {
     // ===== Check secure connection =====
     if (!isSecureConnection() && process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ Insecure connection detected!');
       if (typeof window !== 'undefined') {
         window.location.href = window.location.href.replace('http://', 'https://');
       }
@@ -47,7 +46,6 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn('⚠️ No token found in localStorage');
     }
 
     // ===== Add CSRF token =====
@@ -71,18 +69,14 @@ api.interceptors.request.use(
 
     // ===== Log request data for debugging =====
     const sanitizedUrl = config.url?.replace(/\/[0-9a-f]{24}\b/g, '/:id');
-    console.log(`📤 ${config.method?.toUpperCase()} ${sanitizedUrl || config.url}`);
     if (config.data) {
-      console.log('📦 Request data:', config.data);
     }
     if (config.params) {
-      console.log('📦 Request params:', config.params);
     }
 
     return config;
   },
   (error) => {
-    console.error('❌ Request interceptor error:', error.message);
     return Promise.reject(error);
   }
 );
@@ -91,16 +85,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     const sanitizedUrl = response.config.url?.replace(/\/[0-9a-f]{24}\b/g, '/:id');
-    console.log(`✅ ${response.status} ${response.config.method?.toUpperCase()} ${sanitizedUrl || response.config.url}`);
     if (response.data) {
-      console.log('📦 Response data:', response.data);
     }
     return response;
   },
   (error) => {
     // ===== Network errors =====
     if (!error.response) {
-      console.error('🌐 Network error:', error.message);
       return Promise.reject({
         ...error,
         message: 'Network error. Please check your connection.'
@@ -116,16 +107,9 @@ api.interceptors.response.use(
     }
 
     // ===== Detailed error logging =====
-    console.error('💥 Server error details:');
-    console.error('  Status:', error.response?.status);
-    console.error('  URL:', error.config?.url);
-    console.error('  Method:', error.config?.method);
-    console.error('  Data:', error.response?.data);
-    console.error('  Headers:', error.response?.headers);
 
     // ===== 401 Unauthorized =====
     if (error.response?.status === 401) {
-      console.warn('🔑 Unauthorized - Token may be expired');
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -135,25 +119,20 @@ api.interceptors.response.use(
 
     // ===== 403 Forbidden =====
     if (error.response?.status === 403) {
-      console.warn('🚫 Access forbidden');
     }
 
     // ===== 400 Bad Request - Show validation errors =====
     if (error.response?.status === 400) {
-      console.warn('⚠️ Bad Request - Validation error');
       if (error.response?.data?.errors) {
-        console.warn('Validation errors:', error.response.data.errors);
       }
     }
 
     // ===== 429 Rate Limiting =====
     if (error.response?.status === 429) {
-      console.warn('⏳ Rate limit exceeded');
     }
 
     // ===== 500 Server Error =====
     if (error.response?.status >= 500) {
-      console.error('💥 Server error:', error.response?.data?.message || error.message);
     }
 
     // ===== Sanitize error =====
@@ -174,13 +153,11 @@ api.clearAuth = () => {
   localStorage.removeItem('user');
   delete api.defaults.headers.common['Authorization'];
   document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict;';
-  console.log('🔑 Auth cleared');
 };
 
 api.setAuth = (token) => {
   localStorage.setItem('token', token);
   api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  console.log('🔑 Auth set');
 };
 
 api.isAuthenticated = () => {
@@ -198,7 +175,6 @@ api.getCurrentUser = () => {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
   } catch (e) {
-    console.error('Error parsing user:', e);
     return null;
   }
 };
@@ -208,7 +184,5 @@ api.getToken = () => {
   return localStorage.getItem('token');
 };
 
-console.log('🚀 API Client initialized with baseURL:', API_URL);
-console.log('🔑 Auth status:', api.isAuthenticated() ? 'Authenticated' : 'Not authenticated');
 
 export default api;

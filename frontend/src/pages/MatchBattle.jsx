@@ -265,40 +265,33 @@ const MatchBattle = () => {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('🔌 Battle socket connected:', socket.id);
       socket.emit('join-match-room', matchCode);
       setConnectionError(false);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error);
       setConnectionError(true);
     });
 
     socket.on('match-update', (data) => {
-      console.log('📨 Match update:', data);
       fetchMatchState();
     });
 
     socket.on('match-started', (data) => {
-      console.log('🎮 Match started:', data);
       fetchMatchState();
     });
 
     socket.on('round-revealed', (data) => {
-      console.log('🎯 Round revealed:', data);
       fetchMatchState();
     });
 
     socket.on('opponent-left', (data) => {
-      console.log('👋 Opponent left:', data);
       setSuccess(data.message);
       fetchMatchState();
       alert(`👋 ${data.message}`);
     });
 
     socket.on('match-ended-waiting-selection', (data) => {
-      console.log('🏆 Match ended - Winner select card:', data);
       if (data.forfeit) {
         setSuccess(`🏆 ${data.winner} wins by forfeit! Select a card to steal.`);
       }
@@ -308,7 +301,6 @@ const MatchBattle = () => {
     });
 
     socket.on('match-ended', (data) => {
-      console.log('🏆 Match ended:', data);
       if (data.stolenCard) {
         setStolenCard(data.stolenCard);
       }
@@ -347,9 +339,6 @@ const MatchBattle = () => {
         setIsConfirmed(matchData.isConfirmed || false);
         setIsWaiting(matchData.isWaiting || false);
 
-        console.log('🔍 [FETCH] matchData.myTeam length:', matchData.myTeam?.length || 0);
-        console.log('🔍 [FETCH] isConfirmed:', matchData.isConfirmed);
-        console.log('🔍 [FETCH] matchData.roundResult:', matchData.roundResult);
 
         if (matchData.isSelectingReward && matchData.isWinner) {
           setAvailableCards(matchData.availableCardsToSteal || []);
@@ -359,7 +348,6 @@ const MatchBattle = () => {
         setLoading(false);
       }
     } catch (error) {
-      console.error('Fetch match error:', error);
       if (error.response?.status === 404) {
         setError('Match not found');
       }
@@ -578,7 +566,6 @@ const MatchBattle = () => {
           }, 500);
         }
       } catch (error) {
-        console.error('❌ Failed to delete lobby:', error);
         setError(error.response?.data?.message || 'Failed to leave lobby');
         setTimeout(() => setError(''), 3000);
       } finally {
@@ -696,10 +683,6 @@ const MatchBattle = () => {
   const userId = user?._id?.toString() || user?.id?.toString();
   const isUserHost = userId && hostUserId && userId === hostUserId;
 
-  console.log('🔍 [RENDER] mySide:', mySide);
-  console.log('🔍 [RENDER] match.myTeam length:', match.myTeam?.length || 0);
-  console.log('🔍 [RENDER] isConfirmed:', isConfirmed);
-  console.log('🔍 [RENDER] currentRoundResult:', currentRoundResult);
 
   if (isWaiting) {
     return (

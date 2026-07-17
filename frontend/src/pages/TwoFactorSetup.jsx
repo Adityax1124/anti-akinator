@@ -24,7 +24,6 @@ const TwoFactorSetup = () => {
       const response = await api.get('/2fa/status');
       setStatus(response.data);
     } catch (error) {
-      console.error('Error fetching 2FA status:', error);
     }
   };
 

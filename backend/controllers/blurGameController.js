@@ -21,15 +21,9 @@ function isMatchingGuess(guess, characterName) {
   const normalizedGuess = normalize(guess);
   const normalizedName = normalize(characterName);
 
-  // ✅ EXACT MATCH
   if (normalizedGuess === normalizedName) return true;
+  if (normalizedName.includes(normalizedGuess) && normalizedGuess.length >= 3) return true;
 
-  // ✅ PARTIAL MATCH - Check if guess is a significant part of the name
-  if (normalizedName.includes(normalizedGuess) && normalizedGuess.length >= 3) {
-    return true;
-  }
-
-  // ✅ PARTIAL MATCH - Check if any significant word matches
   const guessWords = normalizedGuess.split(' ');
   const nameWords = normalizedName.split(' ');
   
@@ -45,9 +39,7 @@ function isMatchingGuess(guess, characterName) {
 }
 
 // ============================================================
-// @desc    Get proxied image for blur game (Hides character name)
-// @route   GET /api/blur-game/image/:gameId
-// @access  Private
+// ✅ EXPORT: getBlurImage - IMAGE PROXY
 // ============================================================
 exports.getBlurImage = async (req, res) => {
   try {
@@ -63,7 +55,6 @@ exports.getBlurImage = async (req, res) => {
       });
     }
 
-    // Check if game is active (not completed)
     if (game.isCompleted) {
       return res.status(403).json({
         success: false,
@@ -71,7 +62,6 @@ exports.getBlurImage = async (req, res) => {
       });
     }
 
-    // Check if user owns this game
     if (game.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -89,26 +79,16 @@ exports.getBlurImage = async (req, res) => {
     }
 
     try {
-      // ✅ FETCH THE IMAGE AND SERVE IT (instead of redirecting)
       const response = await fetch(imageUrl);
-      
-      // Check if the response is an image
       const contentType = response.headers.get('content-type') || 'image/jpeg';
       
-      // Set the correct content type
       res.setHeader('Content-Type', contentType);
       
-      // Get the image data as buffer
       const buffer = await response.arrayBuffer();
-      const data = Buffer.from(buffer);
-      
-      // Send the image
-      res.send(data);
+      res.send(Buffer.from(buffer));
       
     } catch (fetchError) {
-      console.error('❌ Failed to fetch image:', fetchError.message);
       
-      // Send a fallback image
       res.setHeader('Content-Type', 'image/svg+xml');
       res.send(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
         <rect width="400" height="400" fill="#1a1a2e"/>
@@ -118,7 +98,6 @@ exports.getBlurImage = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Image proxy error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to load image'
@@ -127,17 +106,13 @@ exports.getBlurImage = async (req, res) => {
 };
 
 // ============================================================
-// @desc    Start a new blur game session
-// @route   POST /api/blur-game/start
-// @access  Private
+// ✅ EXPORT: startGame
 // ============================================================
 exports.startGame = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    console.log(`🎯 Starting game for user: ${req.user.username}`);
 
-    // Check if user already has an active game
     const existingGame = await BlurGameSession.findOne({
       userId: userId,
       isCompleted: false
@@ -147,13 +122,11 @@ exports.startGame = async (req, res) => {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
       if (existingGame.createdAt < fiveMinutesAgo) {
         await BlurGameSession.findByIdAndDelete(existingGame._id);
-        console.log('🗑️ Deleted expired game');
       } else {
-        console.log(`🔄 Returning existing game: ${existingGame.characterName}`);
         return res.status(200).json({
           success: true,
           gameId: existingGame._id,
-          imageUrl: `/api/blur-game/image/${existingGame._id}`,
+          imageUrl: existingGame.imageUrl,
           anime: existingGame.anime,
           characterId: existingGame.characterId,
           characterName: existingGame.characterName,
@@ -167,13 +140,11 @@ exports.startGame = async (req, res) => {
       }
     }
 
-    // Get a random character with an image
     const characters = await Character.find({ 
       image: { $ne: '', $exists: true } 
     });
     
     if (characters.length === 0) {
-      console.error('❌ No characters with images found');
       return res.status(404).json({
         success: false,
         message: 'No characters with images found in database. Please add some characters first.'
@@ -183,7 +154,6 @@ exports.startGame = async (req, res) => {
     const randomIndex = Math.floor(Math.random() * characters.length);
     const character = characters[randomIndex];
 
-    // Create new game session with 3 guesses allowed
     const game = new BlurGameSession({
       userId: userId,
       characterId: character._id,
@@ -202,12 +172,11 @@ exports.startGame = async (req, res) => {
 
     await game.save();
 
-    console.log(`🎮 Blur Game started for ${req.user.username}: ${character.name} from ${character.anime}`);
 
     res.status(200).json({
       success: true,
       gameId: game._id,
-      imageUrl: `/api/blur-game/image/${game._id}`,
+      imageUrl: character.image,
       anime: character.anime,
       characterId: character._id,
       characterName: character.name,
@@ -220,7 +189,6 @@ exports.startGame = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Start blur game error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to start game: ' + error.message
@@ -229,16 +197,13 @@ exports.startGame = async (req, res) => {
 };
 
 // ============================================================
-// @desc    Submit a guess for the current game (3 GUESSES MAX)
-// @route   POST /api/blur-game/guess
-// @access  Private
+// ✅ EXPORT: submitGuess
 // ============================================================
 exports.submitGuess = async (req, res) => {
   try {
     const userId = req.user._id;
     const { gameId, guess, timeTaken } = req.body;
 
-    console.log(`📝 Guess submitted for user ${req.user.username}: "${guess}"`);
 
     if (!gameId || !guess) {
       return res.status(400).json({
@@ -247,7 +212,6 @@ exports.submitGuess = async (req, res) => {
       });
     }
 
-    // Find the game
     const game = await BlurGameSession.findOne({
       _id: gameId,
       userId: userId
@@ -260,7 +224,6 @@ exports.submitGuess = async (req, res) => {
       });
     }
 
-    // Check if game is already completed
     if (game.isCompleted) {
       return res.status(400).json({
         success: false,
@@ -269,7 +232,6 @@ exports.submitGuess = async (req, res) => {
       });
     }
 
-    // Check if game is too old (more than 5 minutes)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     if (game.createdAt < fiveMinutesAgo) {
       game.isCompleted = true;
@@ -280,7 +242,6 @@ exports.submitGuess = async (req, res) => {
       });
     }
 
-    // ✅ Check if already guessed this name
     const guessedNames = game.guessedNames || [];
     const normalizedGuess = normalize(guess);
     if (guessedNames.some(name => normalize(name) === normalizedGuess)) {
@@ -298,19 +259,15 @@ exports.submitGuess = async (req, res) => {
       });
     }
 
-    // Calculate time taken
     const timeTakenSeconds = timeTaken || Math.floor((Date.now() - game.createdAt.getTime()) / 1000);
     const finalTimeTaken = Math.min(timeTakenSeconds, 60);
 
-    // ✅ Check if guess is correct
     const isCorrect = isMatchingGuess(guess, game.characterName);
 
-    // ✅ IF WRONG GUESS - DO NOT END THE GAME YET!
     if (!isCorrect) {
       game.wrongGuesses = (game.wrongGuesses || 0) + 1;
       game.guessedNames.push(guess);
       
-      // ✅ Check if max guesses reached (3)
       if (game.wrongGuesses >= game.maxGuesses) {
         game.isCompleted = true;
         game.guessedAt = new Date();
@@ -377,7 +334,6 @@ exports.submitGuess = async (req, res) => {
       });
     }
 
-    // ✅ CORRECT GUESS!
     const winsCard = finalTimeTaken <= 30;
 
     game.guessedAt = new Date();
@@ -412,7 +368,6 @@ exports.submitGuess = async (req, res) => {
         const cardAdded = user.addCard(character);
         if (cardAdded) {
           user.blurGameStats.totalCardsWon += 1;
-          console.log(`🃏 Card added to ${user.username}'s collection: ${character.name}`);
         }
       }
     }
@@ -458,7 +413,6 @@ exports.submitGuess = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Submit blur game guess error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to submit guess: ' + error.message
@@ -467,16 +421,13 @@ exports.submitGuess = async (req, res) => {
 };
 
 // ============================================================
-// @desc    Abandon game (user left the page)
-// @route   POST /api/blur-game/abandon
-// @access  Private
+// ✅ EXPORT: abandonGame
 // ============================================================
 exports.abandonGame = async (req, res) => {
   try {
     const userId = req.user._id;
     const { gameId } = req.body;
 
-    console.log(`🚪 Abandoning game for user ${req.user.username}`);
 
     if (!gameId) {
       return res.status(400).json({
@@ -516,15 +467,12 @@ exports.abandonGame = async (req, res) => {
     user.blurGameStats.gamesPlayed += 1;
     await user.save();
 
-    console.log(`🚪 Game abandoned by ${user.username}`);
-
     res.status(200).json({
       success: true,
       message: 'Game abandoned successfully'
     });
 
   } catch (error) {
-    console.error('❌ Abandon game error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to abandon game: ' + error.message
@@ -533,9 +481,7 @@ exports.abandonGame = async (req, res) => {
 };
 
 // ============================================================
-// @desc    Get user's game history
-// @route   GET /api/blur-game/history
-// @access  Private
+// ✅ EXPORT: getGameHistory
 // ============================================================
 exports.getGameHistory = async (req, res) => {
   try {
@@ -566,7 +512,6 @@ exports.getGameHistory = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Get blur game history error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get game history: ' + error.message
@@ -575,9 +520,7 @@ exports.getGameHistory = async (req, res) => {
 };
 
 // ============================================================
-// @desc    Get daily challenge character
-// @route   GET /api/blur-game/daily
-// @access  Private
+// ✅ EXPORT: getDailyChallenge
 // ============================================================
 exports.getDailyChallenge = async (req, res) => {
   try {
@@ -627,7 +570,6 @@ exports.getDailyChallenge = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Get daily challenge error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get daily challenge: ' + error.message
@@ -636,9 +578,7 @@ exports.getDailyChallenge = async (req, res) => {
 };
 
 // ============================================================
-// @desc    Get user's blur game stats
-// @route   GET /api/blur-game/stats
-// @access  Private
+// ✅ EXPORT: getGameStats
 // ============================================================
 exports.getGameStats = async (req, res) => {
   try {
@@ -673,7 +613,6 @@ exports.getGameStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Get blur game stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get game stats: ' + error.message
@@ -682,9 +621,7 @@ exports.getGameStats = async (req, res) => {
 };
 
 // ============================================================
-// @desc    Get character for testing (admin only)
-// @route   GET /api/blur-game/test-character
-// @access  Private (Admin)
+// ✅ EXPORT: getTestCharacter
 // ============================================================
 exports.getTestCharacter = async (req, res) => {
   try {
@@ -712,7 +649,6 @@ exports.getTestCharacter = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Get test character error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get test character: ' + error.message

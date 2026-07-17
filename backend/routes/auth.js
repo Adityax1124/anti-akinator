@@ -78,11 +78,6 @@ router.post('/register', registerValidation, async (req, res) => {
     const { username, email, password, referralCode, deviceFingerprint } = req.body;
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-    console.log('========================================');
-    console.log('🔍 [REGISTER] New registration attempt');
-    console.log(`📝 Username: ${username}`);
-    console.log(`📝 IP Address: ${ipAddress}`);
-    console.log(`📝 Device Fingerprint: ${deviceFingerprint ? 'Provided' : 'Not provided'}`);
 
     // ===== LAYER 1: IP ADDRESS LIMIT (100 per 24 hours) =====
     const recentRegistrationsFromIP = await User.countDocuments({
@@ -90,10 +85,7 @@ router.post('/register', registerValidation, async (req, res) => {
       createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     });
 
-    console.log(`📊 Recent registrations from IP ${ipAddress}: ${recentRegistrationsFromIP}`);
-
     if (recentRegistrationsFromIP >= 100) {
-      console.log(`🚫 IP LIMIT REACHED: ${ipAddress} has ${recentRegistrationsFromIP} registrations in 24 hours`);
       return res.status(429).json({
         success: false,
         message: 'Too many accounts created from this network. Maximum 100 accounts per IP in 24 hours.',
@@ -107,7 +99,6 @@ router.post('/register', registerValidation, async (req, res) => {
       const existingDevice = await User.findOne({ deviceFingerprint: deviceFingerprint });
       
       if (existingDevice) {
-        console.log(`🚫 DEVICE LOCKED: ${deviceFingerprint} already registered to: ${existingDevice.username}`);
         return res.status(429).json({
           success: false,
           message: 'This device already has an account. Only one account per device is allowed.',
@@ -121,7 +112,6 @@ router.post('/register', registerValidation, async (req, res) => {
       ? referralCode.trim() 
       : null;
 
-    console.log(`📝 Referral Code Provided: "${cleanReferralCode}"`);
 
     // Check if user already exists
     const existingUser = await User.findOne({ 
@@ -144,17 +134,13 @@ router.post('/register', registerValidation, async (req, res) => {
 
     if (cleanReferralCode) {
       const cleanCode = cleanReferralCode.toUpperCase().trim();
-      console.log(`🔍 [REGISTER] Looking for referrer with code: "${cleanCode}"`);
       
       referrer = await User.findOne({ referralCode: cleanCode });
       
       if (referrer) {
-        console.log(`✅ [REGISTER] Referrer FOUND: ${referrer.username} (ID: ${referrer._id})`);
       } else {
-        console.log(`❌ [REGISTER] No user found with referral code: "${cleanCode}"`);
       }
     } else {
-      console.log(`ℹ️ [REGISTER] No valid referral code provided`);
     }
 
     // Get current season
@@ -180,18 +166,15 @@ router.post('/register', registerValidation, async (req, res) => {
     // If valid referral
     if (referrer) {
       user.referredBy = referrer._id;
-      console.log(`✅ [REGISTER] Set user.referredBy = ${referrer._id}`);
     }
 
     // Generate referral code for the new user
     const prefix = username.slice(0, 4).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     user.referralCode = `${prefix}-${random}`;
-    console.log(`✅ [REGISTER] Generated referral code: ${user.referralCode}`);
 
     // SAVE USER
     await user.save();
-    console.log(`✅ [REGISTER] User ${user.username} saved successfully!`);
 
     // Create referral document if valid referral
     if (referrer) {
@@ -203,16 +186,12 @@ router.post('/register', registerValidation, async (req, res) => {
         registeredAt: new Date()
       });
       await referralDoc.save();
-      console.log(`📝 [REGISTER] Referral document created!`);
       
       referrer.referrals.push(user._id);
       referrer.referralStats.totalReferrals = (referrer.referralStats?.totalReferrals || 0) + 1;
       await referrer.save();
-      console.log(`✅ [REGISTER] Added ${user.username} to ${referrer.username}'s referrals list`);
     }
 
-    console.log(`✅ [REGISTER] Registration complete for ${username}`);
-    console.log('========================================');
 
     // ✅ Generate token (user is already verified)
     const token = jwt.sign(
@@ -257,11 +236,6 @@ router.post('/register', registerValidation, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [REGISTER] ERROR:', {
-      message: error.message,
-      stack: error.stack,
-      ip: req.ip
-    });
     res.status(500).json({
       success: false,
       message: 'Error creating user. Please try again.'
@@ -359,10 +333,6 @@ router.post('/login', loginValidation, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [LOGIN] Error:', {
-      message: error.message,
-      ip: req.ip
-    });
     res.status(500).json({
       success: false,
       message: 'Error logging in. Please try again.'
@@ -385,19 +355,16 @@ router.post('/verify-referral', async (req, res) => {
     }
 
     const cleanCode = referralCode.toUpperCase().trim();
-    console.log(`🔍 [VERIFY] Checking referral code: "${cleanCode}"`);
 
     const referrer = await User.findOne({ referralCode: cleanCode });
 
     if (!referrer) {
-      console.log(`❌ [VERIFY] Invalid referral code: "${cleanCode}"`);
       return res.status(404).json({
         success: false,
         message: 'Invalid referral code'
       });
     }
 
-    console.log(`✅ [VERIFY] Valid referral code from: ${referrer.username}`);
 
     res.json({
       success: true,
@@ -408,7 +375,6 @@ router.post('/verify-referral', async (req, res) => {
       message: `You've been referred by ${referrer.username}! 🎉`
     });
   } catch (error) {
-    console.error('❌ [VERIFY] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to verify referral code'
@@ -432,7 +398,6 @@ router.get('/me', authMiddleware, async (req, res) => {
       user: user
     });
   } catch (error) {
-    console.error('❌ [GET USER] Error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching user data'

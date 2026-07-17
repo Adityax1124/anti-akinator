@@ -136,7 +136,6 @@ const PaymentQRModal = ({
 
       if (!response.ok) {
         const text = await response.text();
-        console.error('Server responded with:', text);
         setUtrError(`Server error: ${response.status}. Please try again.`);
         return false;
       }
@@ -145,7 +144,6 @@ const PaymentQRModal = ({
       try {
         data = await response.json();
       } catch (parseError) {
-        console.error('Failed to parse JSON:', parseError);
         setUtrError('Server returned invalid response. Please try again.');
         return false;
       }
@@ -162,7 +160,6 @@ const PaymentQRModal = ({
 
       return true;
     } catch (error) {
-      console.error('Error checking UTR:', error);
       setUtrError('Network error. Please check your connection and try again.');
       return false;
     } finally {
@@ -230,7 +227,6 @@ const PaymentQRModal = ({
 
       if (!response.ok) {
         const text = await response.text();
-        console.error('Server error:', text);
         setError('Server error. Please try again.');
         setLoading(false);
         return;
@@ -240,7 +236,6 @@ const PaymentQRModal = ({
       try {
         data = await response.json();
       } catch (parseError) {
-        console.error('Failed to parse JSON:', parseError);
         setError('Server returned invalid response. Please try again.');
         setLoading(false);
         return;
@@ -266,7 +261,6 @@ const PaymentQRModal = ({
         if (onError) onError(data.message);
       }
     } catch (error) {
-      console.error('Error submitting transaction:', error);
       setError('Network error. Please check your connection and try again.');
       if (onError) onError(error.message);
     } finally {

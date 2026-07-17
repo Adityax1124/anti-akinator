@@ -36,7 +36,6 @@ const ProfileBackgroundSelector = ({
       });
       setBackgrounds(response.data.backgrounds || []);
     } catch (err) {
-      console.error('Error fetching backgrounds:', err);
       setError('Failed to load backgrounds');
     } finally {
       setLoading(false);

@@ -36,7 +36,6 @@ const ClanPage = () => {
       setUserRole(response.data.userRole || 'member');
       setError('');
     } catch (err) {
-      console.error('Failed to fetch clan data:', err);
       if (err.response?.status === 404) {
         setError('You are not in a clan. Please create or join one.');
         setTimeout(() => {

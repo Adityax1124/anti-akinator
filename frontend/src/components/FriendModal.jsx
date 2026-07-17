@@ -28,7 +28,6 @@ const FriendModal = ({ isOpen, onClose }) => {
       const response = await api.get('/friend/list');
       setFriends(response.data.friends || []);
     } catch (error) {
-      console.error('Fetch friends error:', error);
     }
   };
 
@@ -37,7 +36,6 @@ const FriendModal = ({ isOpen, onClose }) => {
       const response = await api.get('/friend/pending');
       setPendingRequests(response.data.requests || []);
     } catch (error) {
-      console.error('Fetch pending requests error:', error);
     }
   };
 
@@ -50,7 +48,6 @@ const FriendModal = ({ isOpen, onClose }) => {
         const response = await api.get(`/profile/search?q=${encodeURIComponent(query)}`);
         setSearchResults(response.data.users || []);
       } catch (error) {
-        console.error('Search error:', error);
       }
     } else {
       setSearchResults([]);
@@ -94,7 +91,6 @@ const FriendModal = ({ isOpen, onClose }) => {
       setSearchResults(searchResults.filter(u => (u._id || u.id) !== targetId));
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      console.error('Send request error:', error);
       setError(error.response?.data?.message || 'Failed to send request');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -108,7 +104,6 @@ const FriendModal = ({ isOpen, onClose }) => {
       setPendingRequests(pendingRequests.filter(r => r.requester._id !== userId));
       fetchFriends();
     } catch (error) {
-      console.error('Accept request error:', error);
     }
   };
 
@@ -117,7 +112,6 @@ const FriendModal = ({ isOpen, onClose }) => {
       await api.post('/friend/reject', { userId });
       setPendingRequests(pendingRequests.filter(r => r.requester._id !== userId));
     } catch (error) {
-      console.error('Reject request error:', error);
     }
   };
 
@@ -127,7 +121,6 @@ const FriendModal = ({ isOpen, onClose }) => {
       await api.post('/friend/unfriend', { userId });
       setFriends(friends.filter(f => f.userId !== userId));
     } catch (error) {
-      console.error('Unfriend error:', error);
     }
   };
 

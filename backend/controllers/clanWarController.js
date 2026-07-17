@@ -91,7 +91,6 @@ exports.selectWarCard = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Select war card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to select war card: ' + error.message
@@ -138,7 +137,6 @@ exports.getWarCard = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get war card error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get war card: ' + error.message
@@ -207,7 +205,6 @@ exports.getClanWarCards = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get clan war cards error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get clan war cards: ' + error.message
@@ -341,7 +338,6 @@ exports.startWar = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Start war error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to start war: ' + error.message
@@ -462,7 +458,6 @@ exports.getWarStatus = async (req, res) => {
     res.json(response);
 
   } catch (error) {
-    console.error('Get war status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get war status: ' + error.message
@@ -576,7 +571,6 @@ exports.getWarDetails = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get war details error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get war details: ' + error.message
@@ -643,7 +637,6 @@ exports.cancelWarSearch = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Cancel war search error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to cancel war search: ' + error.message
@@ -688,7 +681,6 @@ exports.attack = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Attack error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to attack: ' + error.message
@@ -727,7 +719,6 @@ exports.getWarHistory = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get war history error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get war history: ' + error.message
@@ -760,7 +751,6 @@ exports.getWarLeaderboard = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get war leaderboard error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get war leaderboard: ' + error.message
@@ -821,7 +811,6 @@ exports.getSearchStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get search status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get search status: ' + error.message
@@ -871,7 +860,6 @@ exports.getBattleStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get battle status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get battle status: ' + error.message

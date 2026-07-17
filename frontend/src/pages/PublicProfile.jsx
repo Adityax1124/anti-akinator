@@ -27,7 +27,6 @@ const PublicProfile = () => {
       setProfile(response.data.user);
       setError('');
     } catch (error) {
-      console.error('Error fetching profile:', error);
       setError(error.response?.data?.message || 'User not found');
       setProfile(null);
     } finally {

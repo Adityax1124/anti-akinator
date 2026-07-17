@@ -25,7 +25,6 @@ const NotificationList = ({
         setUnreadCount(response.data.counts?.unread || 0);
       }
     } catch (err) {
-      console.error('Fetch notifications error:', err);
       setError('Failed to load notifications');
     } finally {
       setLoading(false);
@@ -50,7 +49,6 @@ const NotificationList = ({
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (err) {
-      console.error('Mark as read error:', err);
     }
   };
 
@@ -65,7 +63,6 @@ const NotificationList = ({
         setUnreadCount(0);
       }
     } catch (err) {
-      console.error('Mark all as read error:', err);
     }
   };
 
@@ -85,7 +82,6 @@ const NotificationList = ({
         }
       }
     } catch (err) {
-      console.error('Delete notification error:', err);
     }
   };
 

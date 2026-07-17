@@ -65,21 +65,16 @@ const AppContent = () => {
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
-      console.log('⏳ Not authenticated, skipping socket connection');
       return;
     }
 
     const userId = user?._id || user?.id || user?.userId;
     
-    console.log('👤 User object:', user);
-    console.log('👤 User ID found:', userId);
 
     if (!userId) {
-      console.warn('⚠️ No user ID found, cannot register socket');
       return;
     }
 
-    console.log('🔌 Connecting to socket server...');
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
     
@@ -91,50 +86,37 @@ const AppContent = () => {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('✅ Socket connected:', socket.id);
       socket.emit('register-user', { userId: userId });
-      console.log(`📤 Registered user ${userId} for private messages`);
     });
 
     socket.on('team-invite', (data) => {
-      console.log('📨 Team invite received!', data);
-      console.log('📨 From:', data.from?.username);
-      console.log('📨 Room:', data.roomCode);
       setInvite({ ...data, type: 'team' });
     });
 
     socket.on('team-invite-global', (data) => {
-      console.log('📨 Global team invite received:', data);
       if (data.targetUserId === userId) {
         setInvite({ ...data, type: 'team' });
       }
     });
 
     socket.on('match-invite', (data) => {
-      console.log('📨 Match invite received!', data);
-      console.log('📨 From:', data.from?.username);
-      console.log('📨 Match Code:', data.matchCode);
       setInvite({ ...data, type: 'match' });
     });
 
     socket.on('match-invite-global', (data) => {
-      console.log('📨 Global match invite received:', data);
       if (data.targetUserId === userId) {
         setInvite({ ...data, type: 'match' });
       }
     });
 
     socket.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
     });
 
     socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error);
     });
 
     return () => {
       if (socketRef.current) {
-        console.log('🔌 Cleaning up socket');
         socketRef.current.disconnect();
       }
     };

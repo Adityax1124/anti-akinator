@@ -14,7 +14,6 @@ export const startGame = async () => {
     const response = await api.post('/blur-game/start');
     return response.data;
   } catch (error) {
-    console.error('Error starting blur game:', error);
     throw error;
   }
 };
@@ -35,7 +34,6 @@ export const submitGuess = async (gameId, guess, timeTaken) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error submitting guess:', error);
     throw error;
   }
 };
@@ -53,7 +51,6 @@ export const getGameHistory = async (limit = 20, page = 1) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching game history:', error);
     throw error;
   }
 };
@@ -67,7 +64,6 @@ export const getDailyChallenge = async () => {
     const response = await api.get('/blur-game/daily');
     return response.data;
   } catch (error) {
-    console.error('Error fetching daily challenge:', error);
     throw error;
   }
 };
@@ -81,7 +77,6 @@ export const getGameStats = async () => {
     const response = await api.get('/blur-game/stats');
     return response.data;
   } catch (error) {
-    console.error('Error fetching game stats:', error);
     throw error;
   }
 };
@@ -98,7 +93,6 @@ export const saveGameState = (gameState) => {
   try {
     localStorage.setItem('blurGameState', JSON.stringify(gameState));
   } catch (error) {
-    console.error('Error saving game state:', error);
   }
 };
 
@@ -111,7 +105,6 @@ export const getSavedGameState = () => {
     const state = localStorage.getItem('blurGameState');
     return state ? JSON.parse(state) : null;
   } catch (error) {
-    console.error('Error getting game state:', error);
     return null;
   }
 };
@@ -123,7 +116,6 @@ export const clearSavedGameState = () => {
   try {
     localStorage.removeItem('blurGameState');
   } catch (error) {
-    console.error('Error clearing game state:', error);
   }
 };
 

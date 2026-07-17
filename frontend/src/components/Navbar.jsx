@@ -49,14 +49,11 @@ const Navbar = () => {
       const response = await axios.get('/clan/my-clan');
       setIsInClan(true);
       setClanData(response.data.clan);
-      console.log('✅ User is in clan:', response.data.clan.name);
     } catch (error) {
       if (error.response?.status === 404) {
         setIsInClan(false);
         setClanData(null);
-        console.log('ℹ️ User is not in a clan');
       } else {
-        console.error('❌ Error checking clan status:', error);
         setIsInClan(false);
       }
     } finally {
@@ -127,15 +124,12 @@ const Navbar = () => {
     closeAllDropdowns();
     
     if (checkingClan) {
-      console.log('⏳ Still checking clan status...');
       return;
     }
 
     if (isInClan) {
-      console.log('🛡️ User is in clan, navigating to clan page');
       navigate('/clan');
     } else {
-      console.log('🛡️ User is not in clan, opening modal');
       setIsClanModalOpen(true);
     }
   };
@@ -144,7 +138,6 @@ const Navbar = () => {
 
   // ✅ After clan action, refresh status and navigate
   const handleClanAction = (clan) => {
-    console.log('🛡️ Clan action completed:', clan);
     closeClanModal();
     checkClanStatus();
     navigate('/clan');

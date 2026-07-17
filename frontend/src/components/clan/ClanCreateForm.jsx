@@ -32,7 +32,6 @@ const ClanCreateForm = ({ onBack, onSuccess }) => {
 
       onSuccess(response.data.clan);
     } catch (err) {
-      console.error('Error creating clan:', err);
 
       const errorMessage = err.response?.data?.message || 'Failed to create clan. Please try again.';
       setError(errorMessage);

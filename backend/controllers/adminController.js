@@ -173,7 +173,6 @@ exports.sendGift = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Send gift error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send gift: ' + error.message
@@ -393,7 +392,6 @@ exports.claimGift = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Claim gift error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to claim gift: ' + error.message
@@ -451,7 +449,7 @@ exports.assignProfileBackground = async (req, res) => {
     });
     await notification.save();
 
-    console.log(`🎁 Admin ${req.user.username} assigned background "${background.name}" to ${user.username}`);
+  
 
     res.json({
       success: true,
@@ -467,7 +465,6 @@ exports.assignProfileBackground = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Assign background error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error assigning background: ' + error.message
@@ -504,7 +501,6 @@ exports.getUserBackgrounds = async (req, res) => {
       total: backgrounds.length
     });
   } catch (error) {
-    console.error('Get user backgrounds error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error fetching user backgrounds: ' + error.message
@@ -576,7 +572,6 @@ exports.createSeason = async (req, res) => {
     }
     await Promise.all(tierPromises);
 
-    console.log(`📝 Admin ${req.user.username} created season ${seasonNumber} with ${totalTiers} tiers`);
 
     res.status(201).json({
       success: true,
@@ -585,7 +580,6 @@ exports.createSeason = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Admin create season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error creating season: ' + error.message
@@ -653,7 +647,6 @@ exports.updateSeason = async (req, res) => {
       }
     }
 
-    console.log(`📝 Admin ${req.user.username} updated season ${season.seasonNumber}`);
 
     res.json({
       success: true,
@@ -662,7 +655,6 @@ exports.updateSeason = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Admin update season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error updating season: ' + error.message
@@ -689,7 +681,6 @@ exports.deleteSeason = async (req, res) => {
     // Delete the season
     await season.remove();
 
-    console.log(`🗑️ Admin ${req.user.username} deleted season ${season.seasonNumber}`);
 
     res.json({
       success: true,
@@ -697,7 +688,6 @@ exports.deleteSeason = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Admin delete season error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error deleting season: ' + error.message

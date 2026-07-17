@@ -32,7 +32,6 @@ const Collection = () => {
       }
     } catch (err) {
       setError('Failed to load collection');
-      console.error('Collection fetch error:', err);
     } finally {
       setLoading(false);
     }

@@ -18,7 +18,6 @@ const TeamLobby = ({ room, roomCode, user, onLeave, onGameStart, onRefresh }) =>
       const response = await api.get('/friend/list');
       setFriends(response.data.friends || []);
     } catch (error) {
-      console.error('Fetch friends error:', error);
     }
   };
 

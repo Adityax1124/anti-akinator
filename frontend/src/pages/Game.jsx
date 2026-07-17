@@ -67,7 +67,6 @@ const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) 
               setSelectedPackage(null);
             }, 2000);
           } catch (verifyError) {
-            console.error('Payment verification failed:', verifyError);
             setError('Payment verification failed. Please contact support.');
           }
         },
@@ -90,7 +89,6 @@ const BuyShardsModal = ({ isOpen, onClose, onPurchaseComplete, currentShards }) 
       razorpay.open();
 
     } catch (error) {
-      console.error('Payment error:', error);
       setError(error.response?.data?.message || 'Failed to initiate payment');
       setLoading(false);
     }
@@ -155,7 +153,6 @@ const AnimeSelection = ({ onSelectAnime, loading }) => {
         setError('');
       }
     } catch (error) {
-      console.error('Failed to fetch anime options:', error);
       setError('Failed to load anime options. Please refresh.');
     } finally {
       setIsLoading(false);
@@ -287,7 +284,6 @@ const Game = () => {
       
       setError('⏰ Time is up! You gave up.');
     } catch (error) {
-      console.error('Giveup error:', error);
       setError('Failed to give up. Please try again.');
     }
   };
@@ -345,7 +341,6 @@ const Game = () => {
       const response = await api.get('/auth/me');
       setShards(response.data.user.shards || 0);
     } catch (error) {
-      console.error('Failed to fetch shards:', error);
     }
   };
 
@@ -374,7 +369,6 @@ const Game = () => {
     setTimerActive(false);
 
     try {
-      console.log('🏳️ Abandoning game with gameId:', gameState.gameId);
       
       await api.post('/game/giveup', {
         gameId: gameState.gameId
@@ -390,13 +384,10 @@ const Game = () => {
         }]
       }));
       
-      console.log('🏳️ Game abandoned - streak reset');
     } catch (error) {
       if (error.response?.status === 400) {
-        console.log('ℹ️ Game already ended, ignoring abandon');
         return;
       }
-      console.error('Error abandoning game:', error);
     }
   };
 
@@ -411,7 +402,6 @@ const Game = () => {
     if (prevPathRef.current === '/game' && location.pathname !== '/game' && location.pathname !== '') {
       if (gameState.status === 'playing' && !hasEnded.current) {
         if (isPaymentModalOpen.current) {
-          console.log('ℹ️ Payment modal open - ignoring navigation away');
           return;
         }
         
@@ -442,7 +432,6 @@ const Game = () => {
 
     const handleVisibilityChange = () => {
       if (isPaymentModalOpen.current) {
-        console.log('ℹ️ Payment modal open - ignoring visibility change');
         return;
       }
       
@@ -458,7 +447,6 @@ const Game = () => {
 
     const handleBeforeUnload = (e) => {
       if (isPaymentModalOpen.current) {
-        console.log('ℹ️ Payment modal open - ignoring beforeunload');
         return;
       }
       
@@ -472,7 +460,6 @@ const Game = () => {
 
     const handlePageHide = () => {
       if (isPaymentModalOpen.current) {
-        console.log('ℹ️ Payment modal open - ignoring pagehide');
         return;
       }
       
@@ -487,7 +474,6 @@ const Game = () => {
 
     const handleFreeze = () => {
       if (isPaymentModalOpen.current) {
-        console.log('ℹ️ Payment modal open - ignoring freeze');
         return;
       }
       
@@ -502,7 +488,6 @@ const Game = () => {
 
     const handlePopState = () => {
       if (isPaymentModalOpen.current) {
-        console.log('ℹ️ Payment modal open - ignoring popstate');
         return;
       }
       
@@ -595,9 +580,7 @@ const Game = () => {
       setError('');
       setCardNotification(null);
       
-      console.log(`🎮 Game started with anime: ${anime}`);
     } catch (error) {
-      console.error('Failed to start game:', error);
       setError(error.response?.data?.message || 'Failed to start game. Please try again.');
       setGameState(prev => ({ ...prev, loading: false }));
       setShowAnimeSelection(true);
@@ -801,7 +784,6 @@ const Game = () => {
         setGuess('');
       }
     } catch (error) {
-      console.error('Guess error:', error);
       if (error.response?.status === 400) {
         setError(error.response?.data?.message || 'Invalid guess. Please try again.');
       } else if (error.response?.status === 404) {

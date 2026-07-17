@@ -27,7 +27,6 @@ const TreasureChestModal = ({ chestId, onClose, onOpened }) => {
           setError('Failed to load chest');
         }
       } catch (err) {
-        console.error('Fetch chest error:', err);
         setError(err.response?.data?.message || 'Failed to load chest');
       } finally {
         setLoading(false);
@@ -61,7 +60,6 @@ const TreasureChestModal = ({ chestId, onClose, onOpened }) => {
         setError(response.data.message || 'Failed to open chest');
       }
     } catch (err) {
-      console.error('Open chest error:', err);
       setError(err.response?.data?.message || 'Failed to open chest');
     } finally {
       setOpening(false);

@@ -32,11 +32,9 @@ const ClanDonateModal = ({ clanId, members, onClose, onDonate }) => {
         amount: parseInt(amount)
       });
       
-      console.log('✅ Gem donation successful:', response.data);
       onDonate();
       onClose();
     } catch (err) {
-      console.error('❌ Donation error:', err);
       setError(err.response?.data?.message || 'Failed to donate gems');
     } finally {
       setLoading(false);

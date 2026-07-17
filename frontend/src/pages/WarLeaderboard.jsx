@@ -23,7 +23,6 @@ const WarLeaderboard = () => {
         setLeaderboard(response.data.leaderboard || []);
       }
     } catch (err) {
-      console.error('Fetch leaderboard error:', err);
       setError(err.response?.data?.message || 'Failed to load leaderboard');
     } finally {
       setLoading(false);

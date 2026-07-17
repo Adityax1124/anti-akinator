@@ -57,7 +57,6 @@ const TeamGame = ({ room, roomCode, user, onGameEnd }) => {
         setQuestion('');
       }
     } catch (error) {
-      console.error('Ask question error:', error);
       alert(error.response?.data?.message || 'Failed to ask question');
     } finally {
       setLoading(false);
@@ -100,7 +99,6 @@ const TeamGame = ({ room, roomCode, user, onGameEnd }) => {
         }
       }
     } catch (error) {
-      console.error('Guess error:', error);
       alert(error.response?.data?.message || 'Failed to make guess');
     } finally {
       setLoading(false);

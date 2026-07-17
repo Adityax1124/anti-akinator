@@ -91,7 +91,6 @@ router.post('/request', authMiddleware, validateFriendRequest, async (req, res) 
     });
 
   } catch (error) {
-    console.error('Send friend request error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send friend request'
@@ -144,7 +143,6 @@ router.post('/accept', authMiddleware, validateFriendRequest, async (req, res) =
     });
 
   } catch (error) {
-    console.error('Accept friend request error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to accept friend request'
@@ -188,7 +186,6 @@ router.post('/reject', authMiddleware, validateFriendRequest, async (req, res) =
     });
 
   } catch (error) {
-    console.error('Reject friend request error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to reject friend request'
@@ -234,7 +231,6 @@ router.post('/unfriend', authMiddleware, validateFriendRequest, async (req, res)
     });
 
   } catch (error) {
-    console.error('Unfriend error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to remove friend'
@@ -278,7 +274,6 @@ router.get('/list', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get friend list error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get friend list'
@@ -307,7 +302,6 @@ router.get('/pending', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get pending requests error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get pending requests'
@@ -352,7 +346,6 @@ router.get('/status/:userId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get friend status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get friend status'

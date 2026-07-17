@@ -59,7 +59,6 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
       setMessages(response.data.messages || []);
       setError('');
     } catch (error) {
-      console.error('Failed to fetch messages:', error);
       setError('Failed to load messages');
     } finally {
       setLoading(false);
@@ -85,7 +84,6 @@ const ClanChat = ({ clanId, clanName, userRole }) => {
         // ✅ DO NOT auto-scroll after sending - user stays where they are
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
       setError(error.response?.data?.message || 'Failed to send message');
     } finally {
       setSending(false);

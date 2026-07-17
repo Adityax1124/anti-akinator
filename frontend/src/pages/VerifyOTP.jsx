@@ -114,7 +114,6 @@ const VerifyOTP = () => {
         inputRefs.current[0]?.focus();
       }
     } catch (error) {
-      console.error('OTP verification error:', error);
       setError('Failed to verify OTP. Please try again.');
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
