@@ -79,8 +79,44 @@ exports.getBlurImage = async (req, res) => {
       });
     }
 
-    // Redirect to the actual image URL - this hides the character name!
-    res.redirect(game.imageUrl);
+    const imageUrl = game.imageUrl;
+    
+    if (!imageUrl) {
+      return res.status(404).json({
+        success: false,
+        message: 'No image found for this character'
+      });
+    }
+
+    try {
+      // ✅ FETCH THE IMAGE AND SERVE IT (instead of redirecting)
+      const response = await fetch(imageUrl);
+      
+      // Check if the response is an image
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      
+      // Set the correct content type
+      res.setHeader('Content-Type', contentType);
+      
+      // Get the image data as buffer
+      const buffer = await response.arrayBuffer();
+      const data = Buffer.from(buffer);
+      
+      // Send the image
+      res.send(data);
+      
+    } catch (fetchError) {
+      console.error('❌ Failed to fetch image:', fetchError.message);
+      
+      // Send a fallback image
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.send(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+        <rect width="400" height="400" fill="#1a1a2e"/>
+        <text x="200" y="200" font-family="Arial" font-size="24" fill="#94a3b8" text-anchor="middle">🔮 Image Unavailable</text>
+        <text x="200" y="240" font-family="Arial" font-size="14" fill="#64748b" text-anchor="middle">Try guessing anyway!</text>
+      </svg>`);
+    }
+
   } catch (error) {
     console.error('Image proxy error:', error);
     res.status(500).json({
@@ -117,7 +153,6 @@ exports.startGame = async (req, res) => {
         return res.status(200).json({
           success: true,
           gameId: existingGame._id,
-          // ✅ USE RELATIVE URL - NO localhost
           imageUrl: `/api/blur-game/image/${existingGame._id}`,
           anime: existingGame.anime,
           characterId: existingGame.characterId,
@@ -172,7 +207,6 @@ exports.startGame = async (req, res) => {
     res.status(200).json({
       success: true,
       gameId: game._id,
-      // ✅ USE RELATIVE URL - NO localhost
       imageUrl: `/api/blur-game/image/${game._id}`,
       anime: character.anime,
       characterId: character._id,
