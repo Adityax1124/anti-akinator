@@ -1,3 +1,4 @@
+// /frontend/src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -36,6 +37,10 @@ import WarHistory from './pages/WarHistory';
 import WarLeaderboard from './pages/WarLeaderboard';
 import Notifications from './pages/Notifications';
 import SeasonPass from './pages/SeasonPass';
+
+// ✅ NEW: Blur Game
+import BlurGame from './pages/BlurGame';
+
 import './App.css';
 
 // ✅ NEW: ScrollToTop component to fix scroll position on route change
@@ -234,6 +239,12 @@ const AppContent = () => {
             <PrivateRouteWrapper><SeasonPass /></PrivateRouteWrapper>
           } />
           
+          {/* ===== ✅ NEW: BLUR GAME ROUTE ===== */}
+          <Route path="/blur-game" element={
+            <PrivateRouteWrapper><BlurGame /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== ADMIN ROUTE ===== */}
           <Route path="/admin" element={
             <AdminRouteWrapper><AdminPanel /></AdminRouteWrapper>
           } />

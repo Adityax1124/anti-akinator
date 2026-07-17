@@ -467,6 +467,32 @@ const userSchema = new mongoose.Schema({
     default: null
   },
 
+  // ============================================================
+  // ✅ BLUR GAME STATS (NEW)
+  // ============================================================
+  blurGameStats: {
+    gamesPlayed: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    gamesWon: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    bestTime: {
+      type: Number,
+      default: null,
+      min: 0
+    },
+    totalCardsWon: {
+      type: Number,
+      default: 0,
+      min: 0
+    }
+  },
+
   // ===== SECURITY =====
   lastLogin: {
     type: Date,
@@ -550,6 +576,9 @@ userSchema.index({ 'equipped.profileBackground': 1 });
 userSchema.index({ 'achievements.profileBackgrounds.backgroundId': 1 });
 // ✅ Transaction history index
 userSchema.index({ 'transactionHistory': 1 });
+// ✅ Blur Game index
+userSchema.index({ 'blurGameStats.gamesPlayed': -1 });
+userSchema.index({ 'blurGameStats.gamesWon': -1 });
 
 // ===== PRE-SAVE: HASH PASSWORD =====
 userSchema.pre('save', async function(next) {
@@ -600,6 +629,16 @@ userSchema.pre('save', function(next) {
       isCompleted: false,
       completedAt: null,
       joinedAt: new Date()
+    };
+  }
+  
+  // Ensure blurGameStats has default values
+  if (!this.blurGameStats) {
+    this.blurGameStats = {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      bestTime: null,
+      totalCardsWon: 0
     };
   }
   
@@ -817,6 +856,55 @@ userSchema.methods.getClaimedRewards = function() {
 
 userSchema.methods.isTierUnlocked = function(tier) {
   return this.seasonPass.unlockedTiers.some(t => t.tier === tier);
+};
+
+// ============================================================
+// ✅ BLUR GAME METHODS (NEW)
+// ============================================================
+
+// Add blur game stat
+userSchema.methods.addBlurGameStat = function(type, value = 1) {
+  if (!this.blurGameStats) {
+    this.blurGameStats = {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      bestTime: null,
+      totalCardsWon: 0
+    };
+  }
+  
+  if (type === 'played') {
+    this.blurGameStats.gamesPlayed += value;
+  } else if (type === 'won') {
+    this.blurGameStats.gamesWon += value;
+  } else if (type === 'cardWon') {
+    this.blurGameStats.totalCardsWon += value;
+  } else if (type === 'bestTime') {
+    if (!this.blurGameStats.bestTime || value < this.blurGameStats.bestTime) {
+      this.blurGameStats.bestTime = value;
+    }
+  }
+  
+  return this;
+};
+
+// Get blur game stats
+userSchema.methods.getBlurGameStats = function() {
+  const stats = this.blurGameStats || {
+    gamesPlayed: 0,
+    gamesWon: 0,
+    bestTime: null,
+    totalCardsWon: 0
+  };
+  
+  const winRate = stats.gamesPlayed > 0 
+    ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) 
+    : 0;
+  
+  return {
+    ...stats,
+    winRate
+  };
 };
 
 // ============================================================
@@ -1140,6 +1228,46 @@ userSchema.statics.getActiveSeasonPassUsers = async function(seasonId) {
     'seasonPass.active': true,
     'seasonPass.expiresAt': { $gt: new Date() }
   }).select('username email seasonPass');
+};
+
+// ============================================================
+// ✅ BLUR GAME STATICS (NEW)
+// ============================================================
+
+// Get blur game leaderboard
+userSchema.statics.getBlurGameLeaderboard = function(limit = 50) {
+  return this.find({
+    'blurGameStats.gamesPlayed': { $gt: 0 }
+  })
+  .select('username blurGameStats')
+  .sort({
+    'blurGameStats.gamesWon': -1,
+    'blurGameStats.winRate': -1,
+    'blurGameStats.bestTime': 1
+  })
+  .limit(limit);
+};
+
+// Get blur game global stats
+userSchema.statics.getBlurGameGlobalStats = async function() {
+  const result = await this.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalGamesPlayed: { $sum: '$blurGameStats.gamesPlayed' },
+        totalGamesWon: { $sum: '$blurGameStats.gamesWon' },
+        totalCardsWon: { $sum: '$blurGameStats.totalCardsWon' },
+        players: { $sum: 1 }
+      }
+    }
+  ]);
+  
+  return result[0] || {
+    totalGamesPlayed: 0,
+    totalGamesWon: 0,
+    totalCardsWon: 0,
+    players: 0
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);

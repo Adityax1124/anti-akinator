@@ -1,3 +1,4 @@
+// /frontend/src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +26,7 @@ const Home = () => {
     );
 
     const sections = document.querySelectorAll(
-      '.offer-section, .how-to-play-section, .stats-section, .cta-section'
+      '.offer-section, .how-to-play-section, .stats-section, .cta-section, .game-modes-section'
     );
     sections.forEach((section) => observer.observe(section));
 
@@ -44,6 +45,9 @@ const Home = () => {
         onClose={() => setIsTeamModalOpen(false)}
       />
 
+      {/* ============================================================
+          HERO SECTION
+          ============================================================ */}
       <section className="hero-section">
         <div className="aurora aurora-1"></div>
         <div className="aurora aurora-2"></div>
@@ -63,23 +67,32 @@ const Home = () => {
           </p>
           <div className="hero-buttons">
             <button
-              className="hero-btn btn-primary"
+              className="hero-btn btn-ai"
               onClick={() => navigate('/game')}
             >
-              <span className="btn-text">Start Playing</span>
-              <span className="btn-icon">🚀</span>
+              <span className="btn-icon">🤔</span>
+              <span className="btn-text">AI Guessing Game</span>
             </button>
             <button
-              className="hero-btn btn-secondary"
+              className="hero-btn btn-blur"
+              onClick={() => navigate('/blur-game')}
+            >
+              <span className="btn-icon">🔮</span>
+              <span className="btn-text">Mystery Character</span>
+            </button>
+            <button
+              className="hero-btn btn-battle"
               onClick={() => navigate('/match')}
             >
-              <span className="btn-text">⚔️ Battle Now</span>
+              <span className="btn-icon">⚔️</span>
+              <span className="btn-text">Battle Now</span>
             </button>
             <button
               className="hero-btn btn-team"
               onClick={() => setIsTeamModalOpen(true)}
             >
-              <span className="btn-text">🤝 Team Play</span>
+              <span className="btn-icon">🤝</span>
+              <span className="btn-text">Team Play</span>
             </button>
           </div>
         </div>
@@ -88,12 +101,70 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ============================================================
+          GAME MODES SECTION
+          ============================================================ */}
+      <section className="game-modes-section">
+        <h2 className="section-title">
+          Choose Your <span className="section-title-highlight">Game Mode</span>
+        </h2>
+        <div className="game-modes-grid">
+          <div className="game-mode-card mode-ai" onClick={() => navigate('/game')}>
+            <div className="mode-card-glow"></div>
+            <div className="mode-icon-wrapper">
+              <span className="mode-icon">🤔</span>
+            </div>
+            <h3>AI Guessing Game</h3>
+            <p>Ask questions and guess the anime character the AI is thinking of</p>
+            <div className="mode-features">
+              <span>🎯 100+ Characters</span>
+              <span>🧠 AI Powered</span>
+              <span>💎 Earn Gems</span>
+            </div>
+            <div className="mode-play-btn">Play Now →</div>
+          </div>
+
+          <div className="game-mode-card mode-blur" onClick={() => navigate('/blur-game')}>
+            <div className="mode-card-glow"></div>
+            <div className="mode-icon-wrapper">
+              <span className="mode-icon">🔮</span>
+            </div>
+            <h3>Mystery Character</h3>
+            <p>Identify the character from a blurry image that gradually becomes clear</p>
+            <div className="mode-features">
+              <span>🖼️ Blur Challenge</span>
+              <span>⏱️ 30-Second Reward</span>
+              <span>🃏 Win Cards</span>
+            </div>
+            <div className="mode-play-btn">Play Now →</div>
+          </div>
+
+          <div className="game-mode-card mode-battle" onClick={() => navigate('/match')}>
+            <div className="mode-card-glow"></div>
+            <div className="mode-icon-wrapper">
+              <span className="mode-icon">⚔️</span>
+            </div>
+            <h3>Card Battle</h3>
+            <p>Challenge friends in epic real-time PvP card battles</p>
+            <div className="mode-features">
+              <span>👥 Real-Time</span>
+              <span>🏆 Ranked</span>
+              <span>🎴 Steal Cards</span>
+            </div>
+            <div className="mode-play-btn">Play Now →</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          WHAT WE OFFER
+          ============================================================ */}
       <section className="offer-section">
         <h2 className="section-title">
           What <span className="section-title-highlight">We Offer</span>
         </h2>
         <div className="offer-grid">
-          <div className="offer-card">
+          <div className="offer-card" onClick={() => navigate('/game')} style={{ cursor: 'pointer' }}>
             <div className="offer-card-border"></div>
             <div className="offer-icon-wrapper">
               <div className="offer-icon-glow"></div>
@@ -102,6 +173,16 @@ const Home = () => {
             <h3>AI Guessing Game</h3>
             <p>Ask questions and guess the anime character the AI is thinking of</p>
             <div className="offer-tag">Classic Mode</div>
+          </div>
+          <div className="offer-card" onClick={() => navigate('/blur-game')} style={{ cursor: 'pointer' }}>
+            <div className="offer-card-border"></div>
+            <div className="offer-icon-wrapper">
+              <div className="offer-icon-glow"></div>
+              <span className="offer-icon">🔮</span>
+            </div>
+            <h3>Mystery Character</h3>
+            <p>Guess the character from a blurry image that clears over time</p>
+            <div className="offer-tag">New Mode</div>
           </div>
           <div className="offer-card">
             <div className="offer-card-border"></div>
@@ -156,6 +237,9 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ============================================================
+          HOW TO PLAY
+          ============================================================ */}
       <section className="how-to-play-section">
         <h2 className="section-title">
           How to <span className="section-title-highlight">Play</span>
@@ -207,6 +291,9 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ============================================================
+          STATS SECTION
+          ============================================================ */}
       <section className="stats-section">
         <div className="stats-grid">
           <div className="stat-card">
@@ -242,6 +329,9 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ============================================================
+          CTA SECTION
+          ============================================================ */}
       <section className="cta-section">
         <div className="cta-grid-overlay"></div>
         <div className="cta-glow"></div>
@@ -253,16 +343,25 @@ const Home = () => {
               className="cta-btn"
               onClick={() => navigate('/game')}
             >
-              <span>Start Playing</span>
+              <span className="cta-icon">🤔</span>
+              <span className="cta-text">AI Guessing Game</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
             <button
               className="cta-btn-secondary"
-              onClick={() => navigate('/collection')}
+              onClick={() => navigate('/blur-game')}
             >
-              <span>View Collection</span>
+              <span className="cta-icon">🔮</span>
+              <span className="cta-text">Mystery Character</span>
+            </button>
+            <button
+              className="cta-btn-battle"
+              onClick={() => navigate('/match')}
+            >
+              <span className="cta-icon">⚔️</span>
+              <span className="cta-text">Battle Now</span>
             </button>
           </div>
         </div>

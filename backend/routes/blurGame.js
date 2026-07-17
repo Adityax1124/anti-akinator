@@ -8,7 +8,9 @@ const {
   submitGuess,
   getGameHistory,
   getDailyChallenge,
-  getGameStats
+  getGameStats,
+  abandonGame,
+  getTestCharacter
 } = require('../controllers/blurGameController');
 
 // ============================================================
@@ -39,6 +41,11 @@ router.post('/start', authMiddleware, startGame);
 // @access  Private
 router.post('/guess', authMiddleware, validateGuess, submitGuess);
 
+// @route   POST /api/blur-game/abandon
+// @desc    Abandon game (user left the page)
+// @access  Private
+router.post('/abandon', authMiddleware, abandonGame);
+
 // @route   GET /api/blur-game/history
 // @desc    Get user's game history
 // @access  Private
@@ -53,5 +60,10 @@ router.get('/daily', authMiddleware, getDailyChallenge);
 // @desc    Get user's blur game stats
 // @access  Private
 router.get('/stats', authMiddleware, getGameStats);
+
+// @route   GET /api/blur-game/test-character
+// @desc    Get character for testing (admin only)
+// @access  Private (Admin)
+router.get('/test-character', authMiddleware, getTestCharacter);
 
 module.exports = router;

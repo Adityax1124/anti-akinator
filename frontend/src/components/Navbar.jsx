@@ -1,3 +1,4 @@
+// /frontend/src/components/Navbar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -276,6 +277,16 @@ const Navbar = () => {
                 >
                   <span className="nav-icon">🎫</span>
                   <span className="nav-label">Season Pass</span>
+                </Link>
+
+                {/* ✅ NEW: Blur Game - Standalone Nav Item */}
+                <Link 
+                  to="/blur-game" 
+                  className={`nav-link ${isActive('/blur-game') ? 'active' : ''}`}
+                  onClick={closeAllDropdowns}
+                >
+                  <span className="nav-icon">🔮</span>
+                  <span className="nav-label">Mystery</span>
                 </Link>
 
                 <div
