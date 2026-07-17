@@ -71,6 +71,14 @@ exports.getBlurImage = async (req, res) => {
       });
     }
 
+    // Check if user owns this game
+    if (game.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view this image'
+      });
+    }
+
     // Redirect to the actual image URL - this hides the character name!
     res.redirect(game.imageUrl);
   } catch (error) {
@@ -109,7 +117,8 @@ exports.startGame = async (req, res) => {
         return res.status(200).json({
           success: true,
           gameId: existingGame._id,
-          imageUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/api/blur-game/image/${existingGame._id}`,
+          // ✅ USE RELATIVE URL - NO localhost
+          imageUrl: `/api/blur-game/image/${existingGame._id}`,
           anime: existingGame.anime,
           characterId: existingGame.characterId,
           characterName: existingGame.characterName,
@@ -163,7 +172,8 @@ exports.startGame = async (req, res) => {
     res.status(200).json({
       success: true,
       gameId: game._id,
-      imageUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/api/blur-game/image/${game._id}`,
+      // ✅ USE RELATIVE URL - NO localhost
+      imageUrl: `/api/blur-game/image/${game._id}`,
       anime: character.anime,
       characterId: character._id,
       characterName: character.name,
