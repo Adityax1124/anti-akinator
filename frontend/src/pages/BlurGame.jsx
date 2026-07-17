@@ -354,7 +354,7 @@ const BlurGame = () => {
   };
 
   // ============================================================
-  // ✅ END GAME - FIXED
+  // ✅ END GAME
   // ============================================================
   const endGame = async (guessText = null, timedOut = false) => {
     if (isGameEndingRef.current || gameAbandonedRef.current) return;
@@ -402,8 +402,7 @@ const BlurGame = () => {
         const data = await submitGuess(gameId, guessText, timeElapsed);
         console.log('📦 Guess response:', data);
         
-        // ✅ CASE 1: WRONG GUESS - CAN RETRY
-        // ⭐ IMPORTANT: DO NOT end the game!
+        // ✅ WRONG GUESS - CAN RETRY
         if (data.success === false && data.canRetry) {
           console.log('🔄 Wrong guess, can retry. Remaining:', data.remainingGuesses);
           
@@ -416,10 +415,6 @@ const BlurGame = () => {
           setIsSubmitting(false);
           isGameEndingRef.current = false;
           
-          // ⭐ KEEP THE GAME ACTIVE - timer continues!
-          // DO NOT setGameEnded(true)
-          // DO NOT setCanGuess(false)
-          
           setTimeout(() => {
             if (guessInputRef.current) {
               guessInputRef.current.focus();
@@ -428,7 +423,7 @@ const BlurGame = () => {
           return;
         }
         
-        // ✅ CASE 2: GAME OVER (3 wrong guesses OR correct guess)
+        // ✅ GAME OVER OR CORRECT
         if (data.success || data.gameOver) {
           console.log('🏁 Game is over');
           
@@ -651,6 +646,8 @@ const BlurGame = () => {
                 objectFit: 'cover'
               }}
               onError={(e) => {
+                // Fallback: if proxy fails, try direct URL (though we don't have it)
+                console.error('Image load error, using fallback');
                 e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect width="400" height="400" fill="%231a1a2e"/%3E%3Ctext x="50" y="200" font-family="Arial" font-size="24" fill="%2394a3b8"%3ENo Image Available%3C/text%3E%3C/svg%3E';
               }}
             />

@@ -25,28 +25,62 @@ function isMatchingGuess(guess, characterName) {
   if (normalizedGuess === normalizedName) return true;
 
   // ✅ PARTIAL MATCH - Check if guess is a significant part of the name
-  // "rengoku" matches "Kyojiro Rengoku"
   if (normalizedName.includes(normalizedGuess) && normalizedGuess.length >= 3) {
     return true;
   }
 
   // ✅ PARTIAL MATCH - Check if any significant word matches
-  // "Rengoku" matches "Kyojiro Rengoku"
   const guessWords = normalizedGuess.split(' ');
   const nameWords = normalizedName.split(' ');
   
-  // Check if any word from the name matches the guess
   const anyWordMatch = nameWords.some(word => 
     normalizedGuess.includes(word) && word.length >= 3
   );
   if (anyWordMatch) return true;
 
-  // Check if all words in guess are in the name
   const allWordsMatch = guessWords.every(word => nameWords.includes(word));
   if (allWordsMatch && guessWords.length > 0) return true;
 
   return false;
 }
+
+// ============================================================
+// @desc    Get proxied image for blur game (Hides character name)
+// @route   GET /api/blur-game/image/:gameId
+// @access  Private
+// ============================================================
+exports.getBlurImage = async (req, res) => {
+  try {
+    const game = await BlurGameSession.findOne({
+      _id: req.params.gameId,
+      userId: req.user._id
+    });
+
+    if (!game) {
+      return res.status(404).json({
+        success: false,
+        message: 'Game not found'
+      });
+    }
+
+    // Check if game is active (not completed)
+    if (game.isCompleted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Game already completed'
+      });
+    }
+
+    // Redirect to the actual image URL - this hides the character name!
+    res.redirect(game.imageUrl);
+  } catch (error) {
+    console.error('Image proxy error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load image'
+    });
+  }
+};
 
 // ============================================================
 // @desc    Start a new blur game session
@@ -75,7 +109,7 @@ exports.startGame = async (req, res) => {
         return res.status(200).json({
           success: true,
           gameId: existingGame._id,
-          imageUrl: existingGame.imageUrl,
+          imageUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/api/blur-game/image/${existingGame._id}`,
           anime: existingGame.anime,
           characterId: existingGame.characterId,
           characterName: existingGame.characterName,
@@ -129,7 +163,7 @@ exports.startGame = async (req, res) => {
     res.status(200).json({
       success: true,
       gameId: game._id,
-      imageUrl: character.image,
+      imageUrl: `${process.env.BASE_URL || 'http://localhost:5000'}/api/blur-game/image/${game._id}`,
       anime: character.anime,
       characterId: character._id,
       characterName: character.name,
@@ -224,18 +258,16 @@ exports.submitGuess = async (req, res) => {
     const timeTakenSeconds = timeTaken || Math.floor((Date.now() - game.createdAt.getTime()) / 1000);
     const finalTimeTaken = Math.min(timeTakenSeconds, 60);
 
-    // ✅ Check if guess is correct (USING PARTIAL MATCH)
+    // ✅ Check if guess is correct
     const isCorrect = isMatchingGuess(guess, game.characterName);
 
     // ✅ IF WRONG GUESS - DO NOT END THE GAME YET!
     if (!isCorrect) {
-      // Increment wrong guesses
       game.wrongGuesses = (game.wrongGuesses || 0) + 1;
       game.guessedNames.push(guess);
       
       // ✅ Check if max guesses reached (3)
       if (game.wrongGuesses >= game.maxGuesses) {
-        // ✅ GAME OVER - Too many wrong guesses
         game.isCompleted = true;
         game.guessedAt = new Date();
         game.timeTaken = finalTimeTaken;
@@ -243,7 +275,6 @@ exports.submitGuess = async (req, res) => {
         game.wonCard = false;
         await game.save();
 
-        // Update user stats (games played, not won)
         const user = await User.findById(userId);
         if (!user.blurGameStats) {
           user.blurGameStats = {
@@ -284,7 +315,6 @@ exports.submitGuess = async (req, res) => {
         });
       }
 
-      // ✅ SAVE WRONG GUESS - GAME STILL ACTIVE, CAN RETRY
       await game.save();
 
       const remaining = game.maxGuesses - game.wrongGuesses;
@@ -306,7 +336,6 @@ exports.submitGuess = async (req, res) => {
     // ✅ CORRECT GUESS!
     const winsCard = finalTimeTaken <= 30;
 
-    // Update game
     game.guessedAt = new Date();
     game.timeTaken = finalTimeTaken;
     game.isCompleted = true;
@@ -315,10 +344,8 @@ exports.submitGuess = async (req, res) => {
     game.guessedNames.push(guess);
     await game.save();
 
-    // Get user
     const user = await User.findById(userId);
 
-    // Initialize stats
     if (!user.blurGameStats) {
       user.blurGameStats = {
         gamesPlayed: 0,
@@ -328,16 +355,13 @@ exports.submitGuess = async (req, res) => {
       };
     }
 
-    // Update stats
     user.blurGameStats.gamesPlayed += 1;
     user.blurGameStats.gamesWon += 1;
 
-    // Update best time
     if (!user.blurGameStats.bestTime || finalTimeTaken < user.blurGameStats.bestTime) {
       user.blurGameStats.bestTime = finalTimeTaken;
     }
 
-    // If won card, add to user's collection
     if (winsCard) {
       const character = await Character.findById(game.characterId);
       if (character) {
@@ -345,15 +369,12 @@ exports.submitGuess = async (req, res) => {
         if (cardAdded) {
           user.blurGameStats.totalCardsWon += 1;
           console.log(`🃏 Card added to ${user.username}'s collection: ${character.name}`);
-        } else {
-          console.log(`ℹ️ Card already in collection: ${character.name}`);
         }
       }
     }
 
     await user.save();
 
-    // Prepare response message
     let message = '';
     let rewardMessage = '';
 

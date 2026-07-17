@@ -10,7 +10,8 @@ const {
   getDailyChallenge,
   getGameStats,
   abandonGame,
-  getTestCharacter
+  getTestCharacter,
+  getBlurImage
 } = require('../controllers/blurGameController');
 
 // ============================================================
@@ -45,6 +46,11 @@ router.post('/guess', authMiddleware, validateGuess, submitGuess);
 // @desc    Abandon game (user left the page)
 // @access  Private
 router.post('/abandon', authMiddleware, abandonGame);
+
+// @route   GET /api/blur-game/image/:gameId
+// @desc    Get proxied image for blur game (hides character name)
+// @access  Private
+router.get('/image/:gameId', authMiddleware, getBlurImage);
 
 // @route   GET /api/blur-game/history
 // @desc    Get user's game history
