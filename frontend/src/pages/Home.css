@@ -1308,3 +1308,83 @@
     padding: 11px 16px;
   }
 }
+/* ============================================================
+   PROMOTE & EARN BUTTON - ADD TO Home.css
+   ============================================================ */
+
+/* Hero Button - Promote */
+.hero-btn.btn-promote {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+
+.hero-btn.btn-promote:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 35px rgba(245, 158, 11, 0.45);
+}
+
+/* Game Mode - Promote */
+.game-mode-card.mode-promote .mode-icon-wrapper {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.15));
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.game-mode-card.mode-promote .mode-play-btn {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.game-mode-card.mode-promote:hover .mode-play-btn {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.game-mode-card.mode-promote .mode-card-glow {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+}
+
+/* CTA Button - Promote */
+.cta-btn-promote {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+
+.cta-btn-promote .cta-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cta-btn-promote .cta-text {
+  position: relative;
+  z-index: 1;
+}
+
+.cta-btn-promote:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 35px rgba(245, 158, 11, 0.45);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-btn.btn-promote {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .cta-btn-promote {
+    width: 100%;
+    justify-content: center;
+  }
+}

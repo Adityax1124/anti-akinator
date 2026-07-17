@@ -1,4 +1,3 @@
-// /frontend/src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -88,6 +87,13 @@ const Home = () => {
               <span className="btn-text">Battle Now</span>
             </button>
             <button
+              className="hero-btn btn-promote"
+              onClick={() => navigate('/promote-earn')}
+            >
+              <span className="btn-icon">📢</span>
+              <span className="btn-text">Promote & Earn</span>
+            </button>
+            <button
               className="hero-btn btn-team"
               onClick={() => setIsTeamModalOpen(true)}
             >
@@ -153,6 +159,22 @@ const Home = () => {
             </div>
             <div className="mode-play-btn">Play Now →</div>
           </div>
+
+          {/* ✅ NEW: Promote & Earn Card */}
+          <div className="game-mode-card mode-promote" onClick={() => navigate('/promote-earn')}>
+            <div className="mode-card-glow"></div>
+            <div className="mode-icon-wrapper">
+              <span className="mode-icon">📢</span>
+            </div>
+            <h3>Promote & Earn</h3>
+            <p>Create videos about Anti-Akinator and earn amazing rewards!</p>
+            <div className="mode-features">
+              <span>🎥 Create Videos</span>
+              <span>👑 Earn Rewards</span>
+              <span>🏆 Legendary Titles</span>
+            </div>
+            <div className="mode-play-btn">Learn More →</div>
+          </div>
         </div>
       </section>
 
@@ -183,6 +205,16 @@ const Home = () => {
             <h3>Mystery Character</h3>
             <p>Guess the character from a blurry image that clears over time</p>
             <div className="offer-tag">New Mode</div>
+          </div>
+          <div className="offer-card" onClick={() => navigate('/promote-earn')} style={{ cursor: 'pointer' }}>
+            <div className="offer-card-border"></div>
+            <div className="offer-icon-wrapper">
+              <div className="offer-icon-glow"></div>
+              <span className="offer-icon">📢</span>
+            </div>
+            <h3>Promote & Earn</h3>
+            <p>Create videos, get views, and earn exclusive rewards!</p>
+            <div className="offer-tag">Earn Rewards</div>
           </div>
           <div className="offer-card">
             <div className="offer-card-border"></div>
@@ -362,6 +394,13 @@ const Home = () => {
             >
               <span className="cta-icon">⚔️</span>
               <span className="cta-text">Battle Now</span>
+            </button>
+            <button
+              className="cta-btn-promote"
+              onClick={() => navigate('/promote-earn')}
+            >
+              <span className="cta-icon">📢</span>
+              <span className="cta-text">Promote & Earn</span>
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import Transactions from './Admin/Transactions';
 import './AdminPanel.css';
+import Promotions from './Admin/Promotions';
 
 const AdminPanel = () => {
   const { user } = useAuth();
@@ -1814,6 +1815,9 @@ const AdminPanel = () => {
           <button className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`} onClick={() => setActiveTab('shop')}>
             Shop <span className="tab-badge">{shopItems.length}</span>
           </button>
+          <button className={`tab-btn ${activeTab === 'promotions' ? 'active' : ''}`} onClick={() => setActiveTab('promotions')}>
+          📢Promotions
+          </button>
           <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
             Users
           </button>
@@ -3292,6 +3296,7 @@ const AdminPanel = () => {
       {activeTab === 'gift' && renderGiftTab()}
       {activeTab === 'seasons' && renderSeasonPassTab()}
       {activeTab === 'transactions' && <Transactions />}
+      {activeTab === 'promotions' && <Promotions />}
     </div>
   );
 };

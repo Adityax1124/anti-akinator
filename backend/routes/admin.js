@@ -13,13 +13,21 @@ const ShopItem = require('../models/ShopItem');
 const SeasonPass = require('../models/SeasonPass');
 const SeasonPassTier = require('../models/SeasonPassTier');
 const Transaction = require('../models/Transaction');
+const Promotion = require('../models/Promotion');
 
-// ✅ NEW: Import admin controller functions
 const {
   sendGift
 } = require('../controllers/adminController');
 
-// ===== HELPER: Sanitize input =====
+const {
+  getAllPromotions,
+  getPromotionDetail,
+  updatePromotionStatus,
+  giveReward,
+  deletePromotion,
+  getPromotionStats
+} = require('../controllers/promotionController');
+
 function sanitizeInput(str) {
   if (!str) return '';
   return str.replace(/[<>]/g, '').trim();
@@ -187,7 +195,6 @@ router.post('/characters', adminMiddleware, async (req, res) => {
     const character = new Character(characterData);
     await character.save();
 
-
     res.status(201).json({ 
       success: true, 
       character,
@@ -318,7 +325,6 @@ router.put('/characters/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-
     res.json({ 
       success: true, 
       character,
@@ -342,7 +348,6 @@ router.delete('/characters/:id', adminMiddleware, async (req, res) => {
         message: 'Character not found' 
       });
     }
-
 
     res.json({ 
       success: true, 
@@ -403,14 +408,12 @@ router.post('/banners', adminMiddleware, async (req, res) => {
     const banner = new Banner(bannerData);
     await banner.save();
 
-
     res.status(201).json({ 
       success: true, 
       banner,
       message: 'Banner created successfully'
     });
   } catch (error) {
-    
     if (error.name === 'ValidationError') {
       const errors = {};
       Object.keys(error.errors).forEach(key => {
@@ -456,7 +459,6 @@ router.put('/banners/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-
     res.json({ 
       success: true, 
       banner,
@@ -477,7 +479,6 @@ router.delete('/banners/:id', adminMiddleware, async (req, res) => {
         message: 'Banner not found' 
       });
     }
-
 
     res.json({ 
       success: true, 
@@ -511,7 +512,6 @@ router.post('/titles', adminMiddleware, async (req, res) => {
     const title = new Title(titleData);
     await title.save();
 
-
     res.status(201).json({ 
       success: true, 
       title,
@@ -541,7 +541,6 @@ router.put('/titles/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-
     res.json({ 
       success: true, 
       title,
@@ -562,7 +561,6 @@ router.delete('/titles/:id', adminMiddleware, async (req, res) => {
         message: 'Title not found' 
       });
     }
-
 
     res.json({ 
       success: true, 
@@ -596,7 +594,6 @@ router.post('/profile-photos', adminMiddleware, async (req, res) => {
     const photo = new ProfilePhoto(photoData);
     await photo.save();
 
-
     res.status(201).json({ 
       success: true, 
       photo,
@@ -626,7 +623,6 @@ router.put('/profile-photos/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-
     res.json({ 
       success: true, 
       photo,
@@ -648,7 +644,6 @@ router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-
     res.json({ 
       success: true, 
       message: 'Profile photo deleted successfully' 
@@ -659,10 +654,9 @@ router.delete('/profile-photos/:id', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ NEW: PROFILE BACKGROUND CRUD (ADMIN ONLY)
+// PROFILE BACKGROUND CRUD (ADMIN ONLY)
 // ============================================================
 
-// Get all profile backgrounds
 router.get('/profile-backgrounds', adminMiddleware, async (req, res) => {
   try {
     const backgrounds = await ProfileBackground.find()
@@ -681,7 +675,6 @@ router.get('/profile-backgrounds', adminMiddleware, async (req, res) => {
   }
 });
 
-// Create profile background
 router.post('/profile-backgrounds', adminMiddleware, async (req, res) => {
   try {
     const {
@@ -704,7 +697,6 @@ router.post('/profile-backgrounds', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Check if name exists
     const existing = await ProfileBackground.findOne({ 
       name: { $regex: new RegExp(`^${name}$`, 'i') } 
     });
@@ -731,14 +723,12 @@ router.post('/profile-backgrounds', adminMiddleware, async (req, res) => {
 
     await background.save();
 
-
     res.status(201).json({ 
       success: true, 
       background,
       message: 'Profile background created successfully'
     });
   } catch (error) {
-    
     if (error.name === 'ValidationError') {
       const errors = {};
       Object.keys(error.errors).forEach(key => {
@@ -758,7 +748,6 @@ router.post('/profile-backgrounds', adminMiddleware, async (req, res) => {
   }
 });
 
-// Update profile background
 router.put('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
   try {
     const updateData = { ...req.body };
@@ -780,7 +769,6 @@ router.put('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-
     res.json({ 
       success: true, 
       background,
@@ -794,7 +782,6 @@ router.put('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// Delete profile background
 router.delete('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
   try {
     const background = await ProfileBackground.findById(req.params.id);
@@ -806,7 +793,6 @@ router.delete('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Don't allow deleting default background
     if (background.isDefault) {
       return res.status(400).json({
         success: false,
@@ -814,8 +800,7 @@ router.delete('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-    await background.remove();
-
+    await background.deleteOne();
 
     res.json({ 
       success: true, 
@@ -829,7 +814,6 @@ router.delete('/profile-backgrounds/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// Assign background to user (Admin gift)
 router.post('/assign-background', adminMiddleware, async (req, res) => {
   try {
     const { userId, backgroundId } = req.body;
@@ -857,7 +841,6 @@ router.post('/assign-background', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Check if user already has this background
     if (user.hasProfileBackground(backgroundId)) {
       return res.status(400).json({
         success: false,
@@ -865,11 +848,9 @@ router.post('/assign-background', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Add background to user
     const result = user.addProfileBackground(backgroundId);
     await user.save();
 
-    // Increment total users
     await background.incrementTotalUsers();
 
     res.json({
@@ -944,7 +925,6 @@ router.post('/shop-items', adminMiddleware, async (req, res) => {
 
     await shopItem.save();
 
-
     res.status(201).json({
       success: true,
       message: 'Item added to shop successfully!',
@@ -981,7 +961,6 @@ router.put('/shop-items/:id', adminMiddleware, async (req, res) => {
       });
     }
 
-
     res.json({
       success: true,
       message: 'Shop item updated successfully!',
@@ -1005,7 +984,6 @@ router.delete('/shop-items/:id', adminMiddleware, async (req, res) => {
         message: 'Shop item not found'
       });
     }
-
 
     res.json({
       success: true,
@@ -1057,7 +1035,7 @@ router.get('/users', adminMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ✅ ADMIN STATS
+// ADMIN STATS
 // ============================================================
 router.get('/stats', adminMiddleware, async (req, res) => {
   try {
@@ -1071,10 +1049,8 @@ router.get('/stats', adminMiddleware, async (req, res) => {
 
     const winRate = totalGames > 0 ? ((wonGames / totalGames) * 100).toFixed(1) : 0;
 
-    // Get pending transactions count
     const pendingTransactions = await Transaction.countDocuments({ status: 'pending' });
 
-    // Get total revenue from delivered transactions
     const revenueResult = await Transaction.aggregate([
       { $match: { status: 'delivered' } },
       { $group: { _id: null, total: { $sum: '$paidAmount' } } }
@@ -1120,7 +1096,6 @@ router.get('/stats', adminMiddleware, async (req, res) => {
 // SEASON PASS ADMIN ROUTES
 // ============================================================
 
-// Get all seasons
 router.get('/seasons', adminMiddleware, async (req, res) => {
   try {
     const seasons = await SeasonPass.find()
@@ -1138,7 +1113,6 @@ router.get('/seasons', adminMiddleware, async (req, res) => {
   }
 });
 
-// Get single season with tiers
 router.get('/seasons/:seasonId', adminMiddleware, async (req, res) => {
   try {
     const season = await SeasonPass.findById(req.params.seasonId);
@@ -1166,7 +1140,6 @@ router.get('/seasons/:seasonId', adminMiddleware, async (req, res) => {
   }
 });
 
-// Create new season
 router.post('/seasons', adminMiddleware, async (req, res) => {
   try {
     const {
@@ -1208,7 +1181,6 @@ router.post('/seasons', adminMiddleware, async (req, res) => {
 
     await season.save();
 
-    // Create tier entries
     const tierPromises = [];
     for (let i = 1; i <= season.totalTiers; i++) {
       tierPromises.push(
@@ -1221,7 +1193,6 @@ router.post('/seasons', adminMiddleware, async (req, res) => {
       );
     }
     await Promise.all(tierPromises);
-
 
     res.status(201).json({
       success: true,
@@ -1236,7 +1207,6 @@ router.post('/seasons', adminMiddleware, async (req, res) => {
   }
 });
 
-// Update season
 router.put('/seasons/:seasonId', adminMiddleware, async (req, res) => {
   try {
     const {
@@ -1269,7 +1239,6 @@ router.put('/seasons/:seasonId', adminMiddleware, async (req, res) => {
 
     await season.save();
 
-
     res.json({
       success: true,
       message: 'Season updated successfully!',
@@ -1283,7 +1252,6 @@ router.put('/seasons/:seasonId', adminMiddleware, async (req, res) => {
   }
 });
 
-// Activate season (deactivates all others)
 router.post('/seasons/:seasonId/activate', adminMiddleware, async (req, res) => {
   try {
     const season = await SeasonPass.findById(req.params.seasonId);
@@ -1295,7 +1263,6 @@ router.post('/seasons/:seasonId/activate', adminMiddleware, async (req, res) => 
     }
 
     await SeasonPass.activateSeason(season.seasonNumber);
-
 
     res.json({
       success: true,
@@ -1310,7 +1277,6 @@ router.post('/seasons/:seasonId/activate', adminMiddleware, async (req, res) => 
   }
 });
 
-// Deactivate season
 router.post('/seasons/:seasonId/deactivate', adminMiddleware, async (req, res) => {
   try {
     const season = await SeasonPass.findById(req.params.seasonId);
@@ -1322,7 +1288,6 @@ router.post('/seasons/:seasonId/deactivate', adminMiddleware, async (req, res) =
     }
 
     await SeasonPass.deactivateSeason(season.seasonNumber);
-
 
     res.json({
       success: true,
@@ -1337,7 +1302,6 @@ router.post('/seasons/:seasonId/deactivate', adminMiddleware, async (req, res) =
   }
 });
 
-// Update tier rewards
 router.put('/seasons/:seasonId/tiers/:tier', adminMiddleware, async (req, res) => {
   try {
     const { seasonId, tier } = req.params;
@@ -1381,7 +1345,6 @@ router.put('/seasons/:seasonId/tiers/:tier', adminMiddleware, async (req, res) =
   }
 });
 
-// Get season leaderboard
 router.get('/seasons/:seasonId/leaderboard', adminMiddleware, async (req, res) => {
   try {
     const { seasonId } = req.params;
@@ -1402,15 +1365,14 @@ router.get('/seasons/:seasonId/leaderboard', adminMiddleware, async (req, res) =
 });
 
 // ============================================================
-// ✅ SEND GIFT TO USER (ADMIN ONLY)
+// SEND GIFT TO USER (ADMIN ONLY)
 // ============================================================
 router.post('/gift', adminMiddleware, sendGift);
 
 // ============================================================
-// ✅ TRANSACTION MANAGEMENT (ADMIN ONLY)
+// TRANSACTION MANAGEMENT (ADMIN ONLY)
 // ============================================================
 
-// Get all transactions with filters
 router.get('/transactions', adminMiddleware, async (req, res) => {
   try {
     const { 
@@ -1425,13 +1387,11 @@ router.get('/transactions', adminMiddleware, async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    // Build query
     const query = {};
     
     if (status && status !== 'all') query.status = status;
     if (itemType && itemType !== 'all') query.itemType = itemType;
     
-    // Search by UTR or username/email
     if (search) {
       const userMatches = await User.find({
         $or: [
@@ -1448,7 +1408,6 @@ router.get('/transactions', adminMiddleware, async (req, res) => {
       ];
     }
 
-    // Date range filter
     if (startDate || endDate) {
       query.createdAt = {};
       if (startDate) query.createdAt.$gte = new Date(startDate);
@@ -1459,7 +1418,6 @@ router.get('/transactions', adminMiddleware, async (req, res) => {
     const sort = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    // Get transactions with populated user data
     const transactions = await Transaction.find(query)
       .populate('userId', 'username email phoneNumber profilePhoto')
       .populate('verifiedBy', 'username email')
@@ -1467,7 +1425,6 @@ router.get('/transactions', adminMiddleware, async (req, res) => {
       .skip(parseInt(skip))
       .limit(parseInt(limit));
 
-    // Get total count for pagination
     const total = await Transaction.countDocuments(query);
 
     res.json({
@@ -1490,7 +1447,6 @@ router.get('/transactions', adminMiddleware, async (req, res) => {
   }
 });
 
-// Get transaction statistics
 router.get('/transactions/stats', adminMiddleware, async (req, res) => {
   try {
     const stats = await Transaction.aggregate([
@@ -1503,7 +1459,6 @@ router.get('/transactions/stats', adminMiddleware, async (req, res) => {
       }
     ]);
 
-    // Get daily stats for last 7 days
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -1528,7 +1483,6 @@ router.get('/transactions/stats', adminMiddleware, async (req, res) => {
       }
     ]);
 
-    // Get total counts by type
     const typeStats = await Transaction.aggregate([
       {
         $group: {
@@ -1539,7 +1493,6 @@ router.get('/transactions/stats', adminMiddleware, async (req, res) => {
       }
     ]);
 
-    // Get total revenue
     const revenueResult = await Transaction.aggregate([
       { $match: { status: 'delivered' } },
       { $group: { _id: null, total: { $sum: '$paidAmount' } } }
@@ -1567,7 +1520,6 @@ router.get('/transactions/stats', adminMiddleware, async (req, res) => {
   }
 });
 
-// Get single transaction details
 router.get('/transactions/:id', adminMiddleware, async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id)
@@ -1593,7 +1545,6 @@ router.get('/transactions/:id', adminMiddleware, async (req, res) => {
   }
 });
 
-// Verify transaction
 router.put('/transactions/:id/verify', adminMiddleware, async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id);
@@ -1604,7 +1555,6 @@ router.put('/transactions/:id/verify', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Check if already verified/delivered
     if (transaction.status === 'verified' || transaction.status === 'delivered') {
       return res.status(400).json({
         success: false,
@@ -1612,9 +1562,7 @@ router.put('/transactions/:id/verify', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Mark as verified
     await transaction.markAsVerified(req.user._id);
-
 
     res.json({
       success: true,
@@ -1633,7 +1581,6 @@ router.put('/transactions/:id/verify', adminMiddleware, async (req, res) => {
   }
 });
 
-// Deliver item to user
 router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id);
@@ -1644,7 +1591,6 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Check if already delivered
     if (transaction.status === 'delivered') {
       return res.status(400).json({
         success: false,
@@ -1652,12 +1598,10 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
       });
     }
 
-    // If transaction is not verified, verify it first
     if (transaction.status === 'pending') {
       await transaction.markAsVerified(req.user._id);
     }
 
-    // Get user
     const user = await User.findById(transaction.userId);
     if (!user) {
       return res.status(404).json({
@@ -1666,7 +1610,6 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Deliver based on item type
     let deliveryMessage = '';
     switch (transaction.itemType) {
       case 'shards':
@@ -1690,7 +1633,6 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
         break;
         
       case 'bundle':
-        // Handle custom bundles
         if (transaction.itemDetails.shards) {
           user.addShards(transaction.itemDetails.shards);
         }
@@ -1710,17 +1652,13 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
         });
     }
 
-    // Save user changes
     await user.save();
 
-    // Add transaction to user's history
     user.addTransaction(transaction._id);
     await user.save();
 
-    // Mark transaction as delivered
     await transaction.markAsDelivered();
 
-    // Add delivery notes
     transaction.notes = `${deliveryMessage} | Delivered by ${req.user.username}`;
     transaction.verifiedBy = req.user._id;
     transaction.verifiedAt = transaction.verifiedAt || new Date();
@@ -1744,7 +1682,6 @@ router.put('/transactions/:id/deliver', adminMiddleware, async (req, res) => {
   }
 });
 
-// Reject transaction
 router.put('/transactions/:id/reject', adminMiddleware, async (req, res) => {
   try {
     const { reason } = req.body;
@@ -1756,7 +1693,6 @@ router.put('/transactions/:id/reject', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Check if already verified/delivered
     if (transaction.status === 'verified' || transaction.status === 'delivered') {
       return res.status(400).json({
         success: false,
@@ -1764,9 +1700,7 @@ router.put('/transactions/:id/reject', adminMiddleware, async (req, res) => {
       });
     }
 
-    // Reject the transaction
     await transaction.reject(req.user._id, reason || 'Transaction rejected by admin');
-
 
     res.json({
       success: true,
@@ -1784,5 +1718,21 @@ router.put('/transactions/:id/reject', adminMiddleware, async (req, res) => {
     });
   }
 });
+
+// ============================================================
+// ✅ PROMOTION MANAGEMENT (ADMIN ONLY)
+// ============================================================
+
+router.get('/promotions', adminMiddleware, getAllPromotions);
+
+router.get('/promotions/:id', adminMiddleware, getPromotionDetail);
+
+router.put('/promotions/:id/status', adminMiddleware, updatePromotionStatus);
+
+router.post('/promotions/:id/reward', adminMiddleware, giveReward);
+
+router.delete('/promotions/:id', adminMiddleware, deletePromotion);
+
+router.get('/promotions/stats', adminMiddleware, getPromotionStats);
 
 module.exports = router;

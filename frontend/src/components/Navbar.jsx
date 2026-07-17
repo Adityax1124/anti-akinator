@@ -20,7 +20,6 @@ const Navbar = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [hoveredDropdown, setHoveredDropdown] = useState(null);
   
-  // ✅ Clan state
   const [isInClan, setIsInClan] = useState(false);
   const [clanData, setClanData] = useState(null);
   const [checkingClan, setCheckingClan] = useState(true);
@@ -32,7 +31,6 @@ const Navbar = () => {
   const leaderboardRef = useRef(null);
   const profileRef = useRef(null);
 
-  // ✅ Check if user is in a clan
   useEffect(() => {
     checkClanStatus();
   }, [isAuthenticated]);
@@ -119,7 +117,6 @@ const Navbar = () => {
 
   const closeFriendModal = () => setIsFriendModalOpen(false);
 
-  // ✅ Clan button handler - Check if in clan
   const handleClanClick = () => {
     closeAllDropdowns();
     
@@ -136,7 +133,6 @@ const Navbar = () => {
 
   const closeClanModal = () => setIsClanModalOpen(false);
 
-  // ✅ After clan action, refresh status and navigate
   const handleClanAction = (clan) => {
     closeClanModal();
     checkClanStatus();
@@ -217,6 +213,7 @@ const Navbar = () => {
                   </div>
                 </div>
 
+                {/* ✅ Community Dropdown with Promote & Earn INSIDE */}
                 <div
                   className="dropdown-wrapper"
                   ref={communityRef}
@@ -239,10 +236,14 @@ const Navbar = () => {
                       <span className="dropdown-icon">🤝</span>
                       Refer & Earn
                     </button>
+                    {/* ✅ Promote & Earn inside Community */}
+                    <Link to="/promote-earn" className="dropdown-item" onClick={closeAllDropdowns}>
+                      <span className="dropdown-icon">📢</span>
+                      Promote & Earn
+                    </Link>
                   </div>
                 </div>
 
-                {/* ✅ Clan Button with check */}
                 <div
                   className="dropdown-wrapper"
                   ref={clanRef}
@@ -262,7 +263,6 @@ const Navbar = () => {
                   </button>
                 </div>
 
-                {/* ✅ Season Pass - Standalone Nav Item */}
                 <Link 
                   to="/season-pass" 
                   className={`nav-link ${isActive('/season-pass') ? 'active' : ''}`}
@@ -272,7 +272,6 @@ const Navbar = () => {
                   <span className="nav-label">Season Pass</span>
                 </Link>
 
-                {/* ✅ NEW: Blur Game - Standalone Nav Item */}
                 <Link 
                   to="/blur-game" 
                   className={`nav-link ${isActive('/blur-game') ? 'active' : ''}`}
@@ -318,7 +317,6 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                {/* ✅ Notification Bell */}
                 <div className="nav-notification-wrapper">
                   <NotificationBell />
                 </div>

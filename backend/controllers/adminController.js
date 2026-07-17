@@ -8,6 +8,7 @@ const ProfileBackground = require('../models/ProfileBackground');
 const Notification = require('../models/Notification');
 const SeasonPass = require('../models/SeasonPass');
 const SeasonPassTier = require('../models/SeasonPassTier');
+const Promotion = require('../models/Promotion');
 
 // ✅ Send Gift to User
 exports.sendGift = async (req, res) => {
@@ -146,7 +147,6 @@ exports.sendGift = async (req, res) => {
       itemNameFinal = `${amount} ${giftType}`;
     }
 
-    // Create notification with gift
     const notification = new Notification({
       userId: userId,
       type: 'gift',
@@ -449,8 +449,6 @@ exports.assignProfileBackground = async (req, res) => {
     });
     await notification.save();
 
-  
-
     res.json({
       success: true,
       message: 'Background assigned successfully!',
@@ -522,7 +520,6 @@ exports.createSeason = async (req, res) => {
       tierRewards = []
     } = req.body;
 
-    // Validate required fields
     if (!seasonNumber || !seasonName || !startDate || !endDate) {
       return res.status(400).json({
         success: false,
@@ -530,7 +527,6 @@ exports.createSeason = async (req, res) => {
       });
     }
 
-    // Check if season already exists
     const existing = await SeasonPass.findOne({ seasonNumber });
     if (existing) {
       return res.status(400).json({
@@ -539,7 +535,6 @@ exports.createSeason = async (req, res) => {
       });
     }
 
-    // Create season
     const season = new SeasonPass({
       seasonNumber,
       seasonName,
@@ -555,10 +550,8 @@ exports.createSeason = async (req, res) => {
 
     await season.save();
 
-    // ✅ FIX: Only create tiers up to totalTiers (NOT beyond)
     const tierPromises = [];
     for (let i = 1; i <= totalTiers; i++) {
-      // Check if tier rewards were provided for this tier
       const existingRewards = tierRewards.find(t => t.tier === i);
       
       tierPromises.push(
@@ -571,7 +564,6 @@ exports.createSeason = async (req, res) => {
       );
     }
     await Promise.all(tierPromises);
-
 
     res.status(201).json({
       success: true,
@@ -621,15 +613,12 @@ exports.updateSeason = async (req, res) => {
 
     await season.save();
 
-    // ✅ If totalTiers changed, adjust tiers
     if (totalTiers && totalTiers !== season.totalTiers) {
-      // Delete tiers beyond new totalTiers
       await SeasonPassTier.deleteMany({
         seasonId: season._id,
         tier: { $gt: totalTiers }
       });
 
-      // Create missing tiers
       const existingTiers = await SeasonPassTier.find({ seasonId: season._id })
         .select('tier')
         .lean();
@@ -646,7 +635,6 @@ exports.updateSeason = async (req, res) => {
         }
       }
     }
-
 
     res.json({
       success: true,
@@ -675,12 +663,8 @@ exports.deleteSeason = async (req, res) => {
       });
     }
 
-    // Delete all tiers
     await SeasonPassTier.deleteMany({ seasonId: season._id });
-
-    // Delete the season
-    await season.remove();
-
+    await season.deleteOne();
 
     res.json({
       success: true,
@@ -694,3 +678,70 @@ exports.deleteSeason = async (req, res) => {
     });
   }
 };
+
+// ✅ Activate Season
+exports.activateSeason = async (req, res) => {
+  try {
+    const { seasonId } = req.params;
+
+    const season = await SeasonPass.findById(seasonId);
+    if (!season) {
+      return res.status(404).json({
+        success: false,
+        message: 'Season not found'
+      });
+    }
+
+    await SeasonPass.updateMany(
+      { isActive: true },
+      { $set: { isActive: false } }
+    );
+
+    season.isActive = true;
+    await season.save();
+
+    res.json({
+      success: true,
+      message: `Season ${season.seasonNumber} activated successfully!`,
+      season
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error activating season: ' + error.message
+    });
+  }
+};
+
+// ✅ Deactivate Season
+exports.deactivateSeason = async (req, res) => {
+  try {
+    const { seasonId } = req.params;
+
+    const season = await SeasonPass.findById(seasonId);
+    if (!season) {
+      return res.status(404).json({
+        success: false,
+        message: 'Season not found'
+      });
+    }
+
+    season.isActive = false;
+    await season.save();
+
+    res.json({
+      success: true,
+      message: `Season ${season.seasonNumber} deactivated successfully!`,
+      season
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deactivating season: ' + error.message
+    });
+  }
+};
+
+module.exports = exports;

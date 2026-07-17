@@ -523,3 +523,99 @@
   display: flex;
   align-items: center;
 }
+/* /frontend/src/components/Navbar.css - Add these styles */
+
+/* Make navbar more compact */
+.navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 56px; /* Reduced from default */
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px; /* Reduced gap */
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px; /* Reduced padding */
+  font-size: 13px; /* Slightly smaller */
+  font-weight: 500;
+}
+
+.nav-icon {
+  font-size: 15px; /* Smaller icons */
+}
+
+.nav-label {
+  font-size: 12px; /* Smaller text */
+}
+
+.dropdown-btn {
+  padding: 6px 10px;
+}
+
+.dropdown-arrow-svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dropdown-menu {
+  min-width: 160px;
+  padding: 6px 0;
+}
+
+.dropdown-item {
+  padding: 6px 16px;
+  font-size: 13px;
+}
+
+.dropdown-icon {
+  font-size: 14px;
+}
+
+/* Brand text smaller */
+.brand-text {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.brand-logo {
+  height: 32px;
+  width: 32px;
+}
+
+/* Mobile menu adjustments */
+@media (max-width: 1024px) {
+  .navbar-menu {
+    gap: 0px;
+  }
+  
+  .nav-link {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  
+  .nav-label {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    height: 50px;
+    padding: 0 12px;
+  }
+  
+  .brand-text {
+    font-size: 16px;
+  }
+}

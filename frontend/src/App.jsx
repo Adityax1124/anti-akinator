@@ -38,12 +38,14 @@ import WarLeaderboard from './pages/WarLeaderboard';
 import Notifications from './pages/Notifications';
 import SeasonPass from './pages/SeasonPass';
 
-// ✅ NEW: Blur Game
+// ✅ Blur Game
 import BlurGame from './pages/BlurGame';
+
+// ✅ Promotion Page
+import PromoteEarn from './pages/PromoteEarn';
 
 import './App.css';
 
-// ✅ NEW: ScrollToTop component to fix scroll position on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation();
 
@@ -51,7 +53,7 @@ const ScrollToTop = () => {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: 'instant' // or 'smooth' if you want animated scrolling
+      behavior: 'instant'
     });
   }, [pathname]);
 
@@ -69,12 +71,10 @@ const AppContent = () => {
     }
 
     const userId = user?._id || user?.id || user?.userId;
-    
 
     if (!userId) {
       return;
     }
-
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
     
@@ -221,9 +221,14 @@ const AppContent = () => {
             <PrivateRouteWrapper><SeasonPass /></PrivateRouteWrapper>
           } />
           
-          {/* ===== ✅ NEW: BLUR GAME ROUTE ===== */}
+          {/* ===== BLUR GAME ROUTE ===== */}
           <Route path="/blur-game" element={
             <PrivateRouteWrapper><BlurGame /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== PROMOTE & EARN ROUTE ===== */}
+          <Route path="/promote-earn" element={
+            <PrivateRouteWrapper><PromoteEarn /></PrivateRouteWrapper>
           } />
           
           {/* ===== ADMIN ROUTE ===== */}

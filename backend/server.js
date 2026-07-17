@@ -24,24 +24,27 @@ const twoFactorRoutes = require('./routes/twofactor');
 const { authMiddleware } = require('./middleware/auth');
 const cardRoutes = require('./routes/card');
 
-// ✅ NEW: Transaction Routes
+// ✅ Transaction Routes
 const transactionRoutes = require('./routes/transactions');
 
-// ✅ NEW: Season Pass Routes
+// ✅ Season Pass Routes
 const seasonPassRoutes = require('./routes/seasonPass');
 
-// ✅ NEW: Blur Game Routes
+// ✅ Blur Game Routes
 const blurGameRoutes = require('./routes/blurGame');
+
+// ✅ Promotion Routes (NEW)
+const promotionRoutes = require('./routes/promotion');
 
 // ✅ Get setIO from clanRoutes
 const clanSetIO = clanRoutes.setIO;
 
-// ✅ NEW: Clan War Routes
+// ✅ Clan War Routes
 const clanWarRoutes = require('./routes/clanWar');
 const chestRoutes = require('./routes/chest');
 const notificationRoutes = require('./routes/notification');
 
-// ✅ NEW: War Utils for Timer System
+// ✅ War Utils for Timer System
 const { checkWarTimers, cleanupOldWars } = require('./utils/warUtils');
 
 const app = express();
@@ -386,6 +389,26 @@ const blurGameLimiter = rateLimit({
   }
 });
 
+// Promotion Limiter (10 req/min per IP)
+const promotionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: isDevelopment ? 30 : 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many promotion requests. Please slow down.'
+  },
+  skip: (req) => {
+    if (isDevelopment) return true;
+    return false;
+  },
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false
+  }
+});
+
 // Apply rate limiters
 app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
@@ -398,6 +421,7 @@ app.use('/api/shop', profileLimiter);
 app.use('/api/referral', profileLimiter);
 app.use('/api/transactions', transactionLimiter);
 app.use('/api/blur-game', blurGameLimiter);
+app.use('/api/promotion', promotionLimiter);
 
 // ============================================================
 // 🚀 HTTPS REDIRECT
@@ -702,29 +726,32 @@ app.use('/api/clan', authMiddleware, clanRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/cards', authMiddleware, cardRoutes);
 
-// ✅ NEW: Transaction Routes
+// ✅ Transaction Routes
 app.use('/api/transactions', authMiddleware, transactionRoutes);
 console.log('💳 Transaction routes loaded!');
 
-// ✅ NEW: Season Pass Routes
+// ✅ Season Pass Routes
 app.use('/api/season-pass', authMiddleware, seasonPassRoutes);
 console.log('🎫 Season Pass routes loaded!');
 
-// ✅ NEW: Blur Game Routes
+// ✅ Blur Game Routes
 app.use('/api/blur-game', authMiddleware, blurGameRoutes);
 console.log('🔮 Blur Game routes loaded!');
 
-// ✅ NEW: Clan War Routes
+// ✅ Promotion Routes (NEW)
+app.use('/api/promotion', authMiddleware, promotionRoutes);
+console.log('📢 Promotion routes loaded!');
+
+// ✅ Clan War Routes
 app.use('/api/clan-war', authMiddleware, clanWarRoutes);
 app.use('/api/chests', authMiddleware, chestRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 
 // ============================================================
-// ✅ NEW: CLAN WAR TIMER SYSTEM
+// ✅ CLAN WAR TIMER SYSTEM
 // ============================================================
 console.log('⚔️ Starting Clan War Timer System...');
 
-// Run war timers every minute
 const timerInterval = setInterval(async () => {
   try {
     await checkWarTimers();
@@ -733,7 +760,6 @@ const timerInterval = setInterval(async () => {
   }
 }, 60000);
 
-// Run cleanup daily (24 hours)
 const cleanupInterval = setInterval(async () => {
   try {
     await cleanupOldWars();
@@ -742,7 +768,6 @@ const cleanupInterval = setInterval(async () => {
   }
 }, 24 * 60 * 60 * 1000);
 
-// Store intervals for graceful shutdown
 process.on('SIGTERM', () => {
   clearInterval(timerInterval);
   clearInterval(cleanupInterval);
@@ -827,6 +852,10 @@ app.get('/api/health', (req, res) => {
     blurGame: {
       enabled: true,
       limiter: '20 req/min'
+    },
+    promotion: {
+      enabled: true,
+      limiter: '10 req/min'
     }
   });
 });
@@ -930,10 +959,12 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`💳 Transaction routes loaded!`);
   console.log(`🎫 Season Pass routes loaded!`);
   console.log(`🔮 Blur Game routes loaded!`);
+  console.log(`📢 Promotion routes loaded!`);
   console.log(`⏰ Server timeout: 180 seconds`);
   console.log(`📊 maxPoolSize: 100, maxListeners: 200, rate limits: 500/min`);
   console.log(`📊 Login: 100/15min, Register: 20/24hrs`);
   console.log(`📊 Transactions: 30 req/min`);
   console.log(`📊 Blur Game: 20 req/min`);
+  console.log(`📊 Promotion: 10 req/min`);
   console.log(`⚔️ Clan War Timer System: Running every 60 seconds`);
 });
